@@ -937,10 +937,10 @@ class TestDotenvIsolation:
         """A .env in cwd must not leak into os.environ during tests.
 
         Without the suite-wide ``_isolate_dotenv`` fixture,
-        ``get_effective_config`` loads the developer's real .env with
-        ``override=True``; an empty-valued line like ``MINIMAX_BASE_URL=``
-        then poisons ``os.environ.get(key, default)`` lookups for every
-        test that runs afterwards in the same process.
+        ``get_effective_config`` loads the developer's real .env; an
+        empty-valued line like ``MINIMAX_BASE_URL=`` can then poison
+        ``os.environ.get(key, default)`` lookups for every test that runs
+        afterwards in the same process.
         """
         monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
         repro_dir = tmp_path / "repro"
@@ -952,3 +952,47 @@ class TestDotenvIsolation:
         get_effective_config()
 
         assert "MINIMAX_BASE_URL" not in os.environ
+
+    def test_dotenv_does_not_overwrite_inherited_openai_oauth_route(
+        self, tmp_path, monkeypatch
+    ):
+        """A child/fallback config reload must preserve ccproxy credentials.
+
+        Both langgraph dev and the in-process fallback inherit the OAuth route
+        that ``setup_codex_env`` installs before model construction.  A workspace
+        ``.env`` may contain blank or stale OpenAI values; loading it must not
+        replace the already-resolved process environment.
+        """
+        dotenv_path = tmp_path / ".env"
+        dotenv_path.write_text(
+            "OPENAI_API_KEY=\nOPENAI_BASE_URL=http://stale.invalid/v1\n",
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(
+            "EvoScientist.config.settings.find_dotenv",
+            lambda *args, **kwargs: str(dotenv_path),
+        )
+        monkeypatch.setenv("OPENAI_API_KEY", "ccproxy-oauth")
+        monkeypatch.setenv("OPENAI_BASE_URL", "http://127.0.0.1:8000/codex/v1")
+
+        get_effective_config()
+
+        assert os.environ["OPENAI_API_KEY"] == "ccproxy-oauth"
+        assert os.environ["OPENAI_BASE_URL"] == ("http://127.0.0.1:8000/codex/v1")
+
+    def test_dotenv_still_fills_missing_process_values(self, tmp_path, monkeypatch):
+        """Non-overriding dotenv loading still supplies otherwise-missing values."""
+        dotenv_path = tmp_path / ".env"
+        dotenv_path.write_text(
+            "OPENAI_API_KEY=dotenv-test-key\n",
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(
+            "EvoScientist.config.settings.find_dotenv",
+            lambda *args, **kwargs: str(dotenv_path),
+        )
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+        get_effective_config()
+
+        assert os.environ["OPENAI_API_KEY"] == "dotenv-test-key"

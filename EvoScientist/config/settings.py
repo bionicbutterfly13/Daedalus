@@ -842,7 +842,11 @@ def get_effective_config(
     Returns:
         EvoScientistConfig with merged values.
     """
-    load_dotenv(find_dotenv(usecwd=True), override=True)
+    # The live process environment is the highest-priority config source.  In
+    # particular, OAuth startup installs ccproxy routing here before LangGraph
+    # workers or the in-process fallback reload config.  Let .env fill missing
+    # values, but never overwrite that inherited route with blank/stale entries.
+    load_dotenv(find_dotenv(usecwd=True), override=False)
 
     # Start with file config (includes defaults for missing values)
     config = load_config()
