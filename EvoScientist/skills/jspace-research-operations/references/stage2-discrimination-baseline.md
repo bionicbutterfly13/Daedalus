@@ -198,15 +198,27 @@ identity `353479b0...`. Measured decision (aggregate print):
 Reading against the preregistered thresholds:
 
 - Reproduction: PASS (decision is not "kill") — the Stage 1 anchor reproduced.
-- Added information: PASS — median top-10 Jaccard vs the logit lens is 0.194
-  (<= 0.70). The fitted Jacobian readout is clearly distinct from the plain
-  logit lens, and fully distinct from the norm-matched random-vector control
-  (fraction 1.0).
+- Added information: PARTIAL PASS, implemented clause only — median top-10
+  Jaccard vs the logit lens is 0.194 (<= 0.70) with the paired Wilcoxon below
+  alpha. The fitted Jacobian readout is distinct from the plain logit lens, and
+  fully distinct from the norm-matched random-vector control (fraction 1.0).
+  **The second clause of the decision rule above — "the Jacobian readout not
+  within rerun noise of the output or prompt-only baselines" — was not
+  implemented in the notebook and was never evaluated.** The executed
+  `added_info_pass` tests only the Jaccard ceiling and the Wilcoxon p-value.
+  Both baselines were computed but neither entered the decision. What this run
+  established is reported non-identity with the logit lens, not the full
+  added-information condition. See the amendment note below.
 - Specificity: FAIL — requires a D-margin over the logit lens of >= 0.10 on
   >= 80% of prompts for ALL three control families. random_vector clears it
   (1.0), but the structure-broken controls do not: shuffled-layer 0.22,
-  mismatched-probe 0.40.
-- DECISION: **ambiguity** (added information holds; specificity does not).
+  mismatched-probe 0.40. Note the reported `random_vector_fraction` is a
+  single-seed figure: all of `RANDOM_VECTOR_SEEDS = [0, 1, 2]` are computed, but
+  only seed 0 reaches the decision path.
+- DECISION: **ambiguity** (added information holds on its implemented clause;
+  specificity does not). Unchanged by the findings above — the decision turned on
+  the specificity failure, and a narrowed added-information leg can only weaken
+  the case for the instrument.
 
 Evidence artifacts written (content-addressed, schema
 `jspace-observation-discrimination/v1`; kept in the ephemeral Colab runtime, not
@@ -217,14 +229,49 @@ transferred — download is a separate authorization gate that was not exercised
 anchor (stimulus s00) artifact is `22ca288fdb493e33...`. Each filename prefix
 equals the first 16 hex of its content SHA-256 (content-addressing verified).
 
-Meaning: the fitted lens carries information a cheap logit lens does not and is
-not random noise, but this run cannot separate that signal from generic
+Meaning: the fitted lens reports something a cheap logit lens does not and is not
+random noise, but this run cannot separate that signal from generic
 Jacobian-transport structure — the shuffled-layer and mismatched-probe controls
-are not cleanly beaten. Per the stage gates, ambiguity does NOT promote the
-readout beyond evidence class 1 and does NOT authorize Stage 3, publication,
-transfer, or Sakshi/Elume integration. Next iteration should strengthen the
-structure-broken discrimination (more prompts; and/or revisit the D metric and
-the 0.10 margin; and/or the controls themselves) before any promotion.
+are not cleanly beaten. State the first half precisely: it is non-identity with
+the logit lens, which is weaker than "carries information a logit lens does not".
+A low top-10 overlap shows the two readouts disagree; it does not show the
+disagreement is informative, accurate, or useful. Per the stage gates, ambiguity
+does NOT promote the readout beyond evidence class 1 and does NOT authorize
+Stage 3, publication, transfer, or Sakshi/Elume integration. Next iteration
+should implement the gates as preregistered and strengthen the structure-broken
+discrimination (more prompts; and/or revisit the D metric and the 0.10 margin;
+and/or the controls themselves) before any promotion.
+
+## Amendment, 2026-07-26 — preregistration/implementation divergences
+
+Three divergences between the ratified design above and the executed notebook
+(`353479b0f0e959f2e207446b1383ebf632c05bf8c9a9656508cc91d98d4f28f5`), found by an
+independent audit and each re-verified directly against the notebook source:
+
+1. **The added-information gate omits its second clause.** The decision rule
+   requires separation from the output and prompt-only baselines beyond rerun
+   noise; `added_info_pass` tests only `median_jaccard <= 0.70` and the Wilcoxon
+   p-value. Never evaluated.
+2. **`INFERENCE_SEEDS = [0, 1]` but only seed 0 ran.** The value is written into
+   every artifact as `"inference_seeds"`, yet the only seeding calls are
+   `torch.manual_seed(0)` / `torch.cuda.manual_seed_all(0)`. The artifacts
+   overstate the run's seed coverage, and the seed-invariance check the second
+   seed existed for did not happen.
+3. **Specificity consumed one of three random-vector seeds.** All of
+   `RANDOM_VECTOR_SEEDS` are computed; only `rv_seed_rows[RANDOM_VECTOR_SEEDS[0]]`
+   feeds the decision.
+
+The common failure mode: a constant is declared, recorded into artifacts, and
+then not consumed on the decision path. **Any future stage must assert that each
+declared threshold constant is actually used in the gate it names**, as part of
+the preflight, rather than trusting the declaration. All three would have been
+caught before execution by that one check.
+
+These findings do not change the recorded decision (ambiguity). The omitted
+statistics cannot be recovered from this run — the per-prompt artifacts lived
+only in the ephemeral Colab runtime and were never transferred — so closing them
+requires a fresh execution. The canonical notebook was deliberately left
+unmodified: its SHA-256 is the provenance anchor for the executed bytes.
 
 Performance note (not a correctness issue): the measurement took ~12 min on the
 T4, dominated by `output_argmax_rank` doing a full-vocabulary (~151k) argsort

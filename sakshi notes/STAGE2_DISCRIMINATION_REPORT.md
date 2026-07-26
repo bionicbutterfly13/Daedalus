@@ -70,7 +70,11 @@ hold for the instrument to earn the right to be treated as a real measurement.
   the same activation. Prediction: the median top-10 token overlap between the
   Jacobian and logit-lens readouts is at most 0.70, with a paired significance
   test below alpha. If the two always agree, the expensive transport is
-  decoration.
+  decoration. The proposal attached a second, conjunctive clause to this
+  condition: the Jacobian readout must also not be within rerun noise of the
+  output or prompt-only baselines (`STAGE2_DISCRIMINATION_PROPOSAL.md`, success
+  condition 3). **That clause was never implemented and never evaluated** — see
+  §3.8 item 3 and the qualification in §4.
 
 The null across both: the Jacobian lens is observationally silent, its readouts
 explained entirely by the logit lens (H2 fails) or by generic transport structure
@@ -172,9 +176,15 @@ indistinguishable from the random-vector control.
 
 ### 3.8 Deviations and runtime fixes
 
-The design was reduced to practice unchanged in its science, but two
-implementation defects surfaced only under GPU execution and were fixed in the
-canonical notebook. Neither altered any threshold or measurement definition.
+Items 1 and 2 are runtime defects found and fixed during execution. Items 3 to 5
+are divergences between the preregistration and what the notebook actually
+evaluated. They were found on 2026-07-26 by an independent audit and are recorded
+here because the earlier version of this report did not disclose them; each is
+verified against the executed notebook
+(`353479b0f0e959f2e207446b1383ebf632c05bf8c9a9656508cc91d98d4f28f5`). Items 1 and
+2 altered no threshold or measurement definition. Items 3 to 5 do not change the
+recorded decision, which was ambiguity on the specificity failure alone, but they
+narrow what the added-information leg is entitled to claim.
 
 1. **dtype.** jlens stores its fitted Jacobians as float32 and its own
    `lens.apply` casts residuals to float before transport, but the notebook's
@@ -187,6 +197,35 @@ canonical notebook. Neither altered any threshold or measurement definition.
 Both fixes made the notebook's own baseline path match jlens's conventions. The
 run reaching and completing the measurement is itself the verification that the
 capability probe bound `lens.transport` and the six readouts share one basis.
+
+3. **The added-information gate underimplements its preregistration.** The
+   proposal required, conjunctively, that the Jacobian readout also not be within
+   rerun noise of the output or prompt-only baselines. The executed gate is:
+
+   ```python
+   added_info_pass = (
+       median_jaccard_jac_vs_logit <= ADDED_INFO_MEDIAN_JACCARD_MAX
+       and added_info_wilcoxon["wilcoxon_p"] == added_info_wilcoxon["wilcoxon_p"]  # not NaN
+       and added_info_wilcoxon["wilcoxon_p"] < WILCOXON_ALPHA
+   )
+   ```
+
+   There is no output-baseline or prompt-only term. Both readouts were computed
+   (§3.5 items 3 and 4) but neither entered the decision. The separation the
+   proposal asked for was therefore never tested.
+4. **Declared inference seed 1 was never executed.** `INFERENCE_SEEDS = [0, 1]`
+   is recorded into every exported artifact as `"inference_seeds"`, but the only
+   seeding calls in the notebook are `torch.manual_seed(0)` and
+   `torch.cuda.manual_seed_all(0)`. No result in this study was produced under
+   seed 1, so the artifacts overstate the seed coverage of the run. The
+   seed-invariance check the second seed was added for did not happen.
+5. **Specificity used one random-vector seed of the three computed.** The loop
+   `for seed in RANDOM_VECTOR_SEEDS:` computes all of `[0, 1, 2]`, but the
+   decision path consumes `rv_seed_rows[RANDOM_VECTOR_SEEDS[0]]` only. The
+   reported `random_vector_fraction` of 1.00 is a single-seed result. This is the
+   control that passed most decisively, so the narrower basis matters less than
+   it would for a marginal call, but the reported figure is not the three-seed
+   aggregate a reader would reasonably assume.
 
 ## 4. Results
 
@@ -210,10 +249,16 @@ Condition by condition:
 
 - **Reproduction: pass.** The decision is not "kill", so the Stage 1 anchor
   reproduced its pinned top-k under the 0.0 tolerance.
-- **Added information (H2): pass.** The median top-10 Jaccard between the Jacobian
-  and logit-lens readouts is 0.194, far below the 0.70 ceiling. On a typical
-  prompt the two share only about two of their top ten tokens. The Jacobian lens
-  is not a repackaged logit lens.
+- **Added information (H2): partial pass, on the implemented clause only.** The
+  median top-10 Jaccard between the Jacobian and logit-lens readouts is 0.194,
+  far below the 0.70 ceiling. On a typical prompt the two share only about two of
+  their top ten tokens. The Jacobian lens is not a repackaged logit lens. But the
+  preregistration's second clause — separation from the output and prompt-only
+  baselines beyond rerun noise — was never implemented and never evaluated
+  (§3.8 item 3). What this run established is **reported non-identity with the
+  logit lens**, not the full added-information condition as preregistered. The
+  earlier version of this report called this an unqualified pass; that was an
+  overstatement.
 - **Specificity (H1): fail.** The rule requires a D margin of at least 0.10 over
   the logit lens on at least 80% of prompts for all three control families. The
   random-vector control is cleared decisively (fraction 1.00): the Jacobian
@@ -221,7 +266,12 @@ Condition by condition:
   map. But the two structure-broken controls are not cleared: shuffled-layer 0.22
   and mismatched-probe 0.40, both far under 0.80.
 
-Because H2 holds and H1 does not, the decision is **ambiguity**.
+Because H2 holds on its implemented clause and H1 does not, the decision is
+**ambiguity**. The decision is unchanged by the §3.8 findings: it turned on the
+specificity failure, and the added-information leg being narrower than
+preregistered can only weaken the case for the instrument, never strengthen it.
+An audit that narrows a partially-passing condition cannot convert an ambiguity
+into a pass.
 
 Evidence artifacts (content-addressed, schema
 `jspace-observation-discrimination/v1`, retained in the ephemeral runtime, not
@@ -233,9 +283,16 @@ anchor artifact is `22ca288fdb493e33...`. Each filename prefix equals the first
 
 ## 5. Conclusion
 
-The fitted Qwen3-1.7B Jacobian lens carries information that a plain logit lens
-does not, and its readouts are not random noise. Both of those are real, measured,
-and reproducible under the anchor check. That is more than Stage 1 established.
+The fitted Qwen3-1.7B Jacobian lens reports something a plain logit lens does not,
+and its readouts are not random noise. Both of those are real, measured, and
+reproducible under the anchor check. That is more than Stage 1 established.
+
+Stated precisely, the first of those is *non-identity with the logit lens*, which
+is weaker than "carries information a logit lens does not". A low top-10 overlap
+shows the two readouts disagree; it does not show the disagreement is
+informative, accurate, or useful. The preregistered clause that would have
+started to separate those — non-identity with the output and prompt-only
+baselines — was never evaluated (§3.8 item 3).
 
 But the study cannot conclude that the Jacobian lens is measuring the specific
 thing it is fitted to measure. The readout survives the easy control (random
@@ -299,6 +356,11 @@ result.
 The result points at one clear target: strengthen the structure-broken
 discrimination before any promotion. Concrete moves, in rough order of value:
 
+0. Implement the gates as preregistered, and assert that correspondence in the
+   notebook rather than trusting it. Every §3.8 item 3 to 5 finding is a case of
+   a constant being declared, recorded into artifacts, and then not used. A
+   preflight that asserts each declared constant is actually consumed on the
+   decision path would have caught all three before execution.
 1. Pilot the D metric and the specificity margin against the structure-broken
    controls to learn whether they are genuinely inseparable or merely
    under-resolved at 0.10.
@@ -331,3 +393,21 @@ recorded alongside this report and in the skill's reference doc.
   `eb69193` and `b7a69ba`, result `36c6656`, artifact hashes `8cf02a5`.
 - Boundaries held throughout: observation only, no fitting, steering, ablation,
   activation edit, artifact transfer, or Sakshi/Elume mutation.
+
+### Amendment, 2026-07-26
+
+§2, §3.8 (items 3 to 5), §4, §5, and §6.4 item 0 were amended to disclose three
+divergences between the preregistration and the executed notebook: the
+added-information gate omits the proposal's output and prompt-only clause;
+declared inference seed 1 was never executed; and specificity used one
+random-vector seed of the three computed. The findings originate from an
+independent audit run through the EvoScientist engine (thread
+`019f9a2a-5b5a-7d13-80ea-11622e8de7a3`, observation `O-9cfefddee56cd863`) and were
+each re-verified directly against the executed notebook before being recorded.
+
+The recorded decision remains **ambiguity**, unchanged. No measurement was
+recomputed: the per-prompt artifacts were retained only in the ephemeral Colab
+runtime and never transferred, so the omitted statistics cannot be recovered from
+this run and would require a fresh execution. The canonical notebook was
+deliberately not modified — its SHA-256 is the provenance anchor for the executed
+bytes, and amending it would break the identity this report cites.
