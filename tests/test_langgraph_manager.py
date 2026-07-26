@@ -38,6 +38,12 @@ def reset_module_state():
 # =============================================================================
 
 
+def test_startup_and_lock_timeouts_cover_slow_graph_initialization():
+    """OAuth graph imports observed above 60s must not be killed as unhealthy."""
+    assert manager._LANGGRAPH_HEALTH_TIMEOUT_SECONDS >= 300
+    assert manager._FILE_LOCK_TIMEOUT > manager._LANGGRAPH_HEALTH_TIMEOUT_SECONDS
+
+
 class TestLanggraphCliResolution:
     def _make_executable(self, path):
         path.write_text("#!/bin/sh\n", encoding="utf-8")

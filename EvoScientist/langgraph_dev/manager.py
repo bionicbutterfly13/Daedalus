@@ -116,6 +116,13 @@ _LOCK = threading.RLock()
 # corresponding url= field on AsyncSubAgent specs.
 _DEFAULT_PORT = 6174
 
+# Graph construction can legitimately exceed one minute on a cold process:
+# provider clients, middleware, checkpointer, and optional MCP imports all run
+# before /ok becomes ready.  A five-minute ceiling leaves headroom above the
+# ~135-second cold start observed on the full OAuth graph while still bounding
+# a genuinely stuck launch.
+_LANGGRAPH_HEALTH_TIMEOUT_SECONDS = 300
+
 
 def _base_url(port: int = _DEFAULT_PORT) -> str:
     return f"http://localhost:{port}"
@@ -248,7 +255,7 @@ def _unlink_workspace_sidecar() -> None:
 # healthy server and reuses it. ``threading.RLock`` is process-local and
 # can't coordinate across CLI invocations.
 # Lock path lives on ``RUNTIME.lock_file``; timeout stays module-level.
-_FILE_LOCK_TIMEOUT = 120.0  # 60s cold-start health-check + buffer
+_FILE_LOCK_TIMEOUT = _LANGGRAPH_HEALTH_TIMEOUT_SECONDS + 60.0
 
 # Module-level handle to the langgraph dev subprocess we started, if any.
 # Stays None when we reused an existing process (managed by the user).
@@ -748,10 +755,10 @@ def start_langgraph_dev(
     _PROCESS = proc
     _PROCESS_WORKSPACE = workspace_dir
 
-    # langgraph dev cold-starts in ~10-15s normally; first-time npx-based MCP
-    # servers can push this to 30-60s while npm fetches packages, so the budget
-    # is generous. Subsequent runs are much faster thanks to npm cache.
-    deadline = time.monotonic() + 60
+    # langgraph dev cold-starts in ~10-15s normally, but graph construction and
+    # first-time npx-based MCP servers can exceed a minute. Subsequent runs are
+    # much faster thanks to import and npm caches.
+    deadline = time.monotonic() + _LANGGRAPH_HEALTH_TIMEOUT_SECONDS
     while time.monotonic() < deadline:
         if proc.poll() is not None:
             tail = ""
@@ -782,7 +789,8 @@ def start_langgraph_dev(
 
     stop_langgraph_dev(proc)
     raise RuntimeError(
-        f"langgraph dev did not become healthy within 60 seconds. Check {RUNTIME.log_file}"
+        "langgraph dev did not become healthy within "
+        f"{_LANGGRAPH_HEALTH_TIMEOUT_SECONDS} seconds. Check {RUNTIME.log_file}"
     )
 
 
