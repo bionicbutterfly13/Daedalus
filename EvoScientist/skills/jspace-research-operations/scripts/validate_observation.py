@@ -23,11 +23,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any
 
 DISCRIMINATION_SCHEMA_PREFIX = "jspace-observation-discrimination"
+STAGE2B_SCHEMA_PREFIX = "jspace-observation-stage2b"
 
 
 def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
@@ -387,6 +389,125 @@ def validate_discrimination_aggregate(
         )
 
 
+def validate_stage2b_aggregate(
+    artifact: dict[str, Any], path: Path, digest: str, errors: list[str]
+) -> None:
+    """Stage 2b aggregate: every decision must be recomputable from the artifact.
+
+    The test here is deliberately not "does it parse". It is SC-003: can a reader
+    reach each gate's outcome using only fields in this file, with no appeal to
+    the notebook? Stage 2's artifacts could not support that, which is why its
+    2026-07-26 audit had to read notebook source to establish what the gates
+    actually did.
+    """
+    _validate_provenance_blocks(artifact, errors)
+    _validate_retention(artifact, errors)
+    _validate_scope_evidence(artifact, errors)
+
+    registry = artifact.get("registry")
+    require(isinstance(registry, dict), "aggregate must carry a registry block", errors)
+    if isinstance(registry, dict):
+        entries = registry.get("entries")
+        require(
+            isinstance(entries, list) and bool(entries),
+            "registry.entries must be a non-empty list",
+            errors,
+        )
+        for entry in entries if isinstance(entries, list) else []:
+            name = entry.get("name") if isinstance(entry, dict) else None
+            consumers = entry.get("consumed_by") if isinstance(entry, dict) else None
+            require(
+                isinstance(consumers, list) and bool(consumers),
+                f"registry entry {name!r} records no consumer; a declared constant "
+                "with no consumer is what the registry exists to catch",
+                errors,
+            )
+
+    disjointness = artifact.get("disjointness")
+    require(isinstance(disjointness, dict), "aggregate must carry disjointness", errors)
+    if isinstance(disjointness, dict):
+        require(
+            disjointness.get("checked") is True,
+            "disjointness.checked must be true; FR-011 requires the held-out "
+            "property be checked, not documented",
+            errors,
+        )
+        require(
+            disjointness.get("overlap_count") == 0,
+            f"disjointness.overlap_count is {disjointness.get('overlap_count')!r}, "
+            "must be 0",
+            errors,
+        )
+        require(
+            disjointness.get("anchor_present") is False,
+            "the Stage 1 anchor must be outside the analysis sample",
+            errors,
+        )
+
+    gates = artifact.get("gates")
+    require(isinstance(gates, list) and bool(gates), "aggregate needs gates", errors)
+    for gate in gates if isinstance(gates, list) else []:
+        if not isinstance(gate, dict):
+            errors.append("each gate must be an object")
+            continue
+        name = gate.get("name")
+        outcome = gate.get("outcome")
+        require(
+            outcome in {"pass", "fail", "undefined"},
+            f"gate {name!r} has outcome {outcome!r}",
+            errors,
+        )
+        interval = gate.get("interval")
+        require(
+            isinstance(interval, dict), f"gate {name!r} records no interval", errors
+        )
+        if isinstance(interval, dict):
+            bounds = (interval.get("low"), interval.get("high"))
+            finite = all(
+                isinstance(b, (int, float)) and math.isfinite(b) for b in bounds
+            )
+            # The rule that keeps a failed computation from being read as a
+            # measured null. An absent interval and an interval containing zero
+            # are different results.
+            require(
+                finite or outcome == "undefined",
+                f"gate {name!r} has a non-finite interval but outcome {outcome!r}; "
+                "a non-finite bound must be reported as undefined, never fail",
+                errors,
+            )
+            if str(interval.get("method", "")).lower() == "bca":
+                require(
+                    isinstance(gate.get("interval_crosscheck"), dict),
+                    f"gate {name!r} gates on BCa with no percentile cross-check, "
+                    "so a degenerate BCa cannot be detected after the fact",
+                    errors,
+                )
+        # Recomputability: the values the outcome depends on must be present.
+        for field in ("statistic", "n_clusters", "exclusions"):
+            require(
+                field in gate,
+                f"gate {name!r} omits {field!r}, so its outcome cannot be "
+                "recomputed from this artifact alone (SC-003)",
+                errors,
+            )
+
+    decision = artifact.get("decision")
+    require(isinstance(decision, dict), "aggregate must carry a decision", errors)
+    if isinstance(decision, dict):
+        require(
+            decision.get("result") in {"pass", "ambiguity", "fail", "kill"},
+            f"decision.result is {decision.get('result')!r}",
+            errors,
+        )
+
+    require(
+        isinstance(artifact.get("descriptive"), dict),
+        "descriptive must be a sibling block of gates, so a reported quantity "
+        "cannot be mistaken for a decision input",
+        errors,
+    )
+
+
 def validate(
     path: Path, expected_sha256: str | None
 ) -> tuple[dict[str, Any], list[str]]:
@@ -412,10 +533,21 @@ def validate(
     schema = artifact.get("schema")
     schema_str = schema if isinstance(schema, str) else ""
     is_discrimination = schema_str.startswith(DISCRIMINATION_SCHEMA_PREFIX)
+    is_stage2b = schema_str.startswith(STAGE2B_SCHEMA_PREFIX)
     artifact_type = artifact.get("artifact_type")
 
     selected_layers: Any = None
-    if is_discrimination and artifact_type == "aggregate":
+    if is_stage2b and artifact_type == "aggregate":
+        validate_stage2b_aggregate(artifact, path, digest, errors)
+        detected = "stage2b_aggregate"
+    elif is_stage2b:
+        if artifact_type not in (None, "per_prompt"):
+            errors.append(f"unknown stage2b artifact_type: {artifact_type!r}")
+        selected_layers = validate_discrimination_per_prompt(
+            artifact, path, digest, errors
+        )
+        detected = "stage2b_per_prompt"
+    elif is_discrimination and artifact_type == "aggregate":
         validate_discrimination_aggregate(artifact, path, digest, errors)
         detected = "discrimination_aggregate"
     elif is_discrimination:

@@ -131,7 +131,7 @@ inspects a decision already made.
 
 ## Phase 7: Polish & cross-cutting
 
-- [ ] T041 [P] Extend `EvoScientist/skills/jspace-research-operations/scripts/validate_observation.py` with a `jspace-observation-stage2b/v1` branch whose test is not that the artifact parses but that every value a gate's outcome depends on is present in the aggregate (FR-012, SC-003)
+- [x] T041 [P] Extend `EvoScientist/skills/jspace-research-operations/scripts/validate_observation.py` with a `jspace-observation-stage2b/v1` branch whose test is not that the artifact parses but that every value a gate's outcome depends on is present in the aggregate (FR-012, SC-003)
 - [x] T042 [P] Add a Stage 2b section to `EvoScientist/skills/jspace-research-operations/SKILL.md` pointing at the spec directory and the new scripts
 - [ ] T043 Run `uv run ruff check .` and `uv run pytest`, and confirm the suite is green standing alone on this branch — not only combined with PRs #5 and #6. Baseline on `main` is 3036 passed, 12 skipped
 - [ ] T044 Verify every failure code in [contracts/preflight-api.md](./contracts/preflight-api.md) has at least one test that makes it fire. A preflight suite that only proves valid configurations pass has not tested the preflight (Principle III)
