@@ -203,11 +203,17 @@ insensitively against `{'percentile', 'basic', 'bca'}`). There is no first-class
 cluster parameter, but cluster resampling is expressible: pass `data=(cluster_ids,)`
 — one entry per prompt, not per observation — and supply a non-vectorized
 `statistic(idx)` that looks each resampled cluster id up in a closure-captured
-table of that prompt's per-layer paired differences, concatenates with multiplicity,
-and returns the median. Because scipy resamples the id array itself with
-replacement, whole prompts enter or leave together with all their layer
-observations. BCa's jackknife acceleration then leaves out one *cluster* at a time,
+table and returns the median of the values it collects, with multiplicity. Because
+scipy resamples the id array itself with replacement, whole prompts enter or leave
+together. BCa's jackknife acceleration then leaves out one *cluster* at a time,
 which is the correct cluster-level jackknife rather than an observation-level one.
+
+**The table holds one value per prompt, at one layer.** The bootstrap runs once per
+layer in `SELECTED_LAYERS`; the table for a given run maps prompt → that prompt's
+paired difference *at that layer*. It does not map prompt → a vector across layers,
+and the statistic never concatenates across layers. Doing so would pool depth into
+the gate — the same defect the design forbids for absolute NTA, one level down and
+harder to see, because each individual difference is already within-layer.
 
 **Known weakness, must be handled not ignored**: BCa's acceleration term is
 estimated from the skewness of leave-one-out replicates, and the median is

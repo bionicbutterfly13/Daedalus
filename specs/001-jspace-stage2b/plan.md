@@ -23,9 +23,10 @@ The technical approach has three parts, in dependency order:
    preflight be exercisable against a deliberately broken configuration with no
    GPU. Notebook cells cannot be unit-tested; a module in the existing
    `jspace-research-operations` skill can, and joins `validate_observation.py`
-   already there. This is the only part of the feature with automated tests, and
-   it is the part carrying FR-009's constant-consumption registry — the change
-   the design calls its highest-value one.
+   already there. It carries FR-009's constant-consumption registry — the change
+   the design calls its highest-value one. The endpoint and manifest modules get
+   the same treatment and the same test suite; what stays untested is the
+   notebook, which is why it is kept as thin as possible.
 2. **Stimulus manifest as data, generated and digest-verified.** 200 held-out
    prompts, disjoint from Stage 2 by per-prompt digest, asserted at preflight
    rather than documented as a rule.
@@ -58,7 +59,9 @@ re-check). Artifacts stay on the ephemeral runtime; transfer is a separate
 authorization gate. Raw stimulus text lives only in the versioned in-repo
 manifest (Q8).
 
-**Testing**: `uv run pytest` for the preflight module (`tests/jspace/`). The
+**Testing**: `uv run pytest` for the preflight, endpoint, and manifest modules
+(`tests/jspace/`). Tests needing `scipy` are guarded with
+`pytest.importorskip("scipy")` so they run where it exists and skip here. The
 notebook itself is not executed by CI and is not executed by this feature at all.
 Coverage target is the preflight's failure paths, not its happy path — a
 preflight that only passes has not been tested.
@@ -181,11 +184,11 @@ extracted metadata (shape, dtype string, device string) rather than live tensors
 
 **Branch dependency (stated assumption)**: `sakshi notes/` and the
 `jspace-research-operations` skill are tracked on `docs/jspace-research-operations`
-(PR #2), not on `main`. The Stage 2b deliverables therefore branch from that
-branch, or from `main` after #2 merges. spec.md records "Dependencies: none
-blocking" with respect to PRs #5 and #6, which remains true; PR #2 is a different
-matter and is a real ordering constraint on the notebook and manifest tasks. The
-preflight module and its tests have no such constraint and can land first.
+(PR #2), not on `main` — verified with `git ls-tree main`, which returns nothing
+for either path. The Stage 2b deliverables therefore branch from that branch, or
+from `main` after #2 merges. This gates **the whole feature**, not only the
+notebook: the modules are written into that skill directory, so it must exist
+first. PRs #5 and #6 remain genuinely unrelated.
 
 ## Complexity Tracking
 

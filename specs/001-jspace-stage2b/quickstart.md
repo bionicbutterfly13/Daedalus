@@ -150,11 +150,11 @@ immutable evidence; a mismatch means something reformatted them.
 
 - **Any GPU scenario.** Execution is unauthorized until Q1–Q9 are ratified and Q10
   is signed.
-- **A bootstrap correctness test.** `scipy` is a Colab-side dependency and is not in
-  this repo's lockfile (research.md R6). The statistic is where the correctness risk
-  lives and it is tested in Scenario 2; the interval is where a well-tested library
-  is doing standard work. Testing it here would require a hand-rolled resampler that
-  would itself need an equivalence check against scipy.
+- **An unguarded bootstrap test.** `scipy` is a Colab-side dependency and is not in
+  this repo's lockfile (research.md R6), so the bootstrap tests exist but are
+  guarded with `pytest.importorskip("scipy")` — they run wherever scipy is present
+  and skip cleanly here. What is genuinely absent is a hand-rolled numpy resampler,
+  which would itself need an equivalence check against scipy and buys nothing.
 - **An end-to-end notebook run.** The notebook is a shell over the tested modules by
   design (see plan.md Structure Decision). Stage 2 put everything in one cell, and
   no test could reach any of it — which is why four declared-but-unconsumed

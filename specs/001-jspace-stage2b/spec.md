@@ -234,6 +234,8 @@ first.
 
 **PR #2 is an ordering constraint on part of the work.** `sakshi notes/` and the
 `jspace-research-operations` skill are tracked on `docs/jspace-research-operations`,
-not on `main`, so the notebook and the stimulus manifest cannot land until that
-branch merges or the work branches from it. The preflight, endpoint, and manifest
-modules and all their tests carry no such constraint.
+not on `main`. `git ls-tree main` confirms neither exists there, so **every
+deliverable in this feature** — the preflight, endpoint, and manifest modules and
+their tests as much as the notebook — must branch from `docs/jspace-research-operations`
+or wait for it to merge. An earlier draft said only the notebook and stimulus
+manifest were constrained; that was wrong.

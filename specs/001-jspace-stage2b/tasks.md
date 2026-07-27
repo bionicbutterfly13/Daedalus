@@ -16,8 +16,8 @@ that only exercises happy paths. Test tasks precede the implementation they cove
 
 ## Phase 1: Setup
 
-- [ ] T001 Create the test package directory `tests/jspace/` with an empty `tests/jspace/__init__.py`, matching the layout of the existing subpackages under `tests/`
-- [ ] T002 [P] Record the Stage 2 per-prompt digest list as a fixture at `tests/jspace/fixtures/stage2_manifest_digests.json`, extracted from cell 14 of the **tracked** notebook `sakshi notes/jspace_colab_stage2_discrimination.ipynb`, for the FR-011 disjointness check. Do not source it from `jspace-study/` in the main tree — that copy is untracked and local to one machine, which would make the fixture unreproducible
+- [x] T001 Create the test package directory `tests/jspace/` with an empty `tests/jspace/__init__.py`, matching the layout of the existing subpackages under `tests/`
+- [x] T002 [P] Record the Stage 2 per-prompt digest list as a fixture at `tests/jspace/fixtures/stage2_manifest_digests.json`, extracted from cell 14 of the **tracked** notebook `sakshi notes/jspace_colab_stage2_discrimination.ipynb`, for the FR-011 disjointness check. Do not source it from `jspace-study/` in the main tree — that copy is untracked and local to one machine, which would make the fixture unreproducible
 - [ ] T003 [P] Add `stage2b-design-baseline.md` to `EvoScientist/skills/jspace-research-operations/references/` summarizing the design and pointing at `specs/001-jspace-stage2b/`, alongside the existing `stage2-discrimination-baseline.md`
 
 ---
@@ -32,14 +32,14 @@ dtype *strings*, device *strings*, digests, floats. This is what makes the whole
 suite runnable on a machine with no GPU, and it is the reason Stage 2's equivalent
 logic could not be tested at all (plan.md Structure Decision).
 
-- [ ] T004 Create `EvoScientist/skills/jspace-research-operations/scripts/stage2b_preflight.py` with the `PreflightError` exception carrying `code: str` and `detail: dict`, per [contracts/preflight-api.md](./contracts/preflight-api.md)
-- [ ] T005 [P] Write failing tests for the constant registry in `tests/jspace/test_stage2b_preflight.py`: assert `orphaned_constant` for an entry with an empty `consumed_by`, `unregistered_constant` for a gate reading a name absent from the registry, and `phantom_consumer` for an entry whose `consumed_by` names a gate or check that does not exist
-- [ ] T006 Implement `check_constant_registry(registry, gates, preflight_checks)` in `stage2b_preflight.py` — all three checks, per [contracts/constant-registry.md](./contracts/constant-registry.md). The referential check is not redundant: without it, a typo in a `consumed_by` entry passes and then writes a `registry` block into the artifact asserting a linkage that was never built, which is the false assurance the registry exists to prevent
-- [ ] T007 [P] Encode the initial registry from [contracts/constant-registry.md](./contracts/constant-registry.md) as a module-level constant in `stage2b_preflight.py`, including both `constant` and `derived_field` entries. The `derived_field` kind exists because research.md R7's orphan was a computed field, not a declared constant, and a constants-only registry would miss it
-- [ ] T008 [P] Implement `emit_registry_record(registry, gates) -> dict` in `stage2b_preflight.py`, pure and I/O-free, returning the `registry` block for the aggregate artifact
-- [ ] T009 [P] Write failing tests in `tests/jspace/test_stage2b_endpoint.py` for the rank convention: the top token ranks 1 (never 0), ties resolve to the best rank under strict `>`, and rank is 1-indexed so `log(rank)` is defined
-- [ ] T010 Create `EvoScientist/skills/jspace-research-operations/scripts/stage2b_endpoint.py` implementing `target_rank1(logits, target_id)` as a comparison count `(logits > logits[target_id]).sum(-1) + 1`, per research.md R4. Do not call `jlens.vis._ranks_of` — it still performs a full-vocabulary `argsort` per chunk and is the reference, not the implementation
-- [ ] T011 [P] Implement `nta(s_readout, s_prompt_only, s_output, min_denominator)` in `stage2b_endpoint.py` returning the normalized value or an exclusion marker, per data-model.md §3
+- [x] T004 Create `EvoScientist/skills/jspace-research-operations/scripts/stage2b_preflight.py` with the `PreflightError` exception carrying `code: str` and `detail: dict`, per [contracts/preflight-api.md](./contracts/preflight-api.md)
+- [x] T005 [P] Write failing tests for the constant registry in `tests/jspace/test_stage2b_preflight.py`: assert `orphaned_constant` for an entry with an empty `consumed_by`, `unregistered_constant` for a gate reading a name absent from the registry, and `phantom_consumer` for an entry whose `consumed_by` names a gate or check that does not exist
+- [x] T006 Implement `check_constant_registry(registry, gates, preflight_checks, endpoint_fns, consumer_reads)` in `stage2b_preflight.py` — all three checks, per [contracts/constant-registry.md](./contracts/constant-registry.md). The referential check is not redundant: without it, a typo in a `consumed_by` entry passes and then writes a `registry` block into the artifact asserting a linkage that was never built, which is the false assurance the registry exists to prevent. `consumer_reads` carries what each preflight check and endpoint function actually reads, so the reverse check covers all three namespaces — most registered constants here are read by preflight, not by a gate, and a gates-only sweep would leave the larger surface unguarded
+- [x] T007 [P] Encode the initial registry from [contracts/constant-registry.md](./contracts/constant-registry.md) as a module-level constant in `stage2b_preflight.py`, including both `constant` and `derived_field` entries. The `derived_field` kind exists because research.md R7's orphan was a computed field, not a declared constant, and a constants-only registry would miss it
+- [x] T008 [P] Implement `emit_registry_record(registry, gates) -> dict` in `stage2b_preflight.py`, pure and I/O-free, returning the `registry` block for the aggregate artifact
+- [x] T009 [P] Write failing tests in `tests/jspace/test_stage2b_endpoint.py` for the rank convention: the top token ranks 1 (never 0), ties resolve to the best rank under strict `>`, and rank is 1-indexed so `log(rank)` is defined
+- [x] T010 Create `EvoScientist/skills/jspace-research-operations/scripts/stage2b_endpoint.py` implementing `target_rank1(logits, target_id)` as a comparison count `(logits > logits[target_id]).sum(-1) + 1`, per research.md R4. Do not call `jlens.vis._ranks_of` — it still performs a full-vocabulary `argsort` per chunk and is the reference, not the implementation
+- [x] T011 [P] Implement `nta(s_readout, s_prompt_only, s_output, min_denominator)` in `stage2b_endpoint.py` returning the normalized value or an exclusion marker, per data-model.md §3
 
 ---
 
@@ -53,8 +53,8 @@ same-layer map with the fit destroyed but geometry preserved.
 layer. Its construction, its exclusion accounting, and its fit-broken control are
 verifiable with fixed arrays and no model — Scenario 2 of [quickstart.md](./quickstart.md).
 
-- [ ] T012 [P] [US1] Write failing tests in `tests/jspace/test_stage2b_endpoint.py` for the anchors: `NTA(prompt_only) == 0.0` and `NTA(output) == 1.0` exactly, by construction. FR-002 makes Stage 2's omitted-baseline defect unrepresentable rather than re-adding it as a gate, so these must hold identically, not approximately
-- [ ] T013 [P] [US1] Write failing tests in `tests/jspace/test_stage2b_endpoint.py` for the denominator guard: a cell with `s(output) − s(prompt_only)` at or below `NTA_MIN_DENOMINATOR` is excluded with a recorded reason and is never divided; exclusions are counted per layer, never pooled to a bare total
+- [x] T012 [P] [US1] Write failing tests in `tests/jspace/test_stage2b_endpoint.py` for the anchors: `NTA(prompt_only) == 0.0` and `NTA(output) == 1.0` exactly, by construction. FR-002 makes Stage 2's omitted-baseline defect unrepresentable rather than re-adding it as a gate, so these must hold identically, not approximately
+- [x] T013 [P] [US1] Write failing tests in `tests/jspace/test_stage2b_endpoint.py` for the denominator guard: a cell with `s(output) − s(prompt_only)` at or below `NTA_MIN_DENOMINATOR` is excluded with a recorded reason and is never divided; exclusions are counted per layer, never pooled to a bare total
 - [ ] T014 [US1] Implement the rank-parity verification `verify_rank_parity(logits, target_id)` in `stage2b_endpoint.py` (FR-010), comparing the comparison-count rank against a naive `argsort` reference with the same documented convention, and returning a boolean for the artifact's `contracts.rank_parity_verified`
 - [ ] T015 [P] [US1] Implement `build_fit_broken_map(J, seed)` in `stage2b_endpoint.py`: SVD `J = U Σ Vᵀ`, draw a Haar-random orthogonal `Q` under the preregistered seed, return `(Q @ U) @ diag(S) @ Vh` (FR-004). Assert the returned map preserves the singular value spectrum, operator norm, and Frobenius norm of `J` — that preservation is what makes it a control rather than a different object
 - [ ] T016 [P] [US1] Write tests in `tests/jspace/test_stage2b_endpoint.py` asserting `build_fit_broken_map` preserves the spectrum to within float tolerance and that `Q` is orthogonal (`QᵀQ ≈ I`), using a small fixed-seed matrix rather than a real Jacobian
@@ -103,7 +103,7 @@ GPU and no measurement — Scenario 1 of [quickstart.md](./quickstart.md).
 - [ ] T026 [P] [US3] Write failing tests in `tests/jspace/test_stage2b_preflight.py` for the tensor contracts: `dtype_mismatch` for a residual that is not `"torch.float32"`, `device_mismatch` for a readout not on `"cpu"`, `decode_parity` beyond `DECODE_PARITY_TOL`, and `unexpected_softcapping` for a non-null softcap value
 - [ ] T027 [US3] Implement `check_tensor_contracts(observed)` in `stage2b_preflight.py` per [contracts/preflight-api.md](./contracts/preflight-api.md). The dtype check is load-bearing rather than hygienic: `JacobianLens.transport` moves the Jacobian to the residual's device but does not cast its dtype, and Stage 2b bypasses `lens.apply` for three of four factorial cells, losing the `.float()` that path provided (research.md R5)
 - [ ] T028 [P] [US3] Write failing tests in `tests/jspace/test_stage2b_manifest.py` for every manifest failure code: `manifest_version`, `manifest_size`, `category_imbalance`, `malformed_digest`, `duplicate_prompt`, `stage2_overlap`, `anchor_contamination`, `prompt_too_long`, `manifest_digest`
-- [ ] T029 [US3] Create `EvoScientist/skills/jspace-research-operations/scripts/stage2b_manifest.py` implementing manifest construction, canonical digesting byte-identical to Stage 2's scheme, and `check_manifest(manifest, stage2_digests)`
+- [ ] T029 [US3] Create `EvoScientist/skills/jspace-research-operations/scripts/stage2b_manifest.py` implementing manifest construction, canonical digesting byte-identical to Stage 2's scheme, and `check_manifest(manifest, stage2_digests, expected_digest)`. `expected_digest` is a parameter, not a field read back out of `manifest` — a document cannot contain its own hash, and a digest check that finds its expected value inside the thing it is checking is a tautology
 - [ ] T030 [US3] Keep `stage2_overlap` and `anchor_contamination` as distinct codes in `check_manifest`. Both are contamination, but the anchor is deliberately retained elsewhere in the protocol as the reproduction kill check and must not be diagnosed as an ordinary overlap bug
 - [ ] T031 [P] [US3] Write failing tests in `tests/jspace/test_stage2b_preflight.py` for `check_ratification`: `not_ratified` when the flag is false, and `unset_constant` when the flag is true while any registered constant's `declared_value` is `None`
 - [ ] T032 [US3] Implement `check_ratification(thresholds)` in `stage2b_preflight.py`, running last so every other check is exercisable against the unratified configuration the notebook ships in. The `unset_constant` rule makes deferring a threshold and signing the ratification mutually exclusive rather than merely discouraged — Stage 2's failure mode was setting a margin without a pilot, and this makes the inverse mistake impossible too
@@ -114,9 +114,10 @@ GPU and no measurement — Scenario 1 of [quickstart.md](./quickstart.md).
 
 ## Phase 6: Notebook shell
 
-**Blocked on PR #2.** `sakshi notes/` is tracked on `docs/jspace-research-operations`,
-not on `main` (plan.md, Branch dependency). Every task above is unblocked; these are
-not.
+**Also gated on PR #2**, like every phase above it — see Dependencies. This phase
+adds one further prerequisite of its own: T051's adversarial cross-check must
+complete before T035, because cross-checking a design after implementing it
+inspects a decision already made.
 
 - [ ] T035 **After T051 completes.** Author `sakshi notes/jspace_colab_stage2b_discrimination.ipynb` as a shell over the tested modules: boundaries header, pinned identities, constant declarations, install, environment preflight, module import by path, measurement loop, artifact export. Do not reproduce Stage 2's single 18 KB measurement cell — it is the direct cause of four declared-but-unconsumed quantities surviving to an audit
 - [ ] T036 [P] Ship the notebook with `THRESHOLDS_RATIFIED = False` and a guard that raises before the measurement loop (FR-013). This is the boundary between this feature and execution
@@ -221,7 +222,8 @@ unrepeatable. Cheapest phase in the feature and the highest value per line, sinc
 the constant registry alone would have caught every finding of the 2026-07-26 audit
 before execution rather than after.
 
-**Phase 6 waits on PR #2** and on nothing else in this plan.
+**Phase 6 waits on PR #2, like everything else, plus T051.** It is the only phase
+with a prerequisite beyond the shared one.
 
 **Nothing here authorizes a run.** Ten parameters need ratification, three of them
 not delegable: Q3 (what counts as the target — it defines what the study means by
