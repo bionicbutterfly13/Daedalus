@@ -176,9 +176,9 @@ def restore_model_passthrough_patch():
 def _isolate_dotenv(monkeypatch):
     """Keep the developer's real .env out of the test environment.
 
-    ``get_effective_config`` runs ``load_dotenv(find_dotenv(usecwd=True),
-    override=True)``, so any test that loads config injects the repo's
-    real .env into ``os.environ`` for the rest of the pytest process.
+    ``get_effective_config`` loads ``find_dotenv(usecwd=True)``, so any test
+    that loads config can inject otherwise-missing values from the repo's real
+    .env into ``os.environ`` for the rest of the pytest process.
     An empty-valued line like ``MINIMAX_BASE_URL=`` then makes
     ``os.environ.get(key, default)`` return "" instead of the default,
     breaking unrelated tests later in the run (see issue #322).
