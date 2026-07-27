@@ -225,7 +225,15 @@ class TestRegistryCompleteness:
             for name, entry in preflight.INITIAL_REGISTRY.items()
             if entry["kind"] == "constant" and entry["declared_value"] is None
         }
-        assert unset == {"SPEC_MIN_EFFECT", "NTA_MIN_DENOMINATOR"}
+        assert unset == {
+            "SPEC_MIN_EFFECT",
+            "NTA_MIN_DENOMINATOR",
+            # The two decisions T051 surfaced. Declared-but-unset so the run
+            # refuses until they are made, rather than running with the
+            # questions open.
+            "INTERACTION_GATED",
+            "PROMPT_ONLY_CONSTRUCTION",
+        }
 
     def test_every_gate_has_at_least_one_registered_constant_or_field(self):
         consumed = {
@@ -350,6 +358,27 @@ class TestRatification:
         with pytest.raises(preflight.PreflightError) as exc:
             preflight.check_ratification({})
         assert exc.value.code == "not_ratified"
+
+    def test_the_two_open_design_decisions_block_ratification(self):
+        """Open items 7 and 8 cannot be signed past by accident.
+
+        The notebook can be authored while they are open precisely because they
+        are unset constants: the run refuses rather than proceeding under a
+        decision rule nobody chose.
+        """
+        for name in ("INTERACTION_GATED", "PROMPT_ONLY_CONSTRUCTION"):
+            registry = {
+                k: (
+                    {**v, "declared_value": 0.1}
+                    if v["declared_value"] is None and k != name
+                    else v
+                )
+                for k, v in preflight.INITIAL_REGISTRY.items()
+            }
+            with pytest.raises(preflight.PreflightError) as exc:
+                preflight.check_ratification({"THRESHOLDS_RATIFIED": True}, registry)
+            assert exc.value.code == "unset_constant"
+            assert exc.value.detail["constant"] == name
 
     def test_ratifying_with_an_unset_threshold_is_refused(self):
         """Deferring a threshold and signing the ratification are mutually

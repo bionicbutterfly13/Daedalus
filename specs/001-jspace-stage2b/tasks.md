@@ -114,26 +114,27 @@ GPU and no measurement — Scenario 1 of [quickstart.md](./quickstart.md).
 
 ## Phase 6: Notebook shell
 
-> **BLOCKED — on a design decision, not on tooling.** T051's cross-check found
-> that a Stage 2b `pass` can coexist with a null interaction, which the design
-> calls the signature of a real instrument (research.md R10, open item 7). And
-> `prompt_only`, one of the two anchors the endpoint is defined against, has no
-> construction spec anywhere (R11, open item 8). Authoring the notebook before
-> either is settled would bake in a decision rule nobody chose and a baseline
-> nobody defined. This is exactly what putting T051 before Phase 6 was for.
+> **Authored. The measurement loop is deliberately unwritten.** T051 found that
+> a `pass` can coexist with a null interaction (R10, open item 7) and that
+> `prompt_only` has no construction spec (R11, open item 8). Rather than defer
+> the whole phase, both are declared as **unset constants** — the same mechanism
+> `SPEC_MIN_EFFECT` uses — so `check_ratification` refuses a signature while
+> either is open. The blocker is now unrepresentable rather than documented,
+> which is stronger than deferring. Only the loop itself waits, and it raises
+> `NotImplementedError` naming both items.
 
 **Also gated on PR #2**, like every phase above it — see Dependencies. This phase
 adds one further prerequisite of its own: T051's adversarial cross-check must
 complete before T035, because cross-checking a design after implementing it
 inspects a decision already made.
 
-- [ ] T035 **After T051 completes.** Author `sakshi notes/jspace_colab_stage2b_discrimination.ipynb` as a shell over the tested modules: boundaries header, pinned identities, constant declarations, install, environment preflight, module import by path, measurement loop, artifact export. Do not reproduce Stage 2's single 18 KB measurement cell — it is the direct cause of four declared-but-unconsumed quantities surviving to an audit
-- [ ] T036 [P] Ship the notebook with `THRESHOLDS_RATIFIED = False` and a guard that raises before the measurement loop (FR-013). This is the boundary between this feature and execution
-- [ ] T037 Replace Stage 2's five-name transport probe (cell 12) with direct assertions on `lens.jacobians[layer]` and `lens.transport`, both confirmed present at the pinned commit (research.md R1, R3). A probe that accepts whichever of five names resolves cannot be audited against a pin
-- [ ] T038 Resolve Stage 2's three loose constants in the notebook's declarations: `SAME_RUNTIME_REPEATS`, `INFERENCE_SEEDS`, `RANDOM_VECTOR_SEEDS`. Each must either drive the loop that bears its name and be registered, or be deleted (research.md R8). Carrying them forward as declarations that happen to match hardcoded behaviour is exactly what the registry exists to stop
+- [x] T035 **After T051 completes.** Author `sakshi notes/jspace_colab_stage2b_discrimination.ipynb` as a shell over the tested modules: boundaries header, pinned identities, constant declarations, install, environment preflight, module import by path, measurement loop, artifact export. Do not reproduce Stage 2's single 18 KB measurement cell — it is the direct cause of four declared-but-unconsumed quantities surviving to an audit
+- [x] T036 [P] Ship the notebook with `THRESHOLDS_RATIFIED = False` and a guard that raises before the measurement loop (FR-013). This is the boundary between this feature and execution
+- [x] T037 Replace Stage 2's five-name transport probe (cell 12) with direct assertions on `lens.jacobians[layer]` and `lens.transport`, both confirmed present at the pinned commit (research.md R1, R3). A probe that accepts whichever of five names resolves cannot be audited against a pin
+- [x] T038 Resolve Stage 2's three loose constants in the notebook's declarations: `SAME_RUNTIME_REPEATS`, `INFERENCE_SEEDS`, `RANDOM_VECTOR_SEEDS`. Each must either drive the loop that bears its name and be registered, or be deleted (research.md R8). Carrying them forward as declarations that happen to match hardcoded behaviour is exactly what the registry exists to stop
 - [x] T039 [P] Generate `sakshi notes/jspace-stage2b-stimulus-v1.json` — 200 held-out prompts, 5 categories of 40, disjoint from Stage 2 by digest, Stage 1 anchor excluded, every `token_count <= 128`
-- [ ] T052 Before committing the notebook — on request, per the constitution's "commit only when asked" — confirm it is actually stageable. `.gitignore:57` ignores `*.ipynb` repo-wide, but PR #2 adds `!sakshi notes/*.ipynb` re-including that directory, so a plain `git add` works **there and only there**. A notebook written anywhere else needs `git add -f` or it is silently skipped and the commit looks clean while the deliverable is missing. Verify with `git ls-files "sakshi notes/*.ipynb"`, not a green `git status`
-- [ ] T040 Wire the aggregate artifact export to include `registry`, `disjointness`, `gates`, `descriptive`, and `decision` as separate blocks per [contracts/artifact-schema.md](./contracts/artifact-schema.md). Keeping `descriptive` a sibling of `gates` is deliberate: the 2×2 interaction is reported but not gated, and the structure should make that impossible to misread
+- [x] T052 Before committing the notebook — on request, per the constitution's "commit only when asked" — confirm it is actually stageable. `.gitignore:57` ignores `*.ipynb` repo-wide, but `:65` adds `!sakshi notes/*.ipynb` re-including that directory, so a plain `git add` works **there and only there**. A notebook written anywhere else needs `git add -f` or it is silently skipped and the commit looks clean while the deliverable is missing. **Verify with `git ls-files`, never with `git check-ignore`'s exit code**: check-ignore exits 0 when the deciding rule is a *negation* too, so it reports "matched" for a file that is not ignored. That misreading happened once during this work
+- [x] T040 Wire the aggregate artifact export to include `registry`, `disjointness`, `gates`, `descriptive`, and `decision` as separate blocks per [contracts/artifact-schema.md](./contracts/artifact-schema.md). Keeping `descriptive` a sibling of `gates` is deliberate: the 2×2 interaction is reported but not gated, and the structure should make that impossible to misread
 
 ---
 

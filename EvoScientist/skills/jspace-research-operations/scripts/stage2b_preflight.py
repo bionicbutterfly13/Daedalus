@@ -129,6 +129,21 @@ INITIAL_REGISTRY: dict[str, dict[str, Any]] = {
         "declared_value": 0.70,
         "consumed_by": ["h2_overlap"],
     },
+    # Two decisions T051 surfaced, declared here so the run refuses until they
+    # are made. Leaving them out of the registry would have meant a notebook that
+    # runs while the questions are open; leaving them unset means it cannot.
+    # This is the same mechanism SPEC_MIN_EFFECT uses, applied to a decision
+    # rather than a threshold.
+    "INTERACTION_GATED": {
+        "kind": "constant",
+        "declared_value": None,  # open item 7 -- research.md R10
+        "consumed_by": ["endpoint:compose_decision"],
+    },
+    "PROMPT_ONLY_CONSTRUCTION": {
+        "kind": "constant",
+        "declared_value": None,  # open item 8 -- research.md R11
+        "consumed_by": ["endpoint:nta"],
+    },
     "NTA_MIN_DENOMINATOR": {
         "kind": "constant",
         "declared_value": None,  # Q6, pilot-derived
@@ -335,7 +350,8 @@ CONSUMER_READS: dict[str, tuple[str, ...]] = {
         "SELECTED_LAYERS",
         "POSITIONS",
     ),
-    "endpoint:nta": ("NTA_MIN_DENOMINATOR",),
+    "endpoint:nta": ("NTA_MIN_DENOMINATOR", "PROMPT_ONLY_CONSTRUCTION"),
+    "endpoint:compose_decision": ("INTERACTION_GATED",),
     "endpoint:target_rank1": ("target_id",),
     "endpoint:build_fit_broken_map": ("BROKEN_MAP_SEED",),
     "endpoint:select_wrong_activation": ("WRONG_ACTIVATION_SEED",),
