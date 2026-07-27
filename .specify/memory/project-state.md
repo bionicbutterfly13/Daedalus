@@ -3,7 +3,7 @@
 Durable grounding for any agent or human picking this up. Companion to
 `constitution.md` (which holds the rules; this holds the situation).
 
-Last updated: 2026-07-26.
+Last updated: 2026-07-27.
 
 > This file is the **tracked** copy — but only as of 2026-07-26. `.gitignore:50`
 > ignores all of `.specify/memory/*` with a single exception for
@@ -118,17 +118,18 @@ would amend PR #2 while it is under review. Push it whenever that is convenient:
 git -C /Volumes/Asylum/archimedes-wt-jspace push origin docs/jspace-research-operations
 ```
 
-**The main tree is deliberately left checked out on `fix/ccproxy-codex-streaming`.**
-The runtime is an editable install from it, so returning to `main` and restarting
-the stack would silently reintroduce the empty-answer bug. Merge #5 first.
+**The main tree now sits on `feat/jspace-stage2b-modules`.** The old warning
+about staying on `fix/ccproxy-codex-streaming` is retired: #5 is merged, so the
+streaming fix is in `main` and returning the tree there no longer reintroduces
+the empty-answer bug. The stack has not been restarted since the merges, so the
+resident process still runs whatever it loaded at startup.
 
 Docs-branch worktree: `/Volumes/Asylum/archimedes-wt-jspace`.
 
 ## Open items
 
-1. Review and merge PRs #5, #6, #2, #7. Merge #5 before returning the main tree to
-   `main` and restarting the stack. Push `66d03ab` on the docs branch when
-   convenient (see Repo state) — it is the only work not on GitHub.
+1. Review and merge **PR #8** (`feat/jspace-stage2b-modules`), the only open PR
+   of mine. #2, #5, #6, #7 are merged; #1 and #4 are someone else's.
 2. Ratify or revise `sakshi notes/STAGE2B_OPEN_PARAMETERS.md` (ten questions).
    Q3, Q5, and Q10 are flagged not delegable.
 3. File the upstream ccproxy issue if wanted — drafted at
