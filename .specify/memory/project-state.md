@@ -78,7 +78,18 @@ deliberately *not* to set it now, but to derive it from a pilot), and **Q10**
 
 ## Repo state
 
-Four open fork-internal PRs, all green, none merged:
+**PRs #2, #5, #6, and #7 are merged** as of 2026-07-27. `main` now carries the
+Spec Kit setup, the full Stage 2b spec, the J-space skill, the ccproxy streaming
+fix, and the OAuth-route/langgraph-budget fix.
+
+#5 and #6 were re-verified standing alone before merge rather than trusted:
+**3052** and **3042**, both matching what was recorded. That verification took
+three attempts and the first two produced false failures — see Runtime facts.
+
+One open PR of mine: **#8** `feat/jspace-stage2b-modules`, 43 of 56 tasks.
+#1 and #4 are someone else's and untouched.
+
+Previously (all now merged):
 
 | PR | Branch | Contents | Suite, standing alone |
 |---|---|---|---|
@@ -95,7 +106,8 @@ above are the standing-alone figures, which is what a reviewer sees.
 PR #7 branches from `main` and is docs/config only, so its suite result is the
 `main` baseline unchanged — expected for a branch that touches no source.
 
-**One commit exists locally and is deliberately not pushed.** `66d03ab` on
+**(Resolved 2026-07-27 — pushed and merged with #2.)** One commit was
+deliberately held back: `66d03ab` on
 `docs/jspace-research-operations`, in the worktree at
 `/Volumes/Asylum/archimedes-wt-jspace`, reduces `HANDOFF_2026-07-26.md` to
 lab-specific detail plus a pointer at this file, and corrects its Bug B suite
@@ -163,6 +175,14 @@ Docs-branch worktree: `/Volumes/Asylum/archimedes-wt-jspace`.
 
 ## Runtime facts
 
+- **Verifying a branch in a git worktree against the shared editable install is
+  unreliable in two distinct ways, and both produce false failures.** First, run
+  it with the venv on `PATH` — tests that shell out to `python` (not `python3`)
+  otherwise fail with `command not found`. Second, set
+  `PYTHONPATH=<worktree>` — tests that spawn a subprocess with a different `cwd`
+  resolve `EvoScientist` through the editable install, which points at the *main
+  tree*, so they silently test the wrong branch. Both bit during the #5/#6
+  verification and both looked like real defects in the branch under test.
 - Stack: ccproxy `:8000`, langgraph `:6174`, WebUI `:4716`.
 - Model `gpt-5.6-sol`, provider openai, reasoning effort high, via ccproxy Codex.
 - Start: `cd "<workdir>" && EvoSci --ui webui --workdir "<workdir>"` where
