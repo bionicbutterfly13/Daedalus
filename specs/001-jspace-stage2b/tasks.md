@@ -114,6 +114,14 @@ GPU and no measurement — Scenario 1 of [quickstart.md](./quickstart.md).
 
 ## Phase 6: Notebook shell
 
+> **BLOCKED — on a design decision, not on tooling.** T051's cross-check found
+> that a Stage 2b `pass` can coexist with a null interaction, which the design
+> calls the signature of a real instrument (research.md R10, open item 7). And
+> `prompt_only`, one of the two anchors the endpoint is defined against, has no
+> construction spec anywhere (R11, open item 8). Authoring the notebook before
+> either is settled would bake in a decision rule nobody chose and a baseline
+> nobody defined. This is exactly what putting T051 before Phase 6 was for.
+
 **Also gated on PR #2**, like every phase above it — see Dependencies. This phase
 adds one further prerequisite of its own: T051's adversarial cross-check must
 complete before T035, because cross-checking a design after implementing it
@@ -135,7 +143,7 @@ inspects a decision already made.
 - [x] T042 [P] Add a Stage 2b section to `EvoScientist/skills/jspace-research-operations/SKILL.md` pointing at the spec directory and the new scripts
 - [ ] T043 Run `uv run ruff check .` and `uv run pytest`, and confirm the suite is green standing alone on this branch — not only combined with PRs #5 and #6. Baseline on `main` is 3036 passed, 12 skipped
 - [ ] T044 Verify every failure code in [contracts/preflight-api.md](./contracts/preflight-api.md) has at least one test that makes it fire. A preflight suite that only proves valid configurations pass has not tested the preflight (Principle III)
-- [ ] T051 Cross-check the endpoint definition and the 2×2 factorial with Codex before Phase 6, per the constitution's "adversarial review for non-trivial fixes". Treat its output as evidence, not authority — verify each claim against source, and expect to correct it about as often as it corrects you. Record the exchange's conclusions in `specs/001-jspace-stage2b/research.md`
+- [x] T051 Cross-check the endpoint definition and the 2×2 factorial with Codex before Phase 6, per the constitution's "adversarial review for non-trivial fixes". Treat its output as evidence, not authority — verify each claim against source, and expect to correct it about as often as it corrects you. Record the exchange's conclusions in `specs/001-jspace-stage2b/research.md`
 
 ---
 
