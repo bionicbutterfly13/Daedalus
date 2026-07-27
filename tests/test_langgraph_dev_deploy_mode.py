@@ -9,7 +9,9 @@ Verifies the single-env-var enum routing:
 from __future__ import annotations
 
 import dataclasses
+import os
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -90,6 +92,67 @@ def test_deploy_mode_false_default_sets_stripped(monkeypatch, tmp_path, runtime_
     assert env.get("EVOSCIENTIST_DEPLOY_MODE") == "stripped", (
         "deploy_mode=False (default) must inject EVOSCIENTIST_DEPLOY_MODE=stripped"
     )
+
+
+@pytest.mark.parametrize("deploy_mode", [True, False])
+def test_openai_oauth_route_is_inherited_by_both_langgraph_modes(
+    monkeypatch, tmp_path, runtime_paths, deploy_mode
+):
+    """Full and stripped LangGraph workers both keep ccproxy routing."""
+    monkeypatch.setenv("OPENAI_API_KEY", "ccproxy-oauth")
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://127.0.0.1:8000/codex/v1")
+    captured = _patch_start_prereqs(monkeypatch, tmp_path, runtime_paths)
+
+    with pytest.raises(_PopenAbort):
+        manager.start_langgraph_dev(
+            workspace_dir=tmp_path,
+            port=16183,
+            deploy_mode=deploy_mode,
+        )
+
+    env = captured["env"]
+    assert env["OPENAI_API_KEY"] == "ccproxy-oauth"
+    assert env["OPENAI_BASE_URL"] == "http://127.0.0.1:8000/codex/v1"
+
+
+def test_langgraph_child_config_reload_preserves_inherited_oauth_route(tmp_path):
+    """A real LangGraph-like child must survive a stale workspace dotenv reload."""
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / ".env").write_text(
+        "OPENAI_API_KEY=\nOPENAI_BASE_URL=http://stale.invalid/v1\n",
+        encoding="utf-8",
+    )
+    expected_base_url = "http://127.0.0.1:8000/codex/v1"
+    env = os.environ.copy()
+    env.update(
+        {
+            "EVOSCIENTIST_DEPLOY_MODE": "full",
+            "OPENAI_API_KEY": "ccproxy-oauth",
+            "OPENAI_BASE_URL": expected_base_url,
+            "XDG_CONFIG_HOME": str(tmp_path / "config-home"),
+        }
+    )
+    code = f"""
+import os
+from EvoScientist.config import get_effective_config
+
+get_effective_config()
+assert os.environ["OPENAI_API_KEY"] == "ccproxy-oauth"
+assert os.environ["OPENAI_BASE_URL"] == {expected_base_url!r}
+"""
+
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=workspace,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
 
 
 def test_deploy_mode_explicitly_false_sets_stripped(
