@@ -1,0 +1,1613 @@
+{
+  "categories": [
+    "antonym_negation",
+    "arithmetic_completion",
+    "category_membership",
+    "factual_completion",
+    "multi_token_entity"
+  ],
+  "manifest_version": "jspace-stage2b-stimulus/v1",
+  "n_prompts": 200,
+  "prompts": [
+    {
+      "category": "antonym_negation",
+      "id": "s000",
+      "index": 0,
+      "sha256": "db8fa0aa20481673f9466304d18fd4af8a1c20dc99347ae6238d3d2ac1c47a59",
+      "text": "The opposite of big is",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s001",
+      "index": 1,
+      "sha256": "72ce16bd9bea30b283946fd1d20df2960691002d279728721ef084a68151d710",
+      "text": "The opposite of wet is",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s002",
+      "index": 2,
+      "sha256": "7b68deaf080dbfd00266e69e778668030eb5e369fd437651310257ac1903a5e4",
+      "text": "The opposite of loud is",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s003",
+      "index": 3,
+      "sha256": "f2a5dff4f40a27dff7ca17713f8f535f328d2cb62e8a50c3a956764459c7f707",
+      "text": "The opposite of heavy is",
+      "utf8_byte_count": 24
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s004",
+      "index": 4,
+      "sha256": "d37b3cdd4f5d0f2167715039733b414f9994fc50dff893c26eadacbffb73ab66",
+      "text": "The opposite of polite is",
+      "utf8_byte_count": 25
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s005",
+      "index": 5,
+      "sha256": "8326bfa12c0e48969b5f16d732c76c43636942bf616460a2b0b75d8523cf1b63",
+      "text": "The opposite of rich is",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s006",
+      "index": 6,
+      "sha256": "7ff9886ef8a5e9ebb8521c4a0b0d027e35de08b8c3eccdd3f6538c39186bb2fb",
+      "text": "The opposite of sharp is",
+      "utf8_byte_count": 24
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s007",
+      "index": 7,
+      "sha256": "08ade429aaea8c6e6e8211b88a98f0bf79cb84b2ff013501cb373968be97ecbc",
+      "text": "The opposite of smooth is",
+      "utf8_byte_count": 25
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s008",
+      "index": 8,
+      "sha256": "3c1db1ac41d0510d8674c717ec8c5f30945bb2d7b324da89d21c7b48d0191506",
+      "text": "The opposite of tight is",
+      "utf8_byte_count": 24
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s009",
+      "index": 9,
+      "sha256": "8c112a2758d95b148c8990b7f95319937e07f4b73f417924b243a28da35d4265",
+      "text": "The opposite of young is",
+      "utf8_byte_count": 24
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s010",
+      "index": 10,
+      "sha256": "8363969f882f694b9509e73931816bbd2d4c080313f35c8f56dc3ffe2c221948",
+      "text": "The opposite of clean is",
+      "utf8_byte_count": 24
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s011",
+      "index": 11,
+      "sha256": "b8d21688ac2dec2e632c9ec87e13f373a6ab5275622d05ac4e54ba3c9b05dabc",
+      "text": "The opposite of deep is",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s012",
+      "index": 12,
+      "sha256": "da3e21ca80a661f772e10bb6ec35e148e4614ef1e1d10d0c6e1f92e609127e6d",
+      "text": "The opposite of wide is",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s013",
+      "index": 13,
+      "sha256": "e787fe7bddf53a98c877b9b30324c4e1637fcee9dd5d0b3cdc6bfb9f9d56a248",
+      "text": "The opposite of strong is",
+      "utf8_byte_count": 25
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s014",
+      "index": 14,
+      "sha256": "707a96f12ca6437a550bc386e458d5c24fc8fb7f085c1db633640ca0827a04ba",
+      "text": "The opposite of sweet is",
+      "utf8_byte_count": 24
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s015",
+      "index": 15,
+      "sha256": "89e20056cee26a39f8ce280fc2b7b5543be918af25621ce92fa7df619525f2a4",
+      "text": "The opposite of brave is",
+      "utf8_byte_count": 24
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s016",
+      "index": 16,
+      "sha256": "b26b13a0b48a676df59f9648b4b30cc9f01d8339804927f91cf004c4951f281b",
+      "text": "The opposite of dark is",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s017",
+      "index": 17,
+      "sha256": "678d40874ac9114c4198deb35aa3d597934e2fcfce6b274bc53dfb437da78f40",
+      "text": "The opposite of crowded is",
+      "utf8_byte_count": 26
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s018",
+      "index": 18,
+      "sha256": "cc313468fa6125015ea03e9df5194b2843bef75f6ebaa3b0feb594a1b3dffc52",
+      "text": "The opposite of far is",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s019",
+      "index": 19,
+      "sha256": "ad7c4ac6216d6a6d790851ce79c94f8daa11dae762b815e4f1393b535ddc0f36",
+      "text": "The opposite of hard is",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s020",
+      "index": 20,
+      "sha256": "71700d9e822a64487bca702c80b48f43a536bac28724d5fa74495538677daeca",
+      "text": "The opposite of high is",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s021",
+      "index": 21,
+      "sha256": "c3f56bd7cdc8611eab605e5f8e7b235368a17c4dfd243a75ce258d7a26c550e5",
+      "text": "The opposite of long is",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s022",
+      "index": 22,
+      "sha256": "18ae067b41043db2e91647fbd1bf2f65d30aee351a9ac530a301bdc3a778f847",
+      "text": "The opposite of new is",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s023",
+      "index": 23,
+      "sha256": "67843750ccbe9ad688cb9e18929aadd4fd5a66663dc787ce74b314d737860dd1",
+      "text": "The opposite of shut is",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s024",
+      "index": 24,
+      "sha256": "cc0ea02e7c13f32038b0e326c39e4e6521f92a9e14a4dd2c58a93f81db396c6a",
+      "text": "The opposite of quiet is",
+      "utf8_byte_count": 24
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s025",
+      "index": 25,
+      "sha256": "0e81adb99dfab7da32f15e4b691f2f8b3ce0cc9514b2186f7224b523d7c0f7a7",
+      "text": "The opposite of right is",
+      "utf8_byte_count": 24
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s026",
+      "index": 26,
+      "sha256": "8700b437f4496c54e05af4a69c635b14229588d254842f247268f130023c64ae",
+      "text": "The opposite of safe is",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s027",
+      "index": 27,
+      "sha256": "1d29928ac70f4a487c353303e5c711c084a400f47c9c58800aa375af7d4b057d",
+      "text": "The opposite of short is",
+      "utf8_byte_count": 24
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s028",
+      "index": 28,
+      "sha256": "6aeaf6dc8da5fea5e56eda7cf1bb1395935f0d5c242e78b6303af185cc1410c5",
+      "text": "The opposite of sour is",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s029",
+      "index": 29,
+      "sha256": "3ec0d2001038de1b78c55bb3b7468908f393d5079e61acb96a5a19c3faf59669",
+      "text": "The opposite of thick is",
+      "utf8_byte_count": 24
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s030",
+      "index": 30,
+      "sha256": "8d28198d322241332c007c4d95e1854dbef7fb4a172d90825bd9614584ec1c48",
+      "text": "The opposite of honest is",
+      "utf8_byte_count": 25
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s031",
+      "index": 31,
+      "sha256": "aab1431a645b9053d2bd53afd3627f79423d7cd82fee5025c98900ac545a26cf",
+      "text": "The opposite of warm is",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s032",
+      "index": 32,
+      "sha256": "51267a6b52c38d871a0ccdeeff220b538a01be29a31006b9561cc036ed1ddc46",
+      "text": "The opposite of asleep is",
+      "utf8_byte_count": 25
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s033",
+      "index": 33,
+      "sha256": "6fa0101e15906a0be82a4e13bb4281e1f1a96082e4405a87e179052c2695ed1a",
+      "text": "The opposite of cheap is",
+      "utf8_byte_count": 24
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s034",
+      "index": 34,
+      "sha256": "0945896fb9ac9c39d565115e5767a1bc072879b3785db6e8afb4f651f6b07eba",
+      "text": "The opposite of dry is",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s035",
+      "index": 35,
+      "sha256": "929a3de9e2c40491a90515123cffa658b8497fdca74135a19b13e6e47807ce7d",
+      "text": "The opposite of easy is",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s036",
+      "index": 36,
+      "sha256": "d360a60ea29933989b7b6fa2af9509a88bc329d08a73beccddae21be05569088",
+      "text": "The opposite of front is",
+      "utf8_byte_count": 24
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s037",
+      "index": 37,
+      "sha256": "3646e97d9dfa616000bac4ee054bf272b36df146a56947949b19328d684b6d65",
+      "text": "The opposite of guilty is",
+      "utf8_byte_count": 25
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s038",
+      "index": 38,
+      "sha256": "692d08eb63d51133c83c5e83044aed289dc3cbf267d4a48bfc8bb171bf246934",
+      "text": "The opposite of inside is",
+      "utf8_byte_count": 25
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s039",
+      "index": 39,
+      "sha256": "349375400dc734d29670714087ecbc3d3786fd929e505079486cf76cc8c229cc",
+      "text": "The opposite of public is",
+      "utf8_byte_count": 25
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s040",
+      "index": 40,
+      "sha256": "a9ac98293ae796d89ae9a78940c4730869c8ca662a71d223079420686c5e65d0",
+      "text": "Compute: 4 + 4 =",
+      "utf8_byte_count": 16
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s041",
+      "index": 41,
+      "sha256": "91f94984d54b7331ec3fc6964e991a43910213c2b02572e9bcaf37dce45d3c84",
+      "text": "Compute: 6 + 3 =",
+      "utf8_byte_count": 16
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s042",
+      "index": 42,
+      "sha256": "2ae64be89089e9ce1c1cf5a21ff6a2a8500d7db45a11ac9f2e1a795abb52ed22",
+      "text": "Compute: 8 + 2 =",
+      "utf8_byte_count": 16
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s043",
+      "index": 43,
+      "sha256": "d037664ab497a20b2db5d3adbb7a996ad5a230af8f0dc77184490b4d1b82e261",
+      "text": "Compute: 9 + 4 =",
+      "utf8_byte_count": 16
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s044",
+      "index": 44,
+      "sha256": "aac7b0ebfc52e2cc7f7c39df81d599fe2c4695bd91a2641f54086919d8a4443e",
+      "text": "Compute: 11 + 6 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s045",
+      "index": 45,
+      "sha256": "88fad2b5bf8373fb63e787527bb78ead2e096e32ee6dd0a494d89cc7386ccd0f",
+      "text": "Compute: 12 + 5 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s046",
+      "index": 46,
+      "sha256": "5efc26b511b7d6d16d50c396ebb698f045ae75548b5c3e849f579d635e211efe",
+      "text": "Compute: 13 + 3 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s047",
+      "index": 47,
+      "sha256": "dd5b81871717da4242d1bf9fa9f7a6ffda475f7a971e1eaf1622e308aa84911a",
+      "text": "Compute: 14 + 5 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s048",
+      "index": 48,
+      "sha256": "219dd3a8deaef0ca86d73916e072bae4b8d51bc66f729eaa20d8d5a7b383b3ff",
+      "text": "Compute: 15 + 2 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s049",
+      "index": 49,
+      "sha256": "472c8a33db7efa7ae33d417b074f1d166844c967d8143951d86f4d30e53ff61c",
+      "text": "Compute: 16 + 3 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s050",
+      "index": 50,
+      "sha256": "559d53c7a0b4153504a014bf01896bf674b0857cbe9746fa06b99ae5f0b3d1ba",
+      "text": "Compute: 17 + 2 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s051",
+      "index": 51,
+      "sha256": "17b765c0c26d20f3384a7c8bc7227ee32b6ef2b14a4976c63e3397f26028e8bf",
+      "text": "Compute: 18 + 4 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s052",
+      "index": 52,
+      "sha256": "3438f55fbd57d31451534d98ab30061afcf0d98e5336b8c80678937a9b42f24c",
+      "text": "Compute: 19 + 3 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s053",
+      "index": 53,
+      "sha256": "c3ca241882a54a3e90be668e63269c1325f4f29a12ce12b88d517dae2b84fa59",
+      "text": "Compute: 21 + 6 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s054",
+      "index": 54,
+      "sha256": "848a782fa49e914841e7b3810974239a4f335055be93d86656b4387ef19f2eb1",
+      "text": "Compute: 22 + 5 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s055",
+      "index": 55,
+      "sha256": "84ac2a9a1279a466561588644a6767bd685896fd2444423402ae17f13ed2bf26",
+      "text": "Compute: 23 + 4 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s056",
+      "index": 56,
+      "sha256": "2029a5dbd2dddf06fbf5341eaa5c55731abe7eed70c75bad6261c9577f9bbc82",
+      "text": "Compute: 24 + 3 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s057",
+      "index": 57,
+      "sha256": "f8d2dd4ae111be5b1d6c355d665fb3a611f09c96bba859d444ee4721c429bc61",
+      "text": "Compute: 25 + 6 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s058",
+      "index": 58,
+      "sha256": "d6f7ae820bd3d2de7dff889b92470008bcd858ed8ef7bc7b6be03279bb3cb7c8",
+      "text": "Compute: 26 + 2 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s059",
+      "index": 59,
+      "sha256": "abef70fdc020ee29ddb35961af677840ba0af07908b3d08bdc22f1e0f186eb54",
+      "text": "Compute: 27 + 5 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s060",
+      "index": 60,
+      "sha256": "aca495229608d784cc48473b2a77dc09457848dd10a8a83ecbf9d23a98bbce96",
+      "text": "Compute: 11 - 3 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s061",
+      "index": 61,
+      "sha256": "f20c0652b8739bb01af57cd23c3762770965367e42e05cd3d68875d81c8970a8",
+      "text": "Compute: 12 - 4 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s062",
+      "index": 62,
+      "sha256": "0bdc6daf6e9e8680f1ff10775502d75542b42562fbd53fb403527f15777f0269",
+      "text": "Compute: 13 - 6 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s063",
+      "index": 63,
+      "sha256": "ad5879e0d307d78521c08a41443467fc6f70fb604c573cb179cfd57d2b9c4907",
+      "text": "Compute: 14 - 9 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s064",
+      "index": 64,
+      "sha256": "27df1b3cf7c37a87ae10d55ae694ede53cedea643b0ca15486d5e6d5f84dcb6d",
+      "text": "Compute: 15 - 8 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s065",
+      "index": 65,
+      "sha256": "7b1e328f0601b5a3cd90f5cba38d8a93249923ba6af2fc3badfb00b7b8f1f0d4",
+      "text": "Compute: 16 - 7 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s066",
+      "index": 66,
+      "sha256": "ba8c3255d4c53ef4977f3769612d8f7c55a3d00313889cc323ab2f3b12222bdf",
+      "text": "Compute: 17 - 9 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s067",
+      "index": 67,
+      "sha256": "f1217cf6dcf88679071f3078efa0cf8b8f5643c4060370ed953625f3593d5311",
+      "text": "Compute: 18 - 6 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s068",
+      "index": 68,
+      "sha256": "543cddcd7a9bd846919ee7b9f356d9846f9e7748f1a532d80ef526ff3d6f07ae",
+      "text": "Compute: 19 - 4 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s069",
+      "index": 69,
+      "sha256": "094def198b35eefc0f94b6e890d0de262e90f669f97af12c37fc0b5afc118729",
+      "text": "Compute: 20 - 13 =",
+      "utf8_byte_count": 18
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s070",
+      "index": 70,
+      "sha256": "ec3c8b831b5d49bca6c60914f54aaeb13ded05349bbdc814ae4deb350a3646e0",
+      "text": "Compute: 21 - 8 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s071",
+      "index": 71,
+      "sha256": "d88e13b78311de92cef8d6ea3ec475d8894ec12c2ea00d53ba44b7ec0c70436a",
+      "text": "Compute: 22 - 9 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s072",
+      "index": 72,
+      "sha256": "ac1df68db5bf1d11ea9a7dec3461e93531b846751db97fe4d81d8da57943d0ed",
+      "text": "Compute: 23 - 7 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s073",
+      "index": 73,
+      "sha256": "3bac35969ea8e5eca5c5aff2c048d9badf025d70d541bc69a2eb46eb6c0ea968",
+      "text": "Compute: 24 - 11 =",
+      "utf8_byte_count": 18
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s074",
+      "index": 74,
+      "sha256": "d6ae52997582b1a403afbfd6f6f00f684431524848ad56ca5ebd79525605abb3",
+      "text": "Compute: 25 - 12 =",
+      "utf8_byte_count": 18
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s075",
+      "index": 75,
+      "sha256": "b1ade61593f592e5f3776c600aaa0f822c5b21c1194287d260d7c70b514d0773",
+      "text": "Compute: 26 - 14 =",
+      "utf8_byte_count": 18
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s076",
+      "index": 76,
+      "sha256": "42f4081f0d157e1efe60e013bcb54413b34a38a93fdb79c60144a9ed2c439138",
+      "text": "Compute: 27 - 8 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s077",
+      "index": 77,
+      "sha256": "7e53ce8d4097e773afa50d18d4b300a2c2215009b8ab634e67322ea3e29bd9c3",
+      "text": "Compute: 28 - 9 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s078",
+      "index": 78,
+      "sha256": "baf232677884f14c4759ab2e98fabd9ec58c62959d4075c9d122e47931400065",
+      "text": "Compute: 29 - 6 =",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s079",
+      "index": 79,
+      "sha256": "2105957eaae8b0cb94c7f69fbde700740517c2591388cf95f363fdbda919cace",
+      "text": "Compute: 30 - 17 =",
+      "utf8_byte_count": 18
+    },
+    {
+      "category": "category_membership",
+      "id": "s080",
+      "index": 80,
+      "sha256": "c512740adf38d6fde8958de29c5558889fc14549f2eb18c27479e82d46d0465f",
+      "text": "A sparrow is a kind of",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "category_membership",
+      "id": "s081",
+      "index": 81,
+      "sha256": "8a834e64f3e6fe9ef2b6a87089909e2bf9606e8313340f55342db7675bd51933",
+      "text": "A wrench is a kind of",
+      "utf8_byte_count": 21
+    },
+    {
+      "category": "category_membership",
+      "id": "s082",
+      "index": 82,
+      "sha256": "c38138bdd7dc368143c2abc240573b2e752638da604e0c93bcae961053f7dfe5",
+      "text": "A tulip is a kind of",
+      "utf8_byte_count": 20
+    },
+    {
+      "category": "category_membership",
+      "id": "s083",
+      "index": 83,
+      "sha256": "1f49b38299f078576b30deae8211f7c8dab38699becf32af75ad76db3dc9ba59",
+      "text": "A haddock is a kind of",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "category_membership",
+      "id": "s084",
+      "index": 84,
+      "sha256": "8c9a1e91637881bb640ef35a241043b9250b387dca6097423f82ab6050d39150",
+      "text": "A oak is a kind of",
+      "utf8_byte_count": 18
+    },
+    {
+      "category": "category_membership",
+      "id": "s085",
+      "index": 85,
+      "sha256": "4cf85c7f7496db91a2f8a212131c5a4e3b62af8d013aadf0d9386347febf7e8f",
+      "text": "A mandolin is a kind of",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "category_membership",
+      "id": "s086",
+      "index": 86,
+      "sha256": "72420c4ab4d8b34d412c713dc0640a34e886a4c704a8a58dbba80a6d84aba345",
+      "text": "A sandal is a kind of",
+      "utf8_byte_count": 21
+    },
+    {
+      "category": "category_membership",
+      "id": "s087",
+      "index": 87,
+      "sha256": "b5e59af4cca46e3d1b0c127ba831b4c4bf1c07764cb35d2d36c3625ad848776f",
+      "text": "A quartz is a kind of",
+      "utf8_byte_count": 21
+    },
+    {
+      "category": "category_membership",
+      "id": "s088",
+      "index": 88,
+      "sha256": "a954bc39e2b3a7dcc24f3a0ff1b71476a5280364b83d72e50961fe62adb0bc41",
+      "text": "A beagle is a kind of",
+      "utf8_byte_count": 21
+    },
+    {
+      "category": "category_membership",
+      "id": "s089",
+      "index": 89,
+      "sha256": "f338a78ebe7a8f03169a4fd733917d0a17e574c5a86f83ee9d053e3b76c5b9ba",
+      "text": "A cobra is a kind of",
+      "utf8_byte_count": 20
+    },
+    {
+      "category": "category_membership",
+      "id": "s090",
+      "index": 90,
+      "sha256": "fcbb30837f2bc6b1b548ba90e809d2718561242d601f6f010ace0c6de11086ae",
+      "text": "A sycamore is a kind of",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "category_membership",
+      "id": "s091",
+      "index": 91,
+      "sha256": "052c34c4fd95f72abb26c3229e3ea48101a0cfb3a678299b5e5dc120dc1e1d15",
+      "text": "A trumpet is a kind of",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "category_membership",
+      "id": "s092",
+      "index": 92,
+      "sha256": "44e8007047b8ad739731d94fe7406a21b7650200541aeccf0926b56a8dbecedb",
+      "text": "A lettuce is a kind of",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "category_membership",
+      "id": "s093",
+      "index": 93,
+      "sha256": "30cd4a20f6deb27f4644d80c26b1436435d0e1f14c7c2dee9ce589de0d7e271a",
+      "text": "A sapphire is a kind of",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "category_membership",
+      "id": "s094",
+      "index": 94,
+      "sha256": "eea9cd6a8b120b2b248999e13e538c785addbb2f50323e2fe587c5ed64b2a21a",
+      "text": "A kayak is a kind of",
+      "utf8_byte_count": 20
+    },
+    {
+      "category": "category_membership",
+      "id": "s095",
+      "index": 95,
+      "sha256": "ac663fee80106652c46240dde1a99c7c160095396a3261a9845c518020a217f2",
+      "text": "A moth is a kind of",
+      "utf8_byte_count": 19
+    },
+    {
+      "category": "category_membership",
+      "id": "s096",
+      "index": 96,
+      "sha256": "719b9b0ebf113d82be9ed91fa30c46b582141246ef20a95da165c347b0b439ef",
+      "text": "A walnut is a kind of",
+      "utf8_byte_count": 21
+    },
+    {
+      "category": "category_membership",
+      "id": "s097",
+      "index": 97,
+      "sha256": "04e36519f33db4a95fc662ff99e9793c43c31c154229a60bed1193171aa26227",
+      "text": "A flute is a kind of",
+      "utf8_byte_count": 20
+    },
+    {
+      "category": "category_membership",
+      "id": "s098",
+      "index": 98,
+      "sha256": "ff27e9945c48341f41465466e754d6654a09ca542d2cafa34d4799d2f804dfec",
+      "text": "A otter is a kind of",
+      "utf8_byte_count": 20
+    },
+    {
+      "category": "category_membership",
+      "id": "s099",
+      "index": 99,
+      "sha256": "1d39fd8b15a5d86798425ef3d4f12c85bc7d20622f6358ed874c96baaf22895b",
+      "text": "A granite is a kind of",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "category_membership",
+      "id": "s100",
+      "index": 100,
+      "sha256": "f52d591a67849a02ab3d3a9300781528e4c6ec7585f0d1b3193fac0cbcba006d",
+      "text": "A peach is a kind of",
+      "utf8_byte_count": 20
+    },
+    {
+      "category": "category_membership",
+      "id": "s101",
+      "index": 101,
+      "sha256": "54ee272eb6f659cce4d303769fe8d255934f1c65a22e92ac755ef5b9c7b7f959",
+      "text": "A hammerhead is a kind of",
+      "utf8_byte_count": 25
+    },
+    {
+      "category": "category_membership",
+      "id": "s102",
+      "index": 102,
+      "sha256": "fa2fb7b3e7940f5e508188ad481474e0b20a611cb8795e3f3239a6680ae6abc6",
+      "text": "A cedar is a kind of",
+      "utf8_byte_count": 20
+    },
+    {
+      "category": "category_membership",
+      "id": "s103",
+      "index": 103,
+      "sha256": "51b8a45929fa99560717110219bfaffe934984fa7ad77d61321e43773b981ebc",
+      "text": "A banjo is a kind of",
+      "utf8_byte_count": 20
+    },
+    {
+      "category": "category_membership",
+      "id": "s104",
+      "index": 104,
+      "sha256": "3057b0e9baba4053715918e710778d537b5c46664746f5ac7e62477d280e25ba",
+      "text": "A raccoon is a kind of",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "category_membership",
+      "id": "s105",
+      "index": 105,
+      "sha256": "ea5aec27d7c0536ac8b044fea43f85f732198a946ff9ef56faea0fd0c717fe10",
+      "text": "A obsidian is a kind of",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "category_membership",
+      "id": "s106",
+      "index": 106,
+      "sha256": "472e7f7c9ac02d701781bf760a92ec0c4f4fb6e4ed2732a017a9079f8fd9f53b",
+      "text": "A apricot is a kind of",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "category_membership",
+      "id": "s107",
+      "index": 107,
+      "sha256": "36f15604afef2321c9c444ff755da415c2de818cc4954d4951d244cde9de7319",
+      "text": "A cello is a kind of",
+      "utf8_byte_count": 20
+    },
+    {
+      "category": "category_membership",
+      "id": "s108",
+      "index": 108,
+      "sha256": "8bee103adb91339fe15393e444c365973d897f1ac2db693ff69667ca0c004500",
+      "text": "A ferret is a kind of",
+      "utf8_byte_count": 21
+    },
+    {
+      "category": "category_membership",
+      "id": "s109",
+      "index": 109,
+      "sha256": "371adb3ea0f457055716657e24dd14374486f01c675ae4577a5668418035934c",
+      "text": "A birch is a kind of",
+      "utf8_byte_count": 20
+    },
+    {
+      "category": "category_membership",
+      "id": "s110",
+      "index": 110,
+      "sha256": "3a5ed625b9ab2a81355deea1d222831ec517f01a5362fe72479c78e2a3d6af43",
+      "text": "A mango is a kind of",
+      "utf8_byte_count": 20
+    },
+    {
+      "category": "category_membership",
+      "id": "s111",
+      "index": 111,
+      "sha256": "8dcc2ea7e2b18131536b35c6c3d3a1b19e816238319a7ced23d324e37e6d4188",
+      "text": "A harp is a kind of",
+      "utf8_byte_count": 19
+    },
+    {
+      "category": "category_membership",
+      "id": "s112",
+      "index": 112,
+      "sha256": "63f8302edc486bc64bf0e0c60ffa58d0151e3dddc64b76ce3bb5fd331d1b97a8",
+      "text": "A gecko is a kind of",
+      "utf8_byte_count": 20
+    },
+    {
+      "category": "category_membership",
+      "id": "s113",
+      "index": 113,
+      "sha256": "d7d16b684fa063aa5f975fbd7690a8b208e534e74fc936a133fd28dde2902d75",
+      "text": "A marble is a kind of",
+      "utf8_byte_count": 21
+    },
+    {
+      "category": "category_membership",
+      "id": "s114",
+      "index": 114,
+      "sha256": "ddee4c23328009f5b1123c9b4659d62d3c8ec27bcef7b4fdcab5c569a5c62332",
+      "text": "A plum is a kind of",
+      "utf8_byte_count": 19
+    },
+    {
+      "category": "category_membership",
+      "id": "s115",
+      "index": 115,
+      "sha256": "ca0ca581f9095b64d5d819e197c12ed0692b2e74ea651b936284330b75136fc9",
+      "text": "A oboe is a kind of",
+      "utf8_byte_count": 19
+    },
+    {
+      "category": "category_membership",
+      "id": "s116",
+      "index": 116,
+      "sha256": "32dc01e5b4b6229c3ac004e16dd90cf91b6f8ac62a2ca8f95a7ed79bbfec7a27",
+      "text": "A badger is a kind of",
+      "utf8_byte_count": 21
+    },
+    {
+      "category": "category_membership",
+      "id": "s117",
+      "index": 117,
+      "sha256": "0890f00317b6375b2132f981d09b6e75ad1d890d4a25759de33efe4e9003f466",
+      "text": "A willow is a kind of",
+      "utf8_byte_count": 21
+    },
+    {
+      "category": "category_membership",
+      "id": "s118",
+      "index": 118,
+      "sha256": "6ea75139a91fcc2f6c8d7d4c497b4aca6444513c821dad5cb342527e8f583c8f",
+      "text": "A papaya is a kind of",
+      "utf8_byte_count": 21
+    },
+    {
+      "category": "category_membership",
+      "id": "s119",
+      "index": 119,
+      "sha256": "55191c45acac14293c9453125cc26e76d0155a461f6446c008b0ee9a67da691d",
+      "text": "A tuba is a kind of",
+      "utf8_byte_count": 19
+    },
+    {
+      "category": "factual_completion",
+      "id": "s120",
+      "index": 120,
+      "sha256": "4906f6a5183d3cc817b21414f462c2976116838689e5572524c9736604e43180",
+      "text": "Fact: The capital city of Japan is",
+      "utf8_byte_count": 34
+    },
+    {
+      "category": "factual_completion",
+      "id": "s121",
+      "index": 121,
+      "sha256": "0ba62e4093191004f33cb4554dfcafc287b16aee68ea73673e47cf7dfaaac4de",
+      "text": "Fact: The chemical symbol for silver is",
+      "utf8_byte_count": 39
+    },
+    {
+      "category": "factual_completion",
+      "id": "s122",
+      "index": 122,
+      "sha256": "8941e7a08a604c44e1fe6313d44694f5a8e54140b5e60ab78b080cf073d00c4c",
+      "text": "Fact: The largest planet in the solar system is",
+      "utf8_byte_count": 47
+    },
+    {
+      "category": "factual_completion",
+      "id": "s123",
+      "index": 123,
+      "sha256": "37c0a03fa81790af49891ebf4b9f72db3198444ec114ab84b2d46e2213de9ab3",
+      "text": "Fact: The number of days in a leap year is",
+      "utf8_byte_count": 42
+    },
+    {
+      "category": "factual_completion",
+      "id": "s124",
+      "index": 124,
+      "sha256": "eb6e5ffaeea691c1633d8c229132785b238ab2a71d34074a85a7e34ef5d025e3",
+      "text": "Fact: The freezing point of water in degrees Celsius is",
+      "utf8_byte_count": 55
+    },
+    {
+      "category": "factual_completion",
+      "id": "s125",
+      "index": 125,
+      "sha256": "c8dada842b169d528410ea317acdb28de96d9c4bd81a05b17458ee59395d714e",
+      "text": "Fact: The primary gas in Earth's atmosphere is",
+      "utf8_byte_count": 46
+    },
+    {
+      "category": "factual_completion",
+      "id": "s126",
+      "index": 126,
+      "sha256": "f8913323b981d9daab18d744c23bced13a65845359d7ef5e4c27aee687d05b21",
+      "text": "Fact: The tallest mountain above sea level is",
+      "utf8_byte_count": 45
+    },
+    {
+      "category": "factual_completion",
+      "id": "s127",
+      "index": 127,
+      "sha256": "2612756cad40b8e02046b1e6e61476c1a3eae5d229af2ab55f6745ed898fd8dd",
+      "text": "Fact: The longest river in South America is",
+      "utf8_byte_count": 43
+    },
+    {
+      "category": "factual_completion",
+      "id": "s128",
+      "index": 128,
+      "sha256": "63d8a3956ebba7f1984f50bf6ac18698521c7259bfb2e2ed75e990ce19e8f51f",
+      "text": "Fact: The chemical symbol for iron is",
+      "utf8_byte_count": 37
+    },
+    {
+      "category": "factual_completion",
+      "id": "s129",
+      "index": 129,
+      "sha256": "bf67352b809c4636366bf7b3b6bd9d3baaabc9a4a6b2ef23f274a796378798f1",
+      "text": "Fact: The number of sides on a hexagon is",
+      "utf8_byte_count": 41
+    },
+    {
+      "category": "factual_completion",
+      "id": "s130",
+      "index": 130,
+      "sha256": "08c60d4a3bfc77682484ce35860a2f965e7cfac6a4d34c0ad86db924b365a983",
+      "text": "Fact: The currency used in Japan is",
+      "utf8_byte_count": 35
+    },
+    {
+      "category": "factual_completion",
+      "id": "s131",
+      "index": 131,
+      "sha256": "97c15265c3423b7cef4c5e2272d6521ed7018275c8c3906c2a4f2076880612dc",
+      "text": "Fact: The largest ocean on Earth is",
+      "utf8_byte_count": 35
+    },
+    {
+      "category": "factual_completion",
+      "id": "s132",
+      "index": 132,
+      "sha256": "3fd9baa92a07a2d6e6e0efa8609bdb63255055374479d3ba2e2d1279814727b5",
+      "text": "Fact: The chemical symbol for sodium is",
+      "utf8_byte_count": 39
+    },
+    {
+      "category": "factual_completion",
+      "id": "s133",
+      "index": 133,
+      "sha256": "8def636c708bf9c6d04f03929da481dab6ba0e91976a2c20491f97a58edf7302",
+      "text": "Fact: The number of players on a soccer team on the field is",
+      "utf8_byte_count": 60
+    },
+    {
+      "category": "factual_completion",
+      "id": "s134",
+      "index": 134,
+      "sha256": "f45ceeaa2296a2b439a0f476decff64fd8056a6c9a17e42208626e2549e52ee4",
+      "text": "Fact: The capital city of Canada is",
+      "utf8_byte_count": 35
+    },
+    {
+      "category": "factual_completion",
+      "id": "s135",
+      "index": 135,
+      "sha256": "6427d6c0c1451642dbe4836b5fe75e03af6101536cce3705af913f42323ecf24",
+      "text": "Fact: The hardest naturally occurring mineral is",
+      "utf8_byte_count": 48
+    },
+    {
+      "category": "factual_completion",
+      "id": "s136",
+      "index": 136,
+      "sha256": "9f2dc070862177b0fa171d04de94da21f032c827047122dfd5a9bbe81bae5fb1",
+      "text": "Fact: The number of degrees in a right angle is",
+      "utf8_byte_count": 47
+    },
+    {
+      "category": "factual_completion",
+      "id": "s137",
+      "index": 137,
+      "sha256": "f334feb4e7c66a1b510f1392f5d53659cc9363fa6b8004996d3d461328872b57",
+      "text": "Fact: The chemical symbol for potassium is",
+      "utf8_byte_count": 42
+    },
+    {
+      "category": "factual_completion",
+      "id": "s138",
+      "index": 138,
+      "sha256": "f665ee477147bd449a654853d1f99c43b7dfc4ec633389cd0ae913228028cd48",
+      "text": "Fact: The largest mammal on Earth is",
+      "utf8_byte_count": 36
+    },
+    {
+      "category": "factual_completion",
+      "id": "s139",
+      "index": 139,
+      "sha256": "5601342752003997b8cbfd8815612fe8cfae553693e22b13251d03e0053df114",
+      "text": "Fact: The capital city of Australia is",
+      "utf8_byte_count": 38
+    },
+    {
+      "category": "factual_completion",
+      "id": "s140",
+      "index": 140,
+      "sha256": "41d90896ca213da59901ae7b0b76d8c6dde94191df892eae57e53563c66d6845",
+      "text": "Fact: The number of strings on a standard guitar is",
+      "utf8_byte_count": 51
+    },
+    {
+      "category": "factual_completion",
+      "id": "s141",
+      "index": 141,
+      "sha256": "e7794be3c5b65da2e27d7f77a2f0ffe0983976125c779773416f19149450ed01",
+      "text": "Fact: The chemical symbol for lead is",
+      "utf8_byte_count": 37
+    },
+    {
+      "category": "factual_completion",
+      "id": "s142",
+      "index": 142,
+      "sha256": "dd80493818924ef459e9408144ce1abd742637f1ca1cc23c073f5dfaafba6ef2",
+      "text": "Fact: The closest star to Earth is",
+      "utf8_byte_count": 34
+    },
+    {
+      "category": "factual_completion",
+      "id": "s143",
+      "index": 143,
+      "sha256": "16bbe5bfa7edd282d451f6cd114e0bee4ca332207286938c4d2b0a2ac1a83b43",
+      "text": "Fact: The number of bones in the adult human body is",
+      "utf8_byte_count": 52
+    },
+    {
+      "category": "factual_completion",
+      "id": "s144",
+      "index": 144,
+      "sha256": "671a1595f81caf2d73bee7cac0c01eb6ddc7bdc005d200fa166adf54c8c65384",
+      "text": "Fact: The capital city of Egypt is",
+      "utf8_byte_count": 34
+    },
+    {
+      "category": "factual_completion",
+      "id": "s145",
+      "index": 145,
+      "sha256": "5c7446beee67385c4924993c71ae0ab93c46dc5d84983cf111dd928bf7f1aecd",
+      "text": "Fact: The chemical symbol for tin is",
+      "utf8_byte_count": 36
+    },
+    {
+      "category": "factual_completion",
+      "id": "s146",
+      "index": 146,
+      "sha256": "7dbc016ef8a18153de61e24791f989f4b10df99980201814ee4a9be99bc3c11d",
+      "text": "Fact: The number of legs on a spider is",
+      "utf8_byte_count": 39
+    },
+    {
+      "category": "factual_completion",
+      "id": "s147",
+      "index": 147,
+      "sha256": "3f79971bea6a346aaa6dac2b6e741085ba1ccc11bf13fedc846153fd1b1a7846",
+      "text": "Fact: The largest desert on Earth is",
+      "utf8_byte_count": 36
+    },
+    {
+      "category": "factual_completion",
+      "id": "s148",
+      "index": 148,
+      "sha256": "85adf4b2e83f35ba41caa1bdd200f4657f2ae98ea4541a9442d6dcb0233ec2b3",
+      "text": "Fact: The capital city of Brazil is",
+      "utf8_byte_count": 35
+    },
+    {
+      "category": "factual_completion",
+      "id": "s149",
+      "index": 149,
+      "sha256": "acee6ba740f317e21e2bc3fbc0f6b5ac43d4d46200eee2565c434f057bb9a9a7",
+      "text": "Fact: The chemical symbol for copper is",
+      "utf8_byte_count": 39
+    },
+    {
+      "category": "factual_completion",
+      "id": "s150",
+      "index": 150,
+      "sha256": "90013d599478d84a5ccd09f6a55422d7001b338a2155b7a4e6021f8cc5da46c9",
+      "text": "Fact: The number of minutes in an hour is",
+      "utf8_byte_count": 41
+    },
+    {
+      "category": "factual_completion",
+      "id": "s151",
+      "index": 151,
+      "sha256": "ea23fbf0d62421f6a81c3513679b712551ee048001182c989f6c0b04f6d6ff0c",
+      "text": "Fact: The smallest planet in the solar system is",
+      "utf8_byte_count": 48
+    },
+    {
+      "category": "factual_completion",
+      "id": "s152",
+      "index": 152,
+      "sha256": "ede53ffeecf93d6ce377ebb148e6bfc1f5a5fcb4d7a7b01ecca75da46852eb06",
+      "text": "Fact: The capital city of Kenya is",
+      "utf8_byte_count": 34
+    },
+    {
+      "category": "factual_completion",
+      "id": "s153",
+      "index": 153,
+      "sha256": "e77cb8a86263a7f060773e9e4085c3591e574d9f6d977fe274b3a2359f38c48d",
+      "text": "Fact: The chemical symbol for zinc is",
+      "utf8_byte_count": 37
+    },
+    {
+      "category": "factual_completion",
+      "id": "s154",
+      "index": 154,
+      "sha256": "85efc655ea3dcd49cbaf1f82f6949cc03362d356fb40d362892375f86b92b533",
+      "text": "Fact: The number of colours in a rainbow is",
+      "utf8_byte_count": 43
+    },
+    {
+      "category": "factual_completion",
+      "id": "s155",
+      "index": 155,
+      "sha256": "09c254f1c6c2a8e633817825669898b1206a873ad05bed4c1c6410cbfc952fcb",
+      "text": "Fact: The deepest ocean trench is",
+      "utf8_byte_count": 33
+    },
+    {
+      "category": "factual_completion",
+      "id": "s156",
+      "index": 156,
+      "sha256": "38143276907661d896508d98cbf24a30e7434f4329b6a8720906bdf2f0f01b36",
+      "text": "Fact: The capital city of Norway is",
+      "utf8_byte_count": 35
+    },
+    {
+      "category": "factual_completion",
+      "id": "s157",
+      "index": 157,
+      "sha256": "3a048044801ea1368896766bdb88c3826ef7405a7ee5ab170420f3caf6af823c",
+      "text": "Fact: The chemical symbol for mercury is",
+      "utf8_byte_count": 40
+    },
+    {
+      "category": "factual_completion",
+      "id": "s158",
+      "index": 158,
+      "sha256": "e2c8112f969daf25ca7574dbb16c5a1d716bdfc9c73a5c14553e61186a6b23a4",
+      "text": "Fact: The number of teeth in a full adult set is",
+      "utf8_byte_count": 48
+    },
+    {
+      "category": "factual_completion",
+      "id": "s159",
+      "index": 159,
+      "sha256": "549237ef46add0551830da7d7299a13beb3dad361333cd49853384cfe9456bb0",
+      "text": "Fact: The fastest land animal is",
+      "utf8_byte_count": 32
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s160",
+      "index": 160,
+      "sha256": "cc63e5bd4d182ba9e8baec0760c3b21343bd019c03f276b46ff35e6e9bc78b5a",
+      "text": "The physicist Isaac",
+      "utf8_byte_count": 19
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s161",
+      "index": 161,
+      "sha256": "b2f3364ddca38e3fc4c4801122042a336810b13ebecc9a1d674370bd604c916b",
+      "text": "The composer Johann Sebastian",
+      "utf8_byte_count": 29
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s162",
+      "index": 162,
+      "sha256": "96002f3931cff2036c2626225846b96811928a453ebd0d39d1302ae51b691122",
+      "text": "The playwright William",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s163",
+      "index": 163,
+      "sha256": "58b3410f19b0f074b944818e53a0932187b4543f6f749946d638a0cebfd9281c",
+      "text": "The river running through Cairo is the",
+      "utf8_byte_count": 38
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s164",
+      "index": 164,
+      "sha256": "06cc5a1ba77f49e3a12f23256dccd8a1b07163d9a3d642b5df69807c7107468b",
+      "text": "The mountain range separating Europe and Asia is the",
+      "utf8_byte_count": 52
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s165",
+      "index": 165,
+      "sha256": "f36cf45d4fb589c10010be8008ebe3eba0dac777c4c7dcb2fc31dee8257019c3",
+      "text": "The painter Pablo",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s166",
+      "index": 166,
+      "sha256": "b55c42d5a6858a45bd09ba3f35af207b0f1bb45c83f53576647925d0c1192f76",
+      "text": "The inventor Thomas",
+      "utf8_byte_count": 19
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s167",
+      "index": 167,
+      "sha256": "3f25a5215d18dbc6993adb5de094ade3d34840adec1b51ce31f9853cdb9caa1d",
+      "text": "The naturalist Charles",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s168",
+      "index": 168,
+      "sha256": "d1c73e4e8a603c152b484f7c7c0f448bebce22b7a73dad8aaec857a4262b4f30",
+      "text": "The mathematician Leonhard",
+      "utf8_byte_count": 26
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s169",
+      "index": 169,
+      "sha256": "18d1680d88d0b4c2ac97c6e38a6158a04836caabbd419adeec5db37375ae0aa2",
+      "text": "The astronomer Nicolaus",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s170",
+      "index": 170,
+      "sha256": "5b32781e11698c3b5d7d4d84e2bec898a70638cf9ef4862712ffdce3e3a97006",
+      "text": "The sea between Italy and Greece is the",
+      "utf8_byte_count": 39
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s171",
+      "index": 171,
+      "sha256": "2415c1827003f2b470de744488a9d30ab4cb01068b8ecdb89395b32309589414",
+      "text": "The desert covering much of northern Africa is the",
+      "utf8_byte_count": 50
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s172",
+      "index": 172,
+      "sha256": "9678fbae06ecaaf8b93a5487bf8b550f78f79c9610dbe991e693c291e175caa4",
+      "text": "The wall built across northern Britain is Hadrian's",
+      "utf8_byte_count": 51
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s173",
+      "index": 173,
+      "sha256": "fb79d2025113849bbdfa80050a8bc185ae84de70c0627df13f8e8946a0e48ba3",
+      "text": "The canal joining the Atlantic and Pacific is the",
+      "utf8_byte_count": 49
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s174",
+      "index": 174,
+      "sha256": "f633f02c250c6c4887427b45f48f8f5265618901738c003b07625caf03da7a88",
+      "text": "The philosopher Immanuel",
+      "utf8_byte_count": 24
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s175",
+      "index": 175,
+      "sha256": "61a843b3a61fbe9d6c2d4a05c68ecb6cf34c4a718d5e17807787aebdd0db4fcb",
+      "text": "The chemist Marie",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s176",
+      "index": 176,
+      "sha256": "30ab8aa991d3446baa71ec909da655d576b7b62b9807331d7d7d5f965fbb77ad",
+      "text": "The novelist Jane",
+      "utf8_byte_count": 17
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s177",
+      "index": 177,
+      "sha256": "d18849564d3e22407d22dc403b9abeb5e85a05ecc6318c257710533e95275422",
+      "text": "The strait between Europe and Africa is the",
+      "utf8_byte_count": 43
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s178",
+      "index": 178,
+      "sha256": "13be418c81832c1415db162a53a062a738fea69097d77af25f09e01a81db7bc1",
+      "text": "The gulf south of the United States is the",
+      "utf8_byte_count": 42
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s179",
+      "index": 179,
+      "sha256": "3c02562e3d21784221bc979b0a154831267661eaa0df6748b091a35fb2530d10",
+      "text": "The peninsula holding Spain and Portugal is the",
+      "utf8_byte_count": 47
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s180",
+      "index": 180,
+      "sha256": "ef3b4b41e4168ee4848fd0b8284df07f6834f837b27482f4b7ac3f1a66f3a4fc",
+      "text": "The engineer Nikola",
+      "utf8_byte_count": 19
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s181",
+      "index": 181,
+      "sha256": "c40559ea883f1966c55bd722c088123510c81964056639242288f12c21a0407a",
+      "text": "The poet Emily",
+      "utf8_byte_count": 14
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s182",
+      "index": 182,
+      "sha256": "ec5628e6e6001b9314cf8d9bc996cc315599d60ee02e38400be575525cb519e1",
+      "text": "The reef off northeastern Australia is the Great Barrier",
+      "utf8_byte_count": 56
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s183",
+      "index": 183,
+      "sha256": "7880478c0f6e2e1e3d04439756e1d295f5518b5906d412a50e06b5b59adebd0f",
+      "text": "The plateau north of the Himalayas is the",
+      "utf8_byte_count": 41
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s184",
+      "index": 184,
+      "sha256": "d5614bfe5b6a9798f4814aed02c48480a734eb1d20f1bc7fb28df9af69fc7275",
+      "text": "The economist Adam",
+      "utf8_byte_count": 18
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s185",
+      "index": 185,
+      "sha256": "aa328b8cef1e31b4e9725d153597c20cbe4fcbb47baafb6d041a535730103b21",
+      "text": "The biologist Gregor",
+      "utf8_byte_count": 20
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s186",
+      "index": 186,
+      "sha256": "fad1d256e547af066503874b4ee1f10ca5425caf64915c47cb90f76516815d1e",
+      "text": "The channel between England and France is the English",
+      "utf8_byte_count": 53
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s187",
+      "index": 187,
+      "sha256": "9386373937662b421e0a2dbbf5ab201102bc78651f2548d5b4941f3d98ce2764",
+      "text": "The island south of mainland India is Sri",
+      "utf8_byte_count": 41
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s188",
+      "index": 188,
+      "sha256": "e907aa5888217774a8a27b72140761ff2e1f53fe7aeb77fc35a9512c0d56166b",
+      "text": "The composer Wolfgang Amadeus",
+      "utf8_byte_count": 29
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s189",
+      "index": 189,
+      "sha256": "e186c5bb2ef06a442e18f6eb324f5bc79235fa67f013c1927f9902443485c460",
+      "text": "The sea north of Egypt is the",
+      "utf8_byte_count": 29
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s190",
+      "index": 190,
+      "sha256": "29398d675706a9a4b480f82f624aa5750557c97a9998edb5cc708260a38bc1b4",
+      "text": "The volcano that buried Pompeii is Mount",
+      "utf8_byte_count": 40
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s191",
+      "index": 191,
+      "sha256": "b697a07233e542a1d1d25c9be99a5755e035f06313bceca4298229fb2deb203b",
+      "text": "The explorer Ferdinand",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s192",
+      "index": 192,
+      "sha256": "f5e9f89005baaeeb8920c80ff004d92c5922db8b1a21d3e3aef6339746a9b898",
+      "text": "The bay in eastern Canada is Hudson",
+      "utf8_byte_count": 35
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s193",
+      "index": 193,
+      "sha256": "32198b74c3b94ca14b383c3eeb0880602d04b6e23a9f5d9456f32915bde8e697",
+      "text": "The mountain on the Nepal-China border is Mount",
+      "utf8_byte_count": 47
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s194",
+      "index": 194,
+      "sha256": "d01d47f5e4f244861559690dee4845d9845d9f2987ff809553ec3e6c90781135",
+      "text": "The physicist Niels",
+      "utf8_byte_count": 19
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s195",
+      "index": 195,
+      "sha256": "3bb985f38381acc6ca2023f8c06dca364bde4c2b7c5462efc9ba4aa5ad76b9e6",
+      "text": "The forest covering much of Brazil is the",
+      "utf8_byte_count": 41
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s196",
+      "index": 196,
+      "sha256": "d2788d12b0f0d45f4165aef1eca974d542820d846f4e3ffb33cb9a6f26f34d6c",
+      "text": "The lake between the United States and Canada is Lake",
+      "utf8_byte_count": 53
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s197",
+      "index": 197,
+      "sha256": "72db7a4c9719a67a2557dc90254c2ad9cd52a023de07ac4c3d3c24d0fd44dcef",
+      "text": "The architect Frank Lloyd",
+      "utf8_byte_count": 25
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s198",
+      "index": 198,
+      "sha256": "245ec7dbc8ff91e83fa2ff24d18f4f6a35877892a694c757bfddf4bcc8beb879",
+      "text": "The mathematician Carl Friedrich",
+      "utf8_byte_count": 32
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s199",
+      "index": 199,
+      "sha256": "a9992e52a9eec99f1550c22325f4a8d45ac61a00377bf2abd09f9799e5d58a61",
+      "text": "The strait between Russia and Alaska is the",
+      "utf8_byte_count": 43
+    }
+  ]
+}

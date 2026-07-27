@@ -52,18 +52,19 @@ def canonical_digest(document: Mapping[str, Any]) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
-def build_manifest(
-    raw_stimuli: Sequence[tuple[str, str]],
-    token_counts: Mapping[str, int] | None = None,
-) -> dict[str, Any]:
+def build_manifest(raw_stimuli: Sequence[tuple[str, str]]) -> dict[str, Any]:
     """Build the manifest document from ``(category, text)`` pairs.
 
     ``id`` is three digits (``s000``), not Stage 2's two: n=200 overflows ``s99``,
     and silently rolling over would give two prompts the same id.
 
-    ``token_count`` is supplied by the caller because tokenizing needs the model.
-    Where it is absent the field is ``None`` and :func:`check_manifest` will reject
-    the manifest rather than skipping the length check.
+    **Token counts are deliberately not in the manifest.** Tokenizing requires the
+    model, which is not available where this file is authored, and writing an
+    estimate into a content-addressed document would put a fabricated number into
+    the record. Length is a property of the stimulus *under a tokenizer*, not of
+    the stimulus, so it is measured at preflight and recorded in the artifact --
+    which also keeps the manifest digest stable, since a count filled in later
+    would change the digest the repo committed.
     """
     prompts = []
     for index, (category, text) in enumerate(raw_stimuli):
@@ -76,7 +77,6 @@ def build_manifest(
                 "text": text,
                 "sha256": hashlib.sha256(encoded).hexdigest(),
                 "utf8_byte_count": len(encoded),
-                "token_count": (token_counts or {}).get(text),
             }
         )
     return {
@@ -92,6 +92,7 @@ def check_manifest(
     stage2_digests: Sequence[str],
     expected_digest: str | None = None,
     *,
+    token_counts: Mapping[str, int] | None = None,
     n_prompts: int = 200,
     n_categories: int = 5,
     max_prompt_tokens: int = 128,
@@ -150,15 +151,20 @@ def check_manifest(
             )
         digests.append(digest)
 
-        tokens = prompt.get("token_count")
-        if tokens is None or tokens > max_prompt_tokens:
-            raise PreflightError(
-                "prompt_too_long",
-                f"{prompt['id']!r} has token_count {tokens!r}, "
-                f"limit {max_prompt_tokens}",
-                prompt_id=prompt["id"],
-                observed=tokens,
-            )
+        # Measured at preflight against the live tokenizer, not read from the
+        # manifest. Where no counts are supplied the check is skipped rather than
+        # faked -- and the notebook must supply them, since a length that was
+        # never measured is not a length that passed.
+        if token_counts is not None:
+            tokens = token_counts.get(prompt["text"])
+            if tokens is None or tokens > max_prompt_tokens:
+                raise PreflightError(
+                    "prompt_too_long",
+                    f"{prompt['id']!r} has token_count {tokens!r}, "
+                    f"limit {max_prompt_tokens}",
+                    prompt_id=prompt["id"],
+                    observed=tokens,
+                )
 
     if len(set(digests)) != len(digests):
         raise PreflightError(

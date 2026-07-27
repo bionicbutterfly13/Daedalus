@@ -57,8 +57,11 @@ def _stimuli(n_per_category=40, prefix="stage2b unique prompt"):
 
 def _manifest(**kw):
     stimuli = kw.pop("stimuli", None) or _stimuli()
-    counts = {text: 12 for _, text in stimuli}
-    return manifest_mod.build_manifest(stimuli, counts)
+    return manifest_mod.build_manifest(stimuli)
+
+
+def _counts(manifest, value=12):
+    return {p["text"]: value for p in manifest["prompts"]}
 
 
 def _check(manifest, **kw):
@@ -160,18 +163,30 @@ class TestCheckManifest:
 
     def test_over_long_prompt_is_rejected(self):
         built = _manifest()
-        built["prompts"][11]["token_count"] = 500
+        counts = _counts(built)
+        counts[built["prompts"][11]["text"]] = 500
         with pytest.raises(preflight.PreflightError) as exc:
-            _check(built)
+            _check(built, token_counts=counts)
         assert exc.value.code == "prompt_too_long"
 
-    def test_missing_token_count_is_rejected_rather_than_skipped(self):
+    def test_a_prompt_with_no_measured_count_is_rejected(self):
         """An unmeasured length is not a passing length."""
         built = _manifest()
-        built["prompts"][11]["token_count"] = None
+        counts = _counts(built)
+        del counts[built["prompts"][11]["text"]]
         with pytest.raises(preflight.PreflightError) as exc:
-            _check(built)
+            _check(built, token_counts=counts)
         assert exc.value.code == "prompt_too_long"
+
+    def test_token_counts_are_not_stored_in_the_manifest(self):
+        """Tokenizing needs the model. Writing an estimate into a
+        content-addressed document would put a fabricated number in the record,
+        and filling it in later would change the digest the repo committed."""
+        assert "token_count" not in _manifest()["prompts"][0]
+
+    def test_counts_within_the_limit_pass(self):
+        built = _manifest()
+        _check(built, token_counts=_counts(built, value=11))
 
 
 class TestHeldOutStatus:
@@ -228,3 +243,50 @@ class TestManifestDigest:
         built = _manifest()
         assert "sha256" not in built
         assert "digest" not in built
+
+
+class TestShippedManifest:
+    """Tests the file that will actually be used, not just the generator.
+
+    A generator that produces a valid manifest and a committed manifest that is
+    valid are different claims. Only the second one matters at run time.
+    """
+
+    SHIPPED = pathlib.Path(__file__).resolve().parents[2] / (
+        "sakshi notes/jspace-stage2b-stimulus-v1.json"
+    )
+
+    def _shipped(self):
+        if not self.SHIPPED.exists():
+            pytest.skip("stimulus manifest not present on this branch")
+        return json.loads(self.SHIPPED.read_text())
+
+    def test_shipped_manifest_passes_every_check(self):
+        _check(self._shipped())
+
+    def test_shipped_manifest_is_disjoint_from_stage_two(self):
+        """FR-011, against the real file. Building this manifest turned up 11
+        accidental collisions with Stage 2 — the check is what caught them."""
+        digests = {p["sha256"] for p in self._shipped()["prompts"]}
+        assert digests.isdisjoint(STAGE2_DIGESTS)
+
+    def test_shipped_manifest_excludes_the_stage_one_anchor(self):
+        digests = {p["sha256"] for p in self._shipped()["prompts"]}
+        assert STAGE1_ANCHOR not in digests
+
+    def test_shipped_manifest_has_two_hundred_prompts_in_five_categories(self):
+        shipped = self._shipped()
+        assert shipped["n_prompts"] == 200
+        counts: dict[str, int] = {}
+        for prompt in shipped["prompts"]:
+            counts[prompt["category"]] = counts.get(prompt["category"], 0) + 1
+        assert set(counts.values()) == {40}
+        assert set(counts) == set(CATEGORIES)
+
+    def test_generator_reproduces_the_shipped_file_exactly(self):
+        """If these drift, the committed digest describes something that is no
+        longer what the generator makes."""
+        stimuli = _load("stage2b_stimuli").RAW_STIMULI
+        assert manifest_mod.canonical_digest(
+            manifest_mod.build_manifest(stimuli)
+        ) == manifest_mod.canonical_digest(self._shipped())
