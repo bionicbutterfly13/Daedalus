@@ -86,7 +86,11 @@ fix, and the OAuth-route/langgraph-budget fix.
 **3052** and **3042**, both matching what was recorded. That verification took
 three attempts and the first two produced false failures — see Runtime facts.
 
-One open PR of mine: **#8** `feat/jspace-stage2b-modules`, 43 of 56 tasks.
+One open PR of mine: **#8** `feat/jspace-stage2b-modules`, **56 of 56 tasks**.
+The notebook exists and refuses to run: `THRESHOLDS_RATIFIED` is `False`, and
+`INTERACTION_GATED` / `PROMPT_ONLY_CONSTRUCTION` (open items 7 and 8) are
+declared-but-unset, so `check_ratification` blocks a signature while either is
+open. Only the measurement loop is unwritten, and it raises naming both.
 #1 and #4 are someone else's and untouched.
 
 Previously (all now merged):
@@ -195,7 +199,8 @@ Docs-branch worktree: `/Volumes/Asylum/archimedes-wt-jspace`.
    at the correct activation" and assert nothing about input-specificity; or
    make H1 conjunctive over the simple effect plus an interaction interval
    excluding zero, which needs no magnitude estimate. Full argument in
-   `research.md` R10.
+   `research.md` R10. **The notebook cannot run while this is unset** — it is a
+   registry constant, so a signature alone will not start a run.
 
 8. **`prompt_only` has no construction spec.** *(Also blocks the notebook.)* It
    is one of the two anchors that make FR-002's omitted-baseline defect
