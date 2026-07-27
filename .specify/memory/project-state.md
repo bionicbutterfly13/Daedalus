@@ -78,7 +78,7 @@ deliberately *not* to set it now, but to derive it from a pilot), and **Q10**
 
 ## Repo state
 
-Three open fork-internal PRs, all green, none merged:
+Four open fork-internal PRs, all green, none merged:
 
 | PR | Branch | Contents | Suite, standing alone |
 |---|---|---|---|
@@ -90,10 +90,21 @@ Suite sizes: main alone 3036; #5 adds 16; #6 adds 6; all together 3058. Each
 branch was verified green *standing alone*, not only in combination — the counts
 above are the standing-alone figures, which is what a reviewer sees.
 
-A fourth branch, `chore/speckit-claude-integration`, carries the Spec Kit setup and
-`specs/001-jspace-stage2b/`. It branches from `main` and is docs/config only;
-`uv run pytest` on it returns 3036 passed, 12 skipped — the `main` baseline
-unchanged, as expected for a branch that touches no source.
+| #7 | `chore/speckit-claude-integration` | Spec Kit setup + the full Stage 2b plan | 3036 passed, 12 skipped |
+
+PR #7 branches from `main` and is docs/config only, so its suite result is the
+`main` baseline unchanged — expected for a branch that touches no source.
+
+**One commit exists locally and is deliberately not pushed.** `66d03ab` on
+`docs/jspace-research-operations`, in the worktree at
+`/Volumes/Asylum/archimedes-wt-jspace`, reduces `HANDOFF_2026-07-26.md` to
+lab-specific detail plus a pointer at this file, and corrects its Bug B suite
+figure from 3058 to the standing-alone 3052. It was left unpushed because pushing
+would amend PR #2 while it is under review. Push it whenever that is convenient:
+
+```sh
+git -C /Volumes/Asylum/archimedes-wt-jspace push origin docs/jspace-research-operations
+```
 
 **The main tree is deliberately left checked out on `fix/ccproxy-codex-streaming`.**
 The runtime is an editable install from it, so returning to `main` and restarting
@@ -103,8 +114,9 @@ Docs-branch worktree: `/Volumes/Asylum/archimedes-wt-jspace`.
 
 ## Open items
 
-1. Review and merge PRs #5, #6, #2. Merge #5 before returning the main tree to
-   `main` and restarting the stack.
+1. Review and merge PRs #5, #6, #2, #7. Merge #5 before returning the main tree to
+   `main` and restarting the stack. Push `66d03ab` on the docs branch when
+   convenient (see Repo state) — it is the only work not on GitHub.
 2. Ratify or revise `sakshi notes/STAGE2B_OPEN_PARAMETERS.md` (ten questions).
    Q3, Q5, and Q10 are flagged not delegable.
 3. File the upstream ccproxy issue if wanted — drafted at
