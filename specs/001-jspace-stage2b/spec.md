@@ -227,5 +227,11 @@ not delegable:
 
 ## Dependencies
 
-None blocking. PRs #5 and #6 (runtime fixes) are unrelated to this feature and
-need not merge first.
+PRs #5 and #6 (runtime fixes) are unrelated to this feature and need not merge
+first.
+
+**PR #2 is an ordering constraint on part of the work.** `sakshi notes/` and the
+`jspace-research-operations` skill are tracked on `docs/jspace-research-operations`,
+not on `main`, so the notebook and the stimulus manifest cannot land until that
+branch merges or the work branches from it. The preflight, endpoint, and manifest
+modules and all their tests carry no such constraint.

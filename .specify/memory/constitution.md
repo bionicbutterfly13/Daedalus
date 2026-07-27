@@ -154,8 +154,24 @@ Principles marked NON-NEGOTIABLE may be amended but never waived silently.
 
 The Spec Kit tooling here serves two agents. Codex skills live in `.agents/` and
 are tracked; Claude Code skills live in `.claude/skills/`, which `.gitignore`
-excludes, so they are restored on a fresh clone with
-`specify integration install claude`. Installed-integration state itself is
-tracked in `.specify/integration.json`.
+excludes. Installed-integration state itself is tracked in
+`.specify/integration.json`.
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-26 | **Last Amended**: 2026-07-26
+Restore the Claude skills on a fresh clone with **`specify integration upgrade
+claude`**, not `install`. Because `.specify/integration.json` is tracked and
+already lists `claude`, `install` reports "Integration 'claude' is already
+installed / No files were changed" and creates nothing — the clone is left with no
+skills and no error. `upgrade` writes all eleven and leaves the shared templates
+and scripts alone; refreshing those needs an explicit `--force`, which is a
+separate decision (see `project-state.md` § Spec Kit template drift).
+
+**Version**: 1.0.1 | **Ratified**: 2026-07-26 | **Last Amended**: 2026-07-26
+
+*Amendment 1.0.1 (2026-07-26)*: corrected the Claude skills restore command from
+`install` to `upgrade`. The original was an inference from the CLI's help text,
+not a tested claim. Verified by cloning the repo to a scratch directory and
+running both: `install` produced zero skills, `upgrade` produced eleven and left
+`.specify/scripts/` and `.specify/templates/` byte-identical. The same check found
+that the repo's own Claude install was missing `speckit-agent-context-update`,
+leaving the armed `after_specify`/`after_plan` hooks unrunnable from Claude Code;
+`upgrade` installed it.
