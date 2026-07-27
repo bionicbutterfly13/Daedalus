@@ -2,6 +2,12 @@
 
 <h3 align="center">Customize your EvoScientist — harness it, make it yours.</h3>
 
+## Architecture
+
+| Document | Description |
+|----------|-------------|
+| [Archimedes Cognitive Lab Architecture](cognitive-lab-architecture.md) | Working role, control, evidence, and experimental boundaries for Hermes, EvoScientist, Jacobian Lens/J-space, Elume, and Sakshi |
+
 | Example                                                     | Description                                                                     |
 |------------------------------------------------------------|---------------------------------------------------------------------------------|
 | [Survey literature](https://github.com/EvoScientist/EvoScientist/tree/main/docs/examples/survey-literature#literature-survey)   | Run EvoScientist with the `paper-navigator` skill to produce a bilingual, conference-grade literature survey |
