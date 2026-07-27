@@ -694,6 +694,7 @@ def _get_default_middleware(
             drive the main-agent widgets).
     """
     from .middleware import (
+        CcproxyCodexStreamMiddleware,
         ConfigurableModelMiddleware,
         ContextOverflowMapperMiddleware,
         ErrorNormalizationMiddleware,
@@ -789,6 +790,10 @@ def _get_default_middleware(
             model=tool_selector_model,
             events=events,
         ),
+        # Must sit INSIDE the tool selector: it forces stream=True on the main
+        # agent call (ccproxy loses non-streaming Responses output), and the
+        # selector's own structured-output model must not inherit that.
+        CcproxyCodexStreamMiddleware(),
         # Interpreter prompt must land before runtime/memory context, so this
         # middleware sits ahead of runtime_context in the stack.
         create_code_interpreter_middleware(
