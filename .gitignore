@@ -49,6 +49,7 @@ memory/
 !.specify/memory/
 .specify/memory/*
 !.specify/memory/constitution.md
+!.specify/memory/project-state.md
 !EvoScientist/memory/
 media/
 conversation_history/
