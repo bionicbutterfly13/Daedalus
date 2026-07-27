@@ -17,14 +17,21 @@ strongest possible conclusion was always non-identity, whatever the data said.
 from __future__ import annotations
 
 import math
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from typing import Any
 
 __all__ = [
     "RANK_CONVENTION",
     "NTAExcluded",
+    "allocate_wrong_layers",
+    "build_fit_broken_map",
     "nta",
+    "paired_difference_by_cluster",
     "rank_score",
+    "select_wrong_activation",
     "target_rank1",
+    "transport_with",
+    "verify_rank_parity",
 ]
 
 #: Recorded in every artifact so the choice is not silently re-decided later.
@@ -128,3 +135,202 @@ def nta(
     if denominator <= min_denominator:
         return NTAExcluded("denominator_below_min", denominator)
     return (s_readout - s_prompt_only) / denominator
+
+
+def verify_rank_parity(logits: Sequence[float], target_id: int) -> bool:
+    """FR-010: the fast rank must equal a full-sort reference on a fixed probe.
+
+    Returns the boolean recorded as ``contracts.rank_parity_verified``.  This
+    exists because an optimization that silently changes a statistic is
+    indistinguishable from a correct one until the results are wrong, and Stage 2's
+    full-vocabulary ``argsort`` is the thing being replaced.
+
+    The reference here mirrors ``jlens.vis._ranks_of``'s documented convention
+    (0-indexed, rank 0 = top) with ``+1`` applied.  In Colab the same assertion
+    should be repeated against the real ``_ranks_of``; locally jlens is not
+    installed, so the naive sort stands in.
+    """
+    order = sorted(range(len(logits)), key=lambda i: logits[i], reverse=True)
+    return target_rank1(logits, target_id) == order.index(target_id) + 1
+
+
+def build_fit_broken_map(jacobian: Any, seed: int) -> Any:
+    """FR-004: destroy the fitted correspondence, preserve everything nuisance.
+
+    ``J = U S Vt`` becomes ``(Q U) S Vt`` for a Haar-random orthogonal ``Q``.  Left
+    multiplying ``U`` by an orthogonal matrix leaves the singular values untouched,
+    so the operator norm, Frobenius norm, and conditioning are all identical to the
+    original.  What changes is which input direction maps to which output
+    direction.
+
+    That preservation is what makes this a control rather than a different object.
+    A map with a different spectrum could beat or lose to the real one for reasons
+    having nothing to do with the fit.
+
+    ``Q`` comes from a QR decomposition of a Gaussian matrix **with the sign
+    correction** (Mezzadri 2007): ``numpy.linalg.qr`` does not return a Haar-
+    distributed ``Q`` on its own, because LAPACK fixes no sign convention on ``R``'s
+    diagonal.  Without multiplying by ``sign(diag(R))`` the result is biased, which
+    would quietly make the control non-uniform over the orthogonal group.
+
+    ``numpy`` is imported here rather than at module scope so the rest of this
+    module keeps loading in an environment without it.
+    """
+    import numpy as np
+
+    j = np.asarray(jacobian)
+    if j.ndim != 2 or j.shape[0] != j.shape[1]:
+        raise ValueError(f"expected a square matrix, got shape {j.shape}")
+
+    u, s, vt = np.linalg.svd(j, full_matrices=False)
+
+    rng = np.random.default_rng(seed)
+    gaussian = rng.standard_normal((u.shape[0], u.shape[0]))
+    q, r = np.linalg.qr(gaussian)
+    q = q * np.sign(np.diag(r))  # Mezzadri correction; without it Q is not Haar
+
+    return (q @ u) * s @ vt
+
+
+def transport_with(residual: Any, jacobian: Any) -> Any:
+    """Apply a supplied map to a residual: ``residual @ J.T``.
+
+    Reimplements the body of ``JacobianLens.transport`` rather than mutating
+    ``lens.jacobians[layer]`` in place.  Mutating the lens would make every later
+    read of that layer silently return the broken map -- correct today, invisible
+    when wrong, which is the same class of defect as Stage 2's dead constants.
+    """
+    import numpy as np
+
+    return np.asarray(residual) @ np.asarray(jacobian).T
+
+
+def select_wrong_activation(
+    residuals_by_prompt: Mapping[str, Any],
+    exclude_prompt_sha256: str,
+    seed: int,
+) -> tuple[Any, str]:
+    """FR-005: a real residual from a different prompt, rescaled to match norm.
+
+    Returns ``(activation, source_prompt_sha256)``.  The source digest is recorded
+    in the artifact so "this was a real activation, not noise" is a checkable
+    property of the run rather than a claim in a design document.
+
+    Stage 2 already showed a norm-matched *random vector* is easy to beat (fraction
+    1.00), so it survives here only as the sanity floor.  A real activation from a
+    real prompt is the honest hard case: correct distributional structure, wrong
+    content.  Norm-matching removes magnitude as an explanation for any difference.
+    """
+    import numpy as np
+
+    candidates = sorted(k for k in residuals_by_prompt if k != exclude_prompt_sha256)
+    if not candidates:
+        raise ValueError(
+            "no other prompt available to draw a wrong activation from; "
+            "the manifest must hold at least two prompts at this layer"
+        )
+
+    rng = np.random.default_rng(seed)
+    source = candidates[int(rng.integers(len(candidates)))]
+
+    donor = np.asarray(residuals_by_prompt[source], dtype=np.float64)
+    target = np.asarray(residuals_by_prompt[exclude_prompt_sha256], dtype=np.float64)
+
+    donor_norm = float(np.linalg.norm(donor))
+    if donor_norm == 0.0:
+        raise ValueError(f"donor residual for {source!r} has zero norm")
+
+    rescaled = donor * (float(np.linalg.norm(target)) / donor_norm)
+    return rescaled, source
+
+
+def allocate_wrong_layers(
+    selected_layers: Sequence[int],
+    distances: Sequence[int],
+    n_prompts: int,
+    n_layers_total: int,
+    seed: int,
+) -> list[dict[str, int]]:
+    """FR-008: assign each prompt a wrong-layer distance band, near-equally.
+
+    Exact balance is not generally achievable -- 200 prompts over 3 bands is 66.67 --
+    so the rule is ``floor(n/k)`` per band with the remainder going to the
+    lowest-indexed bands, under the preregistered seed.  Realized counts are
+    recorded in the artifact rather than assumed.
+
+    Stage 2 did not balance this at all, which is why its mismatched-probe fraction
+    of 0.40 mixes near and far regimes and cannot be interpreted: a map from an
+    adjacent layer is nearly correct, one from the opposite end is trivially wrong,
+    and pooling them yields a number that describes neither.
+
+    Sign is balanced where the layer index permits.  A band whose offset would fall
+    outside ``[0, n_layers_total)`` in one direction takes the other; if neither
+    direction fits, that assignment is impossible and it raises rather than
+    silently clamping to an edge layer, which would make the realized distance
+    differ from the declared one.
+    """
+    import numpy as np
+
+    if not distances:
+        raise ValueError("distances must be non-empty")
+
+    k = len(distances)
+    base, remainder = divmod(n_prompts, k)
+    counts = [base + (1 if i < remainder else 0) for i in range(k)]
+
+    bands: list[int] = []
+    for distance, count in zip(distances, counts, strict=True):
+        bands.extend([distance] * count)
+
+    rng = np.random.default_rng(seed)
+    rng.shuffle(bands)
+
+    assignments: list[dict[str, int]] = []
+    for index, distance in enumerate(bands):
+        correct = selected_layers[index % len(selected_layers)]
+        options = [
+            correct + delta
+            for delta in (distance, -distance)
+            if 0 <= correct + delta < n_layers_total
+        ]
+        if not options:
+            raise ValueError(
+                f"distance {distance} does not fit around layer {correct} "
+                f"within [0, {n_layers_total})"
+            )
+        # Balance sign deterministically rather than by draw, so the realized
+        # up/down split does not depend on how the shuffle happened to land.
+        wrong = options[index % len(options)]
+        assignments.append(
+            {"correct_layer": correct, "wrong_layer": wrong, "distance": distance}
+        )
+    return assignments
+
+
+def paired_difference_by_cluster(
+    instrument: Mapping[str, float | NTAExcluded],
+    control: Mapping[str, float | NTAExcluded],
+) -> dict[str, float]:
+    """One paired difference per prompt, at a single layer (FR-006).
+
+    Both mappings are prompt digest -> that prompt's NTA **at one layer**.  The
+    prompt is the cluster; layers are repeated measures and are never mixed here.
+    Callers run this once per layer.
+
+    A cell excluded on either side drops the pair: a difference against an excluded
+    denominator is not a small effect, it is an absent measurement, and averaging
+    the two together is how an absent measurement becomes a null result.
+
+    This function deliberately cannot return a depth-pooled value.  Pooling layers
+    would let a strong late layer carry the result, since a late-layer residual sits
+    close to the output and scores well for trivial reasons.
+    """
+    paired: dict[str, float] = {}
+    for prompt, value in instrument.items():
+        other = control.get(prompt)
+        if other is None:
+            continue
+        if isinstance(value, NTAExcluded) or isinstance(other, NTAExcluded):
+            continue
+        paired[prompt] = value - other
+    return paired

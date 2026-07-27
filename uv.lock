@@ -1042,6 +1042,8 @@ wechat = [
 [package.dev-dependencies]
 dev = [
     { name = "build" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -1118,6 +1120,7 @@ provides-extras = ["dev", "telegram", "discord", "slack", "wechat", "feishu", "q
 [package.metadata.requires-dev]
 dev = [
     { name = "build", specifier = ">=1.0" },
+    { name = "numpy", specifier = ">=2.4.6" },
     { name = "pre-commit", specifier = ">=3.5.0" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-asyncio", specifier = ">=1.0" },
