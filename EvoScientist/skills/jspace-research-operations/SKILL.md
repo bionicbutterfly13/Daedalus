@@ -23,6 +23,7 @@ Use progressive disclosure:
 
 - Read `references/known-good-smoke-test.md` when reproducing or comparing against the pinned Qwen3-1.7B smoke test.
 - Read `references/stage2-discrimination-baseline.md` when preparing or reviewing the Stage 2 observational-discrimination study (design, ratified thresholds, runtime fixes, and the first executed-run result).
+- Read `references/stage2b-design-baseline.md` when working on Stage 2b: the target-relative endpoint, the 2x2 factorial controls, the cluster bootstrap idiom, and the one open conflict in the design document about what H1's statistic is.
 - Read `sakshi notes/STAGE2_DISCRIMINATION_REPORT.md` for the full scientific write-up of the first Stage 2 execution (idea, hypothesis, methods, results, conclusion, discussion; decision was ambiguity).
 - Read `sakshi notes/INGOING_BRIEF_ARCHIMEDES_EVOSCIENTIST.md` to start an EvoScientist run on this study: it carries the exact task, the full study, the operational journey and lessons, runtime/invocation facts, a source index with commit ids, and acceptance gates.
 - Use `scripts/validate_observation.py` after downloading a sparse observation JSON (auto-detects the smoke-test and discrimination/v1 schemas).
@@ -245,3 +246,32 @@ Hosted notebooks are stateful documents and UI automation can misdirect input.
 - [ ] Canonical source identity rechecked
 - [ ] Observed facts, supported inferences, and unresolved interpretations separated
 - [ ] Remaining controls and gaps reported
+
+
+## Stage 2b modules
+
+`specs/001-jspace-stage2b/` holds the full specification. The testable logic lives
+in `scripts/`, not in the notebook, which is the change that makes any of it
+reachable by a test — Stage 2 put everything in one 18 KB cell, and that is why
+four declared-but-unconsumed quantities survived to an audit.
+
+| Module | Holds |
+|---|---|
+| `stage2b_preflight.py` | `PreflightError`, the constant registry and its three checks, tensor contracts, ratification, environment |
+| `stage2b_endpoint.py` | rank, NTA, the fit-broken map, wrong activation, layer allocation, paired differences, gates, decision composition, cluster bootstrap |
+| `stage2b_manifest.py` | manifest construction, canonical digesting, the held-out check |
+| `stage2b_stimuli.py` | the 200 held-out prompts |
+
+**None of the first three imports `torch`, `jlens`, or `scipy` at module scope**,
+which is what lets `uv run pytest tests/jspace` exercise them on a machine with no
+GPU. A subprocess test enforces it. `numpy` and `scipy` are dev-only dependencies
+and are imported inside the two functions that need them.
+
+Run `uv run pytest tests/jspace -q` to exercise every preflight failure code. The
+suite is written so each code has a test that makes it *fire*: a preflight suite
+that only proves valid configurations pass has not tested the preflight.
+
+**Execution remains unauthorized.** `THRESHOLDS_RATIFIED` is `False`, and
+`check_ratification` additionally refuses a signed ratification while any declared
+constant is still unset — so deferring a threshold to the pilot and signing off
+are mutually exclusive rather than merely discouraged.
