@@ -406,3 +406,93 @@ the main effect's scale rather than the simple effect's.
 Recorded as an open item in `project-state.md`. The implementation is written so
 switching costs one line: both quantities are computed; only the choice of which
 one `gate_record` receives would change.
+
+---
+
+## R10 — The design can pass while its own signature of a real instrument is absent
+
+**Finding from T051, the pre-implementation adversarial design cross-check.
+This blocks notebook authoring and needs Dr. Mani, not a code change.**
+
+`STAGE2B_DESIGN.md` §4 states the criterion plainly:
+
+> the signature of a real instrument is that breaking the map costs more when
+> the activation is correct. If breaking the map costs the same regardless of
+> whether the input is the right one, the map is not doing input-specific work.
+
+That quantity is the **interaction**. And the design then declines to gate it —
+§4 says it is "reported and interpreted but **not** a gate in this stage",
+because no pilot estimate exists and a third preregistered threshold on an
+unmeasured quantity would be guessing. `data-model.md` §4 and `compose_decision`
+implement exactly that.
+
+**The consequence**: Stage 2b can return `pass` — reproduction holds, H1's simple
+effect clears `SPEC_MIN_EFFECT` with an interval excluding zero, H2 holds — while
+the interaction is null, negative, or unresolved. Under the design's own words,
+that is a result in which *the map is not doing input-specific work*. The study
+would report a pass whose headline claim is the one thing it did not establish.
+
+This is Stage 2's defect in a new form, and specifically it is a **Principle IV
+violation at the design level**: a quantity the preregistration describes as
+decision-relevant — "the signature of a real instrument" — that no gate reads.
+The constant registry was built to make that impossible for constants and
+computed fields. It cannot catch it here, because the omission is in the decision
+rule itself.
+
+### Why deferring the threshold does not resolve it
+
+The reason for not gating the interaction is sound in isolation: Stage 2 set a
+margin without a pilot and then could not say whether its controls were
+inseparable or merely under-resolved at that value. Repeating that in a new unit
+would be the same mistake.
+
+But the fix for "no pilot estimate" is the Q6 pilot, which the design already
+proposes for `SPEC_MIN_EFFECT` and `NTA_MIN_DENOMINATOR`. There is no reason the
+interaction cannot join them. Leaving it ungated is not the conservative choice —
+it is the choice that lets a weaker result be reported under a stronger claim.
+
+### Three options, none of which I should pick
+
+1. **Gate the interaction**, with its threshold derived from the Q6 pilot
+   alongside the other two. Makes the pass mean what §4 says it means. Costs a
+   third preregistered constant and a stricter bar.
+2. **Narrow the pass claim.** Keep the interaction descriptive, and state in the
+   preregistration that a pass establishes the fitted map beats a spectrum-matched
+   broken map *at the correct activation* and asserts nothing about input-specific
+   work. Cheapest, and honest, but concedes the headline.
+3. **Make H1 conjunctive over the simple effect and a nonzero interaction**,
+   without a magnitude threshold on the latter — only that its interval excludes
+   zero. A middle path that needs no pilot estimate for the interaction.
+
+This is a decision about what H1 *means*, so it sits with Q3 and Q5 rather than
+with implementation. Recorded as open item 7.
+
+## R11 — Three smaller design gaps from the same review
+
+**`prompt_only` is operationally undefined.** It is the endpoint's floor and one
+of the two anchors that make FR-002's omission unrepresentable, but nothing in
+the spec tree says how the prompt-only logits are constructed. `nta()` simply
+accepts `s_prompt_only` from its caller. Stage 2's notebook had an
+`input_embedding_residual` helper; whether Stage 2b uses that, a zero-transport
+readout, or something else is unspecified. **The notebook cannot be authored
+without this** — it is the one input whose definition has no home.
+
+**The fit-broken map is narrower than the claim it supports.** `(QU)ΣVᵀ`
+preserves the fitted *input* basis `V` and Haar-rotates the *output* basis
+against a fixed unembedding. Beating it shows the fitted output orientation
+matters relative to a random one; it does not show that the full specific fit
+beats any layer-sized transport. A pass would not rule out generic
+residual-stream/LM-head coordinate alignment, nor another model-structured but
+unfitted operator. The design's secondary spectrum-matched Gaussian control
+(§4.1) destroys both bases and would speak to this — worth promoting from
+"reported alongside" to a named comparison.
+
+**The wrong activation controls magnitude but not content.**
+`select_wrong_activation` excludes the recipient and draws uniformly among the
+rest, matching norm only. A donor sharing the recipient's target or category can
+score well against the recipient's target, which inflates the wrong-activation
+fitted cell and attenuates the interaction. Since the wrong-activation cells do
+not gate, this contamination could survive an overall pass unnoticed — and it
+attacks precisely the quantity R10 is about. A cheap mitigation is to exclude
+donors whose own target token equals the recipient's, which is checkable at
+preflight from data the run already has.

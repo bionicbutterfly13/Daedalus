@@ -174,6 +174,40 @@ Docs-branch worktree: `/Volumes/Asylum/archimedes-wt-jspace`.
    to estimate the main effect's scale instead. Full argument in
    `specs/001-jspace-stage2b/research.md` R9.
 
+7. **Decide what a Stage 2b "pass" is allowed to claim.** *(Blocks the notebook.
+   Found by T051, the pre-implementation design cross-check.)*
+
+   `STAGE2B_DESIGN.md` §4 says "the signature of a real instrument is that
+   breaking the map costs more when the activation is correct" — that is the
+   **interaction**. The same section then declines to gate it, because no pilot
+   estimate exists and a third guessed threshold would repeat Stage 2's mistake.
+
+   So Stage 2b can return `pass` with the interaction null: a result in which,
+   by the design's own words, the map is not doing input-specific work. The
+   study would report a pass whose headline claim is the one thing it did not
+   establish. This is a Principle IV violation at the level of the decision rule
+   — a quantity the preregistration calls decision-relevant that no gate reads —
+   and the constant registry cannot catch it, because the omission is in the
+   rule itself rather than in a constant.
+
+   Three options, none of them mine: gate the interaction with a threshold from
+   the Q6 pilot; narrow the pass claim to "beats a spectrum-matched broken map
+   at the correct activation" and assert nothing about input-specificity; or
+   make H1 conjunctive over the simple effect plus an interaction interval
+   excluding zero, which needs no magnitude estimate. Full argument in
+   `research.md` R10.
+
+8. **`prompt_only` has no construction spec.** *(Also blocks the notebook.)* It
+   is one of the two anchors that make FR-002's omitted-baseline defect
+   unrepresentable, and nothing in the spec tree says how those logits are built.
+   `nta()` just accepts the value. Stage 2 had an `input_embedding_residual`
+   helper; whether Stage 2b uses that or something else is undecided. See
+   `research.md` R11, which also records two narrower gaps: the fit-broken map
+   rotates only the output basis so it supports a narrower claim than "any
+   layer-sized transport", and the wrong-activation control matches norm but not
+   target, so a donor sharing the recipient's target can attenuate the very
+   interaction item 7 is about.
+
 ## Runtime facts
 
 - **Verifying a branch in a git worktree against the shared editable install is
