@@ -24,7 +24,13 @@ __all__ = [
     "RANK_CONVENTION",
     "NTAExcluded",
     "allocate_wrong_layers",
+    "assemble_factorial_cells",
     "build_fit_broken_map",
+    "cluster_bootstrap_median",
+    "combine_per_layer",
+    "compose_decision",
+    "gate_record",
+    "jaccard_top_k",
     "nta",
     "paired_difference_by_cluster",
     "rank_score",
@@ -334,3 +340,275 @@ def paired_difference_by_cluster(
             continue
         paired[prompt] = value - other
     return paired
+
+
+# --------------------------------------------------------------------------
+# US2: non-redundancy, gate records, and decision composition.
+# --------------------------------------------------------------------------
+
+
+def jaccard_top_k(readout_a: Sequence[int], readout_b: Sequence[int], k: int) -> float:
+    """Top-k token overlap between two readouts.
+
+    Carried over from Stage 2's ``jaccard_top10`` so the H2 overlap clause stays
+    commensurable with the pilot.  Low overlap alone is a weak claim — it is
+    satisfied by a readout that is different *and useless* — which is why H2 also
+    requires a target-relative difference.  This clause only establishes that the
+    two readouts are not the same object.
+    """
+    if k < 1:
+        raise ValueError(f"k must be >= 1, got {k}")
+    top_a, top_b = set(readout_a[:k]), set(readout_b[:k])
+    union = top_a | top_b
+    if not union:
+        raise ValueError("both readouts are empty; Jaccard is undefined")
+    return len(top_a & top_b) / len(union)
+
+
+def gate_record(
+    name: str,
+    constant_name: str | None,
+    declared_value: Any,
+    statistic: float,
+    interval: Mapping[str, Any],
+    n_clusters: int,
+    exclusions: Sequence[Mapping[str, Any]] = (),
+    crosscheck: Mapping[str, Any] | None = None,
+    passes: bool | None = None,
+) -> dict[str, Any]:
+    """One gate's full record, per ``contracts/artifact-schema.md``.
+
+    ``outcome`` is ``pass`` | ``fail`` | ``undefined``.  A non-finite interval
+    bound yields **undefined, never fail**.
+
+    That distinction is the whole point.  BCa's acceleration term is estimated from
+    the skewness of leave-one-out replicates, and a median is discontinuous under
+    leave-one-out — with few clusters or many ties scipy returns NaN bounds and
+    emits ``DegenerateDataWarning``.  A NaN lower bound means *the interval could
+    not be computed*, which is a different result from *the interval included
+    zero*.  Collapsing them would let a degenerate bootstrap be reported as a
+    measured null, which is exactly the overstatement Principle V forbids.
+    """
+    low, high = interval.get("low"), interval.get("high")
+    finite = all(isinstance(v, (int, float)) and math.isfinite(v) for v in (low, high))
+
+    if not finite:
+        outcome = "undefined"
+    elif passes is None:
+        raise ValueError(
+            f"gate {name!r} has a finite interval but no pass/fail determination"
+        )
+    else:
+        outcome = "pass" if passes else "fail"
+
+    record: dict[str, Any] = {
+        "name": name,
+        "constant_name": constant_name,
+        "declared_value": declared_value,
+        "statistic": statistic,
+        "interval": dict(interval),
+        "n_clusters": n_clusters,
+        "exclusions": [dict(e) for e in exclusions],
+        "outcome": outcome,
+    }
+    if str(interval.get("method", "")).lower() == "bca":
+        if crosscheck is None:
+            raise ValueError(
+                f"gate {name!r} gates on a BCa interval but records no percentile "
+                "cross-check; a degenerate BCa would then be undetectable after "
+                "the fact"
+            )
+        record["interval_crosscheck"] = dict(crosscheck)
+    return record
+
+
+def combine_per_layer(name: str, per_layer: Mapping[int, Mapping[str, Any]]) -> str:
+    """Fold per-layer gate outcomes into one, conjunctively.
+
+    All comparisons are within layer, so a gate holds only if it holds at *every*
+    layer.  Any ``undefined`` layer makes the whole gate undefined rather than
+    failing: one immeasurable layer does not license a claim about the others, and
+    reporting it as a fail would be a measurement that was never made.
+    """
+    outcomes = [layer["outcome"] for layer in per_layer.values()]
+    if not outcomes:
+        raise ValueError(f"gate {name!r} has no per-layer results to combine")
+    if "undefined" in outcomes:
+        return "undefined"
+    return "pass" if all(o == "pass" for o in outcomes) else "fail"
+
+
+def assemble_factorial_cells(
+    correct_act_fitted_map: float | NTAExcluded,
+    correct_act_broken_map: float | NTAExcluded,
+    wrong_act_fitted_map: float | NTAExcluded,
+    wrong_act_broken_map: float | NTAExcluded,
+) -> dict[str, Any]:
+    """The 2x2 at one ``(prompt, layer)``, plus effects (FR-003).
+
+    ``simple_effect_of_map`` is H1's statistic per the decision-rule table: the
+    map contrast **at the correct activation only**.
+
+    ``main_effect_of_map`` averages that contrast with the one at the wrong
+    activation.  It is computed and reported, but it does **not** gate.  The design
+    document calls it H1 in §4 while §2 and §6 name the simple effect; the two
+    coincide only if the interaction is zero, and §4 itself predicts a nonzero one.
+    Gating on the diluted quantity would penalize the instrument using cells where
+    the design expects the effect to be weakest.  See research.md R9 — this is
+    flagged for ratification, and switching would change only which value reaches
+    ``gate_record``.
+
+    ``interaction`` is reported and interpreted but deliberately ungated: no pilot
+    estimate exists for it, and a third preregistered threshold on an unmeasured
+    quantity would be a guess.
+
+    Any excluded cell makes every effect that depends on it ``None`` rather than
+    zero.  An absent measurement is not a null effect.
+    """
+    cells = {
+        "correct_act_fitted_map": correct_act_fitted_map,
+        "correct_act_broken_map": correct_act_broken_map,
+        "wrong_act_fitted_map": wrong_act_fitted_map,
+        "wrong_act_broken_map": wrong_act_broken_map,
+    }
+
+    def diff(a: str, b: str) -> float | None:
+        x, y = cells[a], cells[b]
+        if isinstance(x, NTAExcluded) or isinstance(y, NTAExcluded):
+            return None
+        return x - y
+
+    simple = diff("correct_act_fitted_map", "correct_act_broken_map")
+    wrong_side = diff("wrong_act_fitted_map", "wrong_act_broken_map")
+    main = None if simple is None or wrong_side is None else (simple + wrong_side) / 2
+    interaction = None if simple is None or wrong_side is None else simple - wrong_side
+
+    return {
+        "cells": {
+            k: (None if isinstance(v, NTAExcluded) else v) for k, v in cells.items()
+        },
+        "excluded": [k for k, v in cells.items() if isinstance(v, NTAExcluded)],
+        "simple_effect_of_map": simple,  # H1 gates on this
+        "main_effect_of_map": main,  # descriptive only (R9)
+        "interaction": interaction,  # descriptive only, no pilot estimate
+    }
+
+
+def compose_decision(
+    gates: Mapping[str, str],
+    *,
+    pinned_identities_matched: bool = True,
+    capacity_ok: bool = True,
+) -> dict[str, Any]:
+    """Fold gate outcomes into ``pass`` | ``ambiguity`` | ``fail`` | ``kill``.
+
+    ``gates`` maps gate ID to its outcome string.  The kill conditions cannot be
+    derived from gate records alone — a pinned-identity mismatch and a capacity
+    failure are preflight outcomes with no gate of their own — so they arrive as
+    explicit keyword arguments rather than being silently assumed to hold.
+
+    An ``undefined`` gate never counts toward a pass.  H1 and H2 are each
+    conjunctive over their two clauses, so a single undefined clause is enough to
+    stop that hypothesis passing, and the reason is recorded in ``notes``.
+    """
+    notes: list[str] = []
+
+    if not pinned_identities_matched:
+        return {"result": "kill", "notes": "pinned identity mismatch"}
+    if not capacity_ok:
+        return {"result": "kill", "notes": "capacity gate failed"}
+    if gates.get("reproduction") != "pass":
+        return {
+            "result": "kill",
+            "notes": f"reproduction {gates.get('reproduction', 'missing')}",
+        }
+
+    def holds(*ids: str) -> bool:
+        for gate_id in ids:
+            outcome = gates.get(gate_id)
+            if outcome == "undefined":
+                notes.append(f"{gate_id} undefined")
+                return False
+            if outcome != "pass":
+                return False
+        return True
+
+    h1 = holds("h1_specificity", "h1_interval")
+    h2 = holds("h2_overlap", "h2_target")
+
+    if not holds("sanity_floor"):
+        return {
+            "result": "fail",
+            "notes": "; ".join([*notes, "sanity floor not cleared"]),
+        }
+
+    if h1 and h2:
+        result = "pass"
+    elif h1 or h2:
+        result = "ambiguity"
+        notes.append("H1 holds, H2 does not" if h1 else "H2 holds, H1 does not")
+    else:
+        result = "fail"
+
+    return {"result": result, "notes": "; ".join(notes)}
+
+
+def cluster_bootstrap_median(
+    cluster_values: Mapping[str, float],
+    level: float,
+    iterations: int,
+    seed: int,
+) -> dict[str, Any]:
+    """BCa interval on the median paired difference, resampling whole prompts.
+
+    ``cluster_values`` maps prompt digest -> that prompt's paired difference **at
+    one layer**.  The bootstrap runs once per layer; it never concatenates across
+    layers, which would pool depth into the gate — the same defect the design
+    forbids for absolute NTA, one level down and harder to see because each
+    individual difference is already within-layer.
+
+    scipy has no first-class cluster parameter.  Resampling an array of cluster
+    *indices* and looking each one up gives a genuine cluster bootstrap: whole
+    prompts enter or leave together, and BCa's jackknife leaves out one cluster at
+    a time rather than one observation.
+
+    Returns both the BCa interval and a percentile cross-check.  BCa's acceleration
+    term is unstable for a median under leave-one-out, so recording only the
+    interval that gated would leave a degenerate result undetectable afterwards.
+    ``scipy`` is imported here so the module still loads without it.
+    """
+    import numpy as np
+    from scipy.stats import bootstrap
+
+    if len(cluster_values) < 2:
+        raise ValueError("cluster bootstrap needs at least two clusters")
+
+    keys = sorted(cluster_values)
+    table = np.array([cluster_values[k] for k in keys], dtype=np.float64)
+    indices = np.arange(len(keys))
+
+    def statistic(idx: np.ndarray) -> float:
+        return float(np.median(table[idx.astype(int)]))
+
+    def interval_for(method: str) -> dict[str, Any]:
+        result = bootstrap(
+            (indices,),
+            statistic,
+            n_resamples=iterations,
+            confidence_level=level,
+            method=method,
+            rng=np.random.default_rng(seed),
+        )
+        return {
+            "method": method,
+            "level": level,
+            "low": float(result.confidence_interval.low),
+            "high": float(result.confidence_interval.high),
+        }
+
+    return {
+        "statistic": float(np.median(table)),
+        "n_clusters": len(keys),
+        "interval": interval_for("bca"),
+        "crosscheck": interval_for("percentile"),
+    }

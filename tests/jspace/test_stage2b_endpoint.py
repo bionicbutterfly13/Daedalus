@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import importlib.util
 import pathlib
+from typing import ClassVar
 
 import pytest
 
@@ -389,3 +390,285 @@ class TestPairedDifferenceByCluster:
             {f"p{i}": 0.5 for i in range(9)}, {f"p{i}": 0.1 for i in range(9)}
         )
         assert len(out) == 9
+
+
+class TestJaccardTopK:
+    def test_identical_rankings_score_one(self):
+        assert endpoint.jaccard_top_k([1, 2, 3], [1, 2, 3], 3) == 1.0
+
+    def test_disjoint_rankings_score_zero(self):
+        assert endpoint.jaccard_top_k([1, 2, 3], [4, 5, 6], 3) == 0.0
+
+    def test_partial_overlap(self):
+        assert endpoint.jaccard_top_k([1, 2, 3], [2, 3, 9], 3) == pytest.approx(2 / 4)
+
+    def test_only_the_top_k_are_compared(self):
+        assert endpoint.jaccard_top_k([1, 2, 99], [1, 2, 77], 2) == 1.0
+
+    def test_two_empty_readouts_raise_rather_than_returning_zero(self):
+        """0/0 is undefined; returning 0.0 would read as maximal disagreement."""
+        with pytest.raises(ValueError, match="undefined"):
+            endpoint.jaccard_top_k([], [], 3)
+
+
+class TestGateRecord:
+    @staticmethod
+    def _bca(low, high):
+        return {"method": "bca", "level": 0.99, "low": low, "high": high}
+
+    def test_finite_interval_and_passes_yields_pass(self):
+        rec = endpoint.gate_record(
+            "h1_specificity",
+            "SPEC_MIN_EFFECT",
+            0.1,
+            0.29,
+            self._bca(0.14, 0.44),
+            193,
+            crosscheck={"low": 0.15},
+            passes=True,
+        )
+        assert rec["outcome"] == "pass"
+
+    def test_finite_interval_including_zero_yields_fail(self):
+        rec = endpoint.gate_record(
+            "h1_interval",
+            "BOOTSTRAP_CI_LEVEL",
+            0.99,
+            0.02,
+            self._bca(-0.03, 0.07),
+            193,
+            crosscheck={"low": -0.02},
+            passes=False,
+        )
+        assert rec["outcome"] == "fail"
+
+    def test_nan_bound_yields_undefined_not_fail(self):
+        """An absent measurement and a measured null are different results.
+
+        BCa's acceleration term is unstable for a median under leave-one-out;
+        scipy returns NaN on a degenerate bootstrap. Reporting that as a fail
+        would let a failed computation be published as evidence of no effect.
+        """
+        rec = endpoint.gate_record(
+            "h1_interval",
+            "BOOTSTRAP_CI_LEVEL",
+            0.99,
+            0.02,
+            self._bca(float("nan"), 0.07),
+            193,
+            crosscheck={"low": 0.0},
+            passes=False,
+        )
+        assert rec["outcome"] == "undefined"
+
+    def test_infinite_bound_also_yields_undefined(self):
+        rec = endpoint.gate_record(
+            "h2_target",
+            None,
+            None,
+            0.1,
+            self._bca(float("-inf"), 0.4),
+            100,
+            crosscheck={"low": 0.0},
+            passes=True,
+        )
+        assert rec["outcome"] == "undefined"
+
+    def test_bca_without_a_crosscheck_is_refused(self):
+        """Recording only the interval that gated leaves a degenerate BCa
+        undetectable after the fact."""
+        with pytest.raises(ValueError, match="cross-check"):
+            endpoint.gate_record(
+                "h1_interval", None, None, 0.1, self._bca(0.1, 0.2), 10, passes=True
+            )
+
+    def test_finite_interval_without_a_verdict_is_refused(self):
+        with pytest.raises(ValueError, match="determination"):
+            endpoint.gate_record(
+                "g",
+                None,
+                None,
+                0.1,
+                {"method": "percentile", "low": 0.1, "high": 0.2},
+                10,
+            )
+
+    def test_exclusions_are_recorded_per_reason_not_as_a_total(self):
+        rec = endpoint.gate_record(
+            "h1_specificity",
+            None,
+            None,
+            0.3,
+            {"method": "percentile", "low": 0.1, "high": 0.5},
+            193,
+            exclusions=[{"reason": "denominator_below_min", "count": 7, "layer": 26}],
+            passes=True,
+        )
+        assert rec["exclusions"][0]["layer"] == 26
+
+
+class TestCombinePerLayer:
+    def test_all_layers_passing_passes(self):
+        assert (
+            endpoint.combine_per_layer(
+                "h1", {6: {"outcome": "pass"}, 13: {"outcome": "pass"}}
+            )
+            == "pass"
+        )
+
+    def test_one_failing_layer_fails_the_gate(self):
+        """Comparisons are within layer, so the gate is conjunctive over them."""
+        assert (
+            endpoint.combine_per_layer(
+                "h1", {6: {"outcome": "pass"}, 13: {"outcome": "fail"}}
+            )
+            == "fail"
+        )
+
+    def test_one_undefined_layer_makes_the_gate_undefined_not_failed(self):
+        """An immeasurable layer does not license a claim about the others."""
+        assert (
+            endpoint.combine_per_layer(
+                "h1", {6: {"outcome": "pass"}, 13: {"outcome": "undefined"}}
+            )
+            == "undefined"
+        )
+
+    def test_undefined_dominates_even_alongside_a_failure(self):
+        assert (
+            endpoint.combine_per_layer(
+                "h1", {6: {"outcome": "fail"}, 13: {"outcome": "undefined"}}
+            )
+            == "undefined"
+        )
+
+    def test_no_layers_raises(self):
+        with pytest.raises(ValueError, match="no per-layer"):
+            endpoint.combine_per_layer("h1", {})
+
+
+class TestAssembleFactorialCells:
+    def test_simple_effect_is_the_correct_activation_contrast(self):
+        """H1 gates on this per the decision-rule table (research.md R9)."""
+        out = endpoint.assemble_factorial_cells(0.8, 0.3, 0.2, 0.1)
+        assert out["simple_effect_of_map"] == pytest.approx(0.5)
+
+    def test_main_effect_averages_both_contrasts(self):
+        out = endpoint.assemble_factorial_cells(0.8, 0.3, 0.2, 0.1)
+        assert out["main_effect_of_map"] == pytest.approx((0.5 + 0.1) / 2)
+
+    def test_main_effect_is_smaller_when_the_expected_interaction_holds(self):
+        """The design predicts breaking the map costs more at the correct
+        activation. Under that prediction the main effect is diluted, which is
+        why H1 gates on the simple effect instead (R9)."""
+        out = endpoint.assemble_factorial_cells(0.8, 0.3, 0.2, 0.1)
+        assert out["main_effect_of_map"] < out["simple_effect_of_map"]
+        assert out["interaction"] > 0
+
+    def test_interaction_is_the_difference_of_contrasts(self):
+        out = endpoint.assemble_factorial_cells(0.8, 0.3, 0.2, 0.1)
+        assert out["interaction"] == pytest.approx(0.5 - 0.1)
+
+    def test_an_excluded_cell_makes_effects_none_not_zero(self):
+        """An absent measurement is not a null effect."""
+        out = endpoint.assemble_factorial_cells(
+            endpoint.NTAExcluded("denominator_below_min", 0.0), 0.3, 0.2, 0.1
+        )
+        assert out["simple_effect_of_map"] is None
+        assert out["main_effect_of_map"] is None
+        assert out["excluded"] == ["correct_act_fitted_map"]
+
+    def test_wrong_side_exclusion_leaves_the_simple_effect_intact(self):
+        out = endpoint.assemble_factorial_cells(
+            0.8, 0.3, endpoint.NTAExcluded("denominator_below_min", 0.0), 0.1
+        )
+        assert out["simple_effect_of_map"] == pytest.approx(0.5)
+        assert out["main_effect_of_map"] is None
+
+
+class TestComposeDecision:
+    BASE: ClassVar[dict] = {
+        "reproduction": "pass",
+        "h1_specificity": "pass",
+        "h1_interval": "pass",
+        "h2_overlap": "pass",
+        "h2_target": "pass",
+        "sanity_floor": "pass",
+    }
+
+    def test_everything_passing_is_a_pass(self):
+        assert endpoint.compose_decision(self.BASE)["result"] == "pass"
+
+    def test_exactly_one_hypothesis_is_ambiguity(self):
+        gates = {**self.BASE, "h2_overlap": "fail"}
+        assert endpoint.compose_decision(gates)["result"] == "ambiguity"
+
+    def test_neither_hypothesis_is_a_fail(self):
+        gates = {**self.BASE, "h1_specificity": "fail", "h2_overlap": "fail"}
+        assert endpoint.compose_decision(gates)["result"] == "fail"
+
+    def test_reproduction_failure_is_a_kill(self):
+        gates = {**self.BASE, "reproduction": "fail"}
+        assert endpoint.compose_decision(gates)["result"] == "kill"
+
+    def test_pinned_identity_mismatch_is_a_kill(self):
+        """Not derivable from gate records — it is a preflight outcome, which is
+        why it arrives as an explicit argument rather than being assumed."""
+        out = endpoint.compose_decision(self.BASE, pinned_identities_matched=False)
+        assert out["result"] == "kill"
+        assert "identity" in out["notes"]
+
+    def test_capacity_failure_is_a_kill(self):
+        assert (
+            endpoint.compose_decision(self.BASE, capacity_ok=False)["result"] == "kill"
+        )
+
+    def test_undefined_gate_never_counts_as_a_pass(self):
+        gates = {**self.BASE, "h1_interval": "undefined"}
+        out = endpoint.compose_decision(gates)
+        assert out["result"] == "ambiguity"
+        assert "h1_interval undefined" in out["notes"]
+
+    def test_both_hypotheses_undefined_is_a_fail_with_reasons(self):
+        gates = {**self.BASE, "h1_interval": "undefined", "h2_target": "undefined"}
+        out = endpoint.compose_decision(gates)
+        assert out["result"] == "fail"
+        assert "h1_interval undefined" in out["notes"]
+        assert "h2_target undefined" in out["notes"]
+
+    def test_sanity_floor_failure_fails_even_when_both_hypotheses_hold(self):
+        gates = {**self.BASE, "sanity_floor": "fail"}
+        out = endpoint.compose_decision(gates)
+        assert out["result"] == "fail"
+        assert "sanity floor" in out["notes"]
+
+    def test_h1_is_conjunctive_over_its_two_clauses(self):
+        gates = {**self.BASE, "h1_interval": "fail"}
+        assert endpoint.compose_decision(gates)["result"] == "ambiguity"
+
+
+class TestClusterBootstrapMedian:
+    def test_resamples_whole_clusters_and_returns_both_intervals(self):
+        pytest.importorskip("scipy")
+        values = {f"p{i:03d}": 0.5 + 0.01 * i for i in range(40)}
+        out = endpoint.cluster_bootstrap_median(
+            values, level=0.95, iterations=400, seed=1
+        )
+        assert out["n_clusters"] == 40
+        assert out["interval"]["method"] == "bca"
+        assert out["crosscheck"]["method"] == "percentile"
+        assert out["interval"]["low"] <= out["statistic"] <= out["interval"]["high"]
+
+    def test_is_deterministic_under_a_fixed_seed(self):
+        pytest.importorskip("scipy")
+        values = {f"p{i:03d}": float(i) for i in range(30)}
+        kw = {"level": 0.95, "iterations": 300, "seed": 7}
+        assert (
+            endpoint.cluster_bootstrap_median(values, **kw)["interval"]
+            == endpoint.cluster_bootstrap_median(values, **kw)["interval"]
+        )
+
+    def test_a_single_cluster_raises(self):
+        pytest.importorskip("scipy")
+        with pytest.raises(ValueError, match="at least two clusters"):
+            endpoint.cluster_bootstrap_median({"p1": 1.0}, 0.95, 100, 0)

@@ -138,6 +138,29 @@ Docs-branch worktree: `/Volumes/Asylum/archimedes-wt-jspace`.
    stands either way — but the provenance still slightly overstates what was
    tested.
 
+6. **Decide what H1's statistic is.** `STAGE2B_DESIGN.md` defines it two
+   incompatible ways. §2 and §6 (the decision-rule table) say the **simple paired
+   difference at the correct activation**, `NTA(jac) − NTA(fit_broken)`. §4 says
+   "Main effect of map — averaging over activation correctness… **This is H1**",
+   which averages that contrast with the one at the *wrong* activation.
+
+   They coincide only if the interaction is zero — and §4 predicts a nonzero one
+   ("breaking the map costs more when the activation is correct"). Under the
+   design's own expectation the main effect is therefore *smaller* than the simple
+   effect, so gating on it would dilute the signal using cells where the effect is
+   expected to be weakest.
+
+   **Implemented as the §2/§6 form** (two sections of three, and one of them is
+   the operative decision table); the main effect is computed and reported under
+   `descriptive` but does not gate. Switching costs one line — both quantities are
+   computed, only the choice of which reaches `gate_record` would change.
+
+   This is a scientific question about what H1 *means*, not an implementation
+   detail: if §4 is the intended reading, `SPEC_MIN_EFFECT` must be ratified
+   against a different quantity than the decision table names, and Q6's pilot has
+   to estimate the main effect's scale instead. Full argument in
+   `specs/001-jspace-stage2b/research.md` R9.
+
 ## Runtime facts
 
 - Stack: ccproxy `:8000`, langgraph `:6174`, WebUI `:4716`.

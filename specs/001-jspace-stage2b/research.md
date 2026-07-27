@@ -337,3 +337,72 @@ that failed the initial gate were verified against the pinned commit rather than
 deferred, and the one inference that could not be confirmed locally (R2, IPython
 not installed) was converted into a runtime assertion instead of being carried as
 an assumption.
+
+---
+
+## R9 — What H1's statistic actually is *(design-document conflict, resolved for implementation, flagged for ratification)*
+
+`STAGE2B_DESIGN.md` defines H1 two incompatible ways, and the difference is not
+cosmetic — it changes the number the gate reads.
+
+| Section | H1's statistic |
+|---|---|
+| §2, hypotheses | "the prompt-clustered median paired difference `NTA(jacobian) − NTA(fit_broken_same_layer)`" |
+| §6, decision rule table | "cluster-bootstrap median of `NTA(jac) − NTA(fit_broken)`" |
+| §4, factorial | "**Main effect of map** — averaging over activation correctness, does the fitted map beat the broken one? **This is H1.**" |
+
+§2 and §6 describe the **simple effect at the correct activation**: one paired
+difference per prompt between the top-left and top-right cells of the 2×2.
+
+§4 describes the **main effect of map**: the average of both map-broken contrasts,
+the one at the correct activation *and* the one at the wrong activation.
+
+### These coincide only when the interaction is zero
+
+```
+simple effect  = NTA(correct, fitted) − NTA(correct, broken)
+main effect    = ½[NTA(correct, fitted) − NTA(correct, broken)]
+               + ½[NTA(wrong,   fitted) − NTA(wrong,   broken)]
+```
+
+The design does not merely permit an interaction, it **predicts one**. §4: "the
+signature of a real instrument is that breaking the map costs more when the
+activation is correct." If that holds, the second bracket is smaller than the
+first, and the main effect is systematically *below* the simple effect.
+
+So gating H1 on the main effect would dilute the very quantity the study is trying
+to detect, using cells where the design expects the effect to be weakest. A real
+instrument would be measured against a threshold partly determined by how it
+behaves on activations it was never given. That is a worse test, and it would fail
+for a reason unrelated to the instrument's quality.
+
+### Decision for implementation
+
+**Gate on the §2/§6 form** — the simple paired difference at the correct
+activation. Reasons, in order:
+
+1. Two of three sections say it, and one of those is the decision-rule table,
+   which is the operative specification. §4's claim appears in a paragraph
+   explaining what the factorial *yields*, not in a gate definition.
+2. It is the form already carried into `spec.md`, `data-model.md` §4, and
+   `contracts/constant-registry.md`.
+3. The dilution argument above: under the design's own stated expectation, the
+   main effect is the weaker and less interpretable of the two.
+
+**Compute the main effect anyway and report it under `descriptive`**, alongside
+the interaction estimate. It is genuinely informative — a large main effect with
+no interaction would say something different about the instrument than a large
+simple effect with a strong interaction — and computing it costs nothing once the
+2×2 cells exist. It just does not gate.
+
+### Not resolved here
+
+Which definition Dr. Mani *intended* is his call, and it is a scientific question
+about what H1 means rather than an implementation detail. If §4 is the intended
+reading, `SPEC_MIN_EFFECT` will need to be ratified against a different quantity
+than the one the decision table names, and the pilot in Q6 would have to estimate
+the main effect's scale rather than the simple effect's.
+
+Recorded as an open item in `project-state.md`. The implementation is written so
+switching costs one line: both quantities are computed; only the choice of which
+one `gate_record` receives would change.

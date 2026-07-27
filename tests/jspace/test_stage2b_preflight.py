@@ -9,7 +9,9 @@ rather than on message text so the messages stay free to change.
 from __future__ import annotations
 
 import importlib.util
+import json
 import pathlib
+from typing import ClassVar
 
 import pytest
 
@@ -24,18 +26,37 @@ preflight = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(preflight)
 
 
-def test_module_imports_without_torch_jlens_or_scipy():
+@pytest.mark.parametrize("module_name", ["stage2b_preflight", "stage2b_endpoint"])
+def test_module_imports_without_torch_jlens_or_scipy(module_name):
     """The binding constraint from plan.md's Structure Decision.
 
-    If this ever fails, the whole preflight becomes untestable on any machine
-    without a GPU stack -- which is the exact condition that made Stage 2's
-    equivalent logic unreachable by any test.
+    If this ever fails, the modules become unusable on any machine without a GPU
+    stack -- the exact condition that made Stage 2's equivalent logic unreachable
+    by any test.
+
+    Checked in a *subprocess*, because asserting on this process's ``sys.modules``
+    would only measure whether some earlier test happened to import scipy. That
+    tests the test run, not the module.
     """
+    import subprocess
     import sys
 
-    assert "torch" not in sys.modules
-    assert "jlens" not in sys.modules
-    assert "scipy" not in sys.modules
+    source = (
+        "import importlib.util as u, sys, json;"
+        f"s=u.spec_from_file_location('m', {str(_MODULE_PATH.parent / (module_name + '.py'))!r});"
+        "m=u.module_from_spec(s); sys.modules['m']=m; s.loader.exec_module(m);"
+        "print(json.dumps([n for n in ('torch','jlens','scipy','numpy')"
+        " if n in sys.modules]))"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", source],
+        capture_output=True,
+        text=True,
+        check=True,
+        cwd=_MODULE_PATH.parent,
+    )
+    leaked = json.loads(result.stdout)
+    assert leaked == [], f"{module_name} imports {leaked} at module scope"
 
 
 class TestConstantRegistry:
@@ -248,3 +269,171 @@ class TestRegistryRecord:
             preflight.PREFLIGHT_CHECKS
         )
         assert set(record["endpoint_fns_declared"]) == set(preflight.ENDPOINT_FNS)
+
+
+class TestTensorContracts:
+    VALID: ClassVar[dict] = {
+        "residual_shape": (2048,),
+        "residual_dtype": "torch.float32",
+        "jacobian_shape": (2048, 2048),
+        "jacobian_dtype": "torch.float32",
+        "readout_device": "cpu",
+        "decode_parity_max_abs": 3.1e-6,
+        "decode_parity_tol": 1e-5,
+        "logit_softcapping": None,
+    }
+
+    def test_a_valid_configuration_passes(self):
+        preflight.check_tensor_contracts(self.VALID)
+
+    def test_lists_and_tuples_are_treated_alike(self):
+        """Shapes arrive from JSON as lists and from torch as tuples."""
+        preflight.check_tensor_contracts({**self.VALID, "residual_shape": [2048]})
+
+    def test_wrong_residual_dtype_is_rejected(self):
+        """Load-bearing, not hygiene: transport moves the Jacobian to the
+        residual's device but does not cast dtype, and Stage 2b bypasses
+        lens.apply for three of four cells, losing the .float() that path did."""
+        with pytest.raises(preflight.PreflightError) as exc:
+            preflight.check_tensor_contracts(
+                {**self.VALID, "residual_dtype": "torch.bfloat16"}
+            )
+        assert exc.value.code == "dtype_mismatch"
+
+    def test_wrong_readout_device_is_rejected(self):
+        with pytest.raises(preflight.PreflightError) as exc:
+            preflight.check_tensor_contracts({**self.VALID, "readout_device": "cuda:0"})
+        assert exc.value.code == "device_mismatch"
+
+    def test_wrong_residual_shape_is_rejected(self):
+        with pytest.raises(preflight.PreflightError) as exc:
+            preflight.check_tensor_contracts({**self.VALID, "residual_shape": (768,)})
+        assert exc.value.code == "shape_mismatch"
+
+    def test_wrong_jacobian_shape_is_rejected(self):
+        with pytest.raises(preflight.PreflightError) as exc:
+            preflight.check_tensor_contracts(
+                {**self.VALID, "jacobian_shape": (2048, 1024)}
+            )
+        assert exc.value.code == "shape_mismatch"
+
+    def test_decode_parity_beyond_tolerance_is_rejected(self):
+        with pytest.raises(preflight.PreflightError) as exc:
+            preflight.check_tensor_contracts(
+                {**self.VALID, "decode_parity_max_abs": 1e-2}
+            )
+        assert exc.value.code == "decode_parity"
+
+    def test_missing_decode_parity_is_rejected_rather_than_skipped(self):
+        """An unmeasured parity is not a passing parity."""
+        observed = {**self.VALID}
+        observed["decode_parity_max_abs"] = None
+        with pytest.raises(preflight.PreflightError) as exc:
+            preflight.check_tensor_contracts(observed)
+        assert exc.value.code == "decode_parity"
+
+    def test_active_softcapping_is_rejected(self):
+        """It would silently change every rank statistic."""
+        with pytest.raises(preflight.PreflightError) as exc:
+            preflight.check_tensor_contracts({**self.VALID, "logit_softcapping": 30.0})
+        assert exc.value.code == "unexpected_softcapping"
+
+
+class TestRatification:
+    def test_unratified_configuration_refuses(self):
+        """The shipped state. FR-013 and Q10."""
+        with pytest.raises(preflight.PreflightError) as exc:
+            preflight.check_ratification({"THRESHOLDS_RATIFIED": False})
+        assert exc.value.code == "not_ratified"
+
+    def test_missing_flag_is_treated_as_unratified(self):
+        with pytest.raises(preflight.PreflightError) as exc:
+            preflight.check_ratification({})
+        assert exc.value.code == "not_ratified"
+
+    def test_ratifying_with_an_unset_threshold_is_refused(self):
+        """Deferring a threshold and signing the ratification are mutually
+        exclusive. Stage 2 set a margin without a pilot and then could not say
+        whether its controls were inseparable or merely under-resolved."""
+        with pytest.raises(preflight.PreflightError) as exc:
+            preflight.check_ratification(
+                {"THRESHOLDS_RATIFIED": True}, preflight.INITIAL_REGISTRY
+            )
+        assert exc.value.code == "unset_constant"
+        assert exc.value.detail["constant"] in {
+            "SPEC_MIN_EFFECT",
+            "NTA_MIN_DENOMINATOR",
+        }
+
+    def test_ratifying_with_every_threshold_set_passes(self):
+        registry = {
+            name: {**entry, "declared_value": 0.1}
+            if entry["declared_value"] is None
+            else entry
+            for name, entry in preflight.INITIAL_REGISTRY.items()
+        }
+        preflight.check_ratification({"THRESHOLDS_RATIFIED": True}, registry)
+
+    def test_derived_fields_do_not_block_ratification(self):
+        """They have no declared value by nature; only constants must be set."""
+        registry = {"nta_jacobian": {"kind": "derived_field", "declared_value": None}}
+        preflight.check_ratification({"THRESHOLDS_RATIFIED": True}, registry)
+
+
+class TestEnvironment:
+    PINS: ClassVar[dict] = {
+        k: v["declared_value"] for k, v in preflight.INITIAL_REGISTRY.items()
+    }
+    VALID: ClassVar[dict] = {
+        "python_version": (3, 12, 1),
+        "cuda_available": True,
+        "vram_gib": 15.0,
+        "jlens_commit": PINS["JLENS_COMMIT"],
+        "model_id": PINS["MODEL_ID"],
+        "model_revision": PINS["MODEL_REVISION"],
+        "lens_repo": PINS["LENS_REPO"],
+        "lens_revision": PINS["LENS_REVISION"],
+        "lens_file": PINS["LENS_FILE"],
+        "expected_lens_sha256": PINS["EXPECTED_LENS_SHA256"],
+        "expected_model_d_model": PINS["EXPECTED_MODEL_D_MODEL"],
+        "expected_model_n_layers": PINS["EXPECTED_MODEL_N_LAYERS"],
+    }
+
+    def test_a_valid_environment_passes(self):
+        preflight.check_environment(self.VALID, self.PINS)
+
+    def test_old_python_is_rejected(self):
+        with pytest.raises(preflight.PreflightError) as exc:
+            preflight.check_environment(
+                {**self.VALID, "python_version": (3, 9, 0)}, self.PINS
+            )
+        assert exc.value.code == "python_version"
+
+    def test_no_cuda_is_rejected(self):
+        with pytest.raises(preflight.PreflightError) as exc:
+            preflight.check_environment(
+                {**self.VALID, "cuda_available": False}, self.PINS
+            )
+        assert exc.value.code == "no_cuda"
+
+    def test_insufficient_vram_is_rejected(self):
+        with pytest.raises(preflight.PreflightError) as exc:
+            preflight.check_environment({**self.VALID, "vram_gib": 8.0}, self.PINS)
+        assert exc.value.code == "insufficient_vram"
+
+    def test_wrong_jlens_commit_is_rejected(self):
+        """Read back from the installed package, not trusted from the install
+        line — that converts an inference into a measurement."""
+        with pytest.raises(preflight.PreflightError) as exc:
+            preflight.check_environment(
+                {**self.VALID, "jlens_commit": "deadbeef"}, self.PINS
+            )
+        assert exc.value.code == "jlens_commit"
+
+    @pytest.mark.parametrize(
+        "field", ["model_revision", "lens_revision", "expected_lens_sha256"]
+    )
+    def test_identity_mismatches_are_rejected(self, field):
+        with pytest.raises(preflight.PreflightError) as exc:
+            preflight.check_environment({**self.VALID, field: "wrong"}, self.PINS)
+        assert exc.value.code == "identity_mismatch"
