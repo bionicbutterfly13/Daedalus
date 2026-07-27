@@ -59,7 +59,7 @@ here, which does not.
 
 ---
 
-## `check_constant_registry(registry: dict, gates: dict) -> None`
+## `check_constant_registry(registry, gates, preflight_checks, endpoint_fns) -> None`
 
 The Principle IV mechanization. See
 [constant-registry.md](./constant-registry.md) for the full rules.
@@ -70,8 +70,9 @@ Three checks, all required:
    `PreflightError("orphaned_constant")`.
 2. Every constant name any gate reads appears in the registry → else
    `PreflightError("unregistered_constant")`.
-3. Every name in any `consumed_by` resolves to a declared consumer — a gate in the
-   inventory, or a `preflight:`-prefixed check in this file → else
+3. Every name in any `consumed_by` resolves to a declared consumer in its
+   namespace — a bare gate ID from the inventory, a `preflight:` check declared in
+   this file, or an `endpoint:` function → else
    `PreflightError("phantom_consumer")`.
 
 Check 1 alone would have caught Stage 2's `INFERENCE_SEEDS` but not a gate quietly
@@ -79,16 +80,23 @@ reading a value nobody declared. Neither 1 nor 2 catches an entry that names a
 consumer which was never built — and that case is worse than both, because it
 passes and then writes a `registry` block asserting the constant is consumed.
 
-`check_constant_registry` therefore takes the declared preflight check names
-alongside `gates`, so the `preflight:` namespace is resolvable rather than assumed:
+`check_constant_registry` therefore takes all three declared namespaces alongside
+`gates`, so every prefix is resolvable rather than assumed:
 
 ```python
-def check_constant_registry(registry, gates, preflight_checks) -> None: ...
+def check_constant_registry(registry, gates, preflight_checks, endpoint_fns) -> None: ...
 ```
+
+Names are matched **exactly**. No case folding, no whitespace normalization, no
+fuzzy match — a check that accepts `H1 specificity` for `h1_specificity` cannot
+tell a real linkage from a typo, which is the whole thing it is for.
 
 ---
 
-## `check_manifest(manifest: dict, stage2_digests: list[str]) -> None`
+## `check_manifest(manifest, stage2_digests, expected_digest) -> None`
+
+`expected_digest` is passed in, not read from `manifest`. The digest is of the
+manifest, so it cannot live inside it — see [../data-model.md](../data-model.md) §1.
 
 | Assertion | Code |
 |---|---|
@@ -100,7 +108,7 @@ def check_constant_registry(registry, gates, preflight_checks) -> None: ...
 | digest set ∩ `stage2_digests` is empty (FR-011) | `stage2_overlap` |
 | `STAGE1_PROMPT_SHA256` absent | `anchor_contamination` |
 | every `token_count <= MAX_PROMPT_TOKENS` | `prompt_too_long` |
-| recomputed manifest digest matches the recorded one | `manifest_digest` |
+| digest recomputed from the document equals `expected_digest` | `manifest_digest` |
 
 `stage2_overlap` and `anchor_contamination` are separate codes on purpose. Both are
 contamination, but the anchor case is expected-and-deliberate elsewhere in the

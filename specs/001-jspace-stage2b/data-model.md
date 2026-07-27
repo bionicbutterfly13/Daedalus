@@ -40,6 +40,16 @@ reading notebook source.
 `json.dumps(manifest_doc, sort_keys=True, indent=2, ensure_ascii=False) + "\n"`,
 matching Stage 2's canonicalization exactly so the two are comparable.
 
+**The digest is never stored inside the manifest.** A document cannot contain its
+own hash. It lives in exactly two places, both outside: the filename
+(`jspace-stage2b-stimulus-v1.json` is content-named at commit time only for
+humans; the authoritative copy is the artifact) and
+`aggregate.stimulus_manifest.sha256` in every observation artifact.
+`check_manifest` therefore takes the expected digest as an argument and compares it
+to the value recomputed from the document — it has no self-consistent field to
+check against, and asking it to find one is how a digest check quietly becomes a
+tautology.
+
 **Validation rules**
 
 - **Disjointness (FR-011)**: the set of per-prompt `sha256` values MUST be disjoint
@@ -140,14 +150,37 @@ A named decision. This is the entity FR-012 exists to make recomputable.
 
 **Gate inventory**
 
-| Gate | Statistic | Constant | Default |
-|---|---|---|---|
-| reproduction (kill) | anchor top-k identity, max abs logit diff | `STAGE1_RERUN_NOISE_MAX_ABS_LOGIT_DIFF` | `0.0` |
-| H1 specificity | cluster-bootstrap median `NTA(jac) − NTA(fit_broken)` | `SPEC_MIN_EFFECT` | **unset (Q5)** |
-| H1 interval | BCa lower bound above zero | `BOOTSTRAP_CI_LEVEL` | `0.99` |
-| H2 overlap | median top-10 Jaccard vs logit lens | `NONREDUNDANCY_MAX_JACCARD` | `0.70` |
-| H2 target | interval on `NTA(jac) − NTA(logit_lens)` excludes 0 | `BOOTSTRAP_CI_LEVEL` | `0.99` |
-| sanity floor | `NTA(jac) − NTA(random_vector)` excludes 0 | — | must hold |
+The `ID` column is canonical. It is what `consumed_by` entries in the registry
+resolve against, so these strings and those strings must match exactly.
+
+| ID | Gate | Statistic | Constant | Default |
+|---|---|---|---|---|
+| `reproduction` | Reproduction (kill) | anchor top-k identity, max abs logit diff | `STAGE1_RERUN_NOISE_MAX_ABS_LOGIT_DIFF` | `0.0` |
+| `h1_specificity` | H1 specificity | cluster-bootstrap median `NTA(jac) − NTA(fit_broken)`, **per layer** | `SPEC_MIN_EFFECT` | **unset (Q5)** |
+| `h1_interval` | H1 interval | BCa lower bound of that median above zero | `BOOTSTRAP_CI_LEVEL` | `0.99` |
+| `h2_overlap` | H2 non-redundancy, overlap | median top-10 Jaccard vs logit lens | `NONREDUNDANCY_MAX_JACCARD` | `0.70` |
+| `h2_target` | H2 non-redundancy, target | interval on `NTA(jac) − NTA(logit_lens)` excludes 0 | `BOOTSTRAP_CI_LEVEL` | `0.99` |
+| `sanity_floor` | Sanity floor | `NTA(jac) − NTA(random_vector)` excludes 0 | — | must hold |
+
+**H1 is two conjunctive clauses, not one.** `h1_specificity` requires the median
+paired difference to exceed `SPEC_MIN_EFFECT`; `h1_interval` requires the interval
+on that median to exclude zero. H1 passes only if both hold. This follows
+`STAGE2B_DESIGN.md` §2 and §6 — "the median paired difference is greater than
+`SPEC_MIN_EFFECT`, with a cluster-bootstrap confidence interval excluding zero."
+
+It is **not** the single criterion "the lower bound exceeds `SPEC_MIN_EFFECT`",
+which is strictly stronger and would fail cases the two-clause rule passes. spec.md
+Acceptance Scenario 2 under US1 originally stated the stronger form; it has been
+corrected to match the design. Whichever is intended, the important thing is that
+one rule is written in one place, because a decision rule that differs between the
+spec and the data model is a rule nobody can implement.
+
+**Per-layer, then combined.** Because all comparisons are within layer (§3), the
+gate statistic is computed per layer and the gate passes only if it holds at every
+layer in `SELECTED_LAYERS`. Concatenating every layer's paired differences into one
+pooled median would let a strong late layer carry the result — the same depth-
+pooling this design forbids for absolute NTA, reintroduced one level down. Pooled
+figures remain reportable under `descriptive`.
 
 Decision composition: **pass** = reproduction ∧ H1 ∧ H2(both clauses);
 **ambiguity** = reproduction ∧ exactly one of H1/H2; **fail** = reproduction ∧

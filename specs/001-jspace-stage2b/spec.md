@@ -72,8 +72,10 @@ verdict without any other story.
    fitted Jacobian and a same-layer fit-broken map are each applied to the same
    correct activation, **Then** the prompt-clustered median paired difference in
    normalized target attainment is reported with a bootstrap interval.
-2. **Given** that interval, **When** its lower bound exceeds `SPEC_MIN_EFFECT`,
-   **Then** H1 passes; when it includes zero, H1 fails. Either is a valid result.
+2. **Given** that interval, **When** the median paired difference exceeds
+   `SPEC_MIN_EFFECT` **and** the interval excludes zero, **Then** H1 passes; when
+   either clause fails, H1 fails. Either outcome is a valid result. Both clauses
+   are evaluated per layer, and H1 passes only if they hold at every layer.
 
 ### User Story 2 - Establish non-redundancy with teeth (Priority: P2)
 

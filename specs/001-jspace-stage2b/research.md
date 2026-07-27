@@ -18,8 +18,15 @@ about the exact code that would run, not about the library in general.
 
 `JacobianLens.jacobians` is a public attribute, `dict[int, torch.Tensor]`, mapping
 source layer to a dense `[d_model, d_model]` tensor
-(`jlens/lens.py:26-27`, `:40`). It is stored fp32 on CPU — `__init__` casts every
-incoming tensor with `.float()` regardless of the on-disk dtype. Allocation is
+(`jlens/lens.py:26-27`, `:40`). `__init__` casts every incoming tensor with
+`.float()` regardless of the on-disk dtype, so fp32 in memory is guaranteed.
+
+Device is CPU **in practice, not by construction**: `load()` uses
+`torch.load(..., map_location="cpu")` (`jlens/lens.py:66-79`) and nothing in
+`lens.py` or `fitting.py` moves the dict elsewhere, but `__init__` calls only
+`.float()`, never `.cpu()`. A `JacobianLens` constructed directly from CUDA tensors
+would hold CUDA tensors. Assert the device at preflight rather than relying on the
+load path. Allocation is
 explicitly dense (`torch.zeros(d_model, d_model, dtype=torch.float32)`,
 `jlens/fitting.py:149`, `:309`); nothing is factored, low-rank, or sparse.
 
@@ -116,8 +123,11 @@ chunks along the sequence dimension only (`jlens/vis.py:117`) and still calls
 gathering the target columns. That is a memory optimization, not an algorithmic
 one.
 
-For a single target token, the rank is a comparison count, which is O(V) time and
-O(1) extra memory instead of O(V log V) and a full rank buffer:
+For a single target token, the rank is a comparison count — O(V) time instead of
+O(V log V), and one boolean temporary instead of a full int64 rank buffer. It is
+**not** O(1) memory; `(logits > x)` materializes V bytes before the reduction. The
+saving is the sort and the `[chunk, vocab]` scatter buffer, which is what actually
+hurts at vocab 151936:
 
 ```python
 rank0 = (logits > logits[target_id]).sum(-1)   # 0-indexed, strict
@@ -213,15 +223,28 @@ is an undefined measurement and a different outcome from a measured null. Report
 the percentile interval alongside BCa as a cross-check, and record both in the
 artifact.
 
+**Statistic is per layer, not pooled.** The lookup table holds one prompt's paired
+differences *at a single layer*, and the bootstrap runs once per layer in
+`SELECTED_LAYERS`. Concatenating a prompt's differences across layers into one
+median would pool depth into the gate — the same defect the design forbids for
+absolute NTA, one level down, where it is harder to see because each individual
+difference is already within-layer. An earlier draft of this section described
+exactly that concatenation; it was wrong.
+
 **Environment note**: scipy is not a dependency of this repo (`uv.lock` has no
 scipy entry) and is not installed in `.venv`. It is a Colab-side dependency only.
-Consequence for the plan: **the endpoint module's tests must not import scipy.**
-Split the pure statistic (NTA, rank, denominator guard — testable in the repo
-suite) from the interval machinery (scipy, exercised only in Colab). If the
-bootstrap logic must be unit-tested, it needs a hand-rolled resampler over numpy,
-which would then need its own equivalence check against scipy. Defer that: the
-statistic is where the correctness risk lives, and the interval is where the
-library is doing standard work.
+Consequence for the plan: **the endpoint module must not import scipy at module
+scope** — import it inside `cluster_bootstrap_median` so the module still loads in
+a scipy-free environment.
+
+Its tests are written but guarded with `pytest.importorskip("scipy")` (T050), so
+they run wherever scipy exists and skip cleanly here. That is the resolution of an
+earlier contradiction in this document, which said to defer bootstrap tests
+entirely while tasks.md specified them: deferring the *implementation* was never
+the intent, and FR-006 has no other home. What is genuinely deferred is a
+hand-rolled numpy resampler, which would need its own equivalence check against
+scipy and buys nothing — the statistic is where the correctness risk lives, and the
+interval is where a well-tested library does standard work.
 
 ---
 

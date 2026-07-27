@@ -57,7 +57,7 @@ Jacobian transport would produce.
 
 `specs/001-jspace-stage2b/` — **Stage 2b, designed and planned, not authorized to
 run.** The spec is joined by `plan.md`, `research.md`, `data-model.md`,
-`contracts/`, `quickstart.md`, and a 51-task `tasks.md`. All 51 tasks produce
+`contracts/`, `quickstart.md`, and a 56-task `tasks.md`. All 56 tasks produce
 files; none runs a measurement.
 
 It fixes two structural defects that made Stage 2 unanswerable:

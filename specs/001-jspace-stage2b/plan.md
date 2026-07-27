@@ -98,7 +98,7 @@ iterations over prompts.
 
 *GATE: Must pass before Phase 0 research. Re-checked after Phase 1 design.*
 
-Gates derived from `.specify/memory/constitution.md` v1.0.0.
+Gates derived from `.specify/memory/constitution.md` v1.0.1.
 
 | Principle | Gate for this feature | Initial | Post-design |
 |---|---|---|---|

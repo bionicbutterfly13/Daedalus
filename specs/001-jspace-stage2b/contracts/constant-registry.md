@@ -74,17 +74,56 @@ prevent. Concretely, three entries below name preflight checks rather than gates
 without the referential check, a typo in any of them would be indistinguishable
 from a real linkage.
 
-**Consumer namespace.** `consumed_by` entries are resolved against two namespaces,
-and the entry must say which:
+**Consumer namespace.** `consumed_by` entries resolve against three namespaces, and
+the entry must say which. Every name is a snake_case identifier; **no wildcards, no
+prose, no display names** — `every nta_*` is not a consumer, and neither is
+`H1 specificity`.
 
 | Prefix | Resolves against | Example |
 |---|---|---|
-| *(none)* | the gate inventory in [../data-model.md](../data-model.md) §4 | `h1_specificity` |
-| `preflight:` | the check functions in [preflight-api.md](./preflight-api.md) | `preflight:decode_parity` |
+| *(none)* | the gate IDs in [../data-model.md](../data-model.md) §4 | `h1_specificity` |
+| `preflight:` | the check functions in [preflight-api.md](./preflight-api.md) | `preflight:tensor_contracts` |
+| `endpoint:` | the functions in [../plan.md](../plan.md)'s `stage2b_endpoint.py` | `endpoint:nta` |
 
 A constant consumed only by a preflight check is still consumed — it governs an
-abort, which is a decision. But it is not a scientific gate, and merging the two
+abort, which is a decision. But it is not a scientific gate, and merging the
 namespaces would let a preflight-only constant look like it gated a hypothesis.
+
+The `endpoint:` namespace exists because some constants govern *how a quantity is
+computed* rather than *whether a run proceeds*. `NTA_MIN_DENOMINATOR` is the case:
+it excludes cells inside `nta()`, during measurement. Filing it under `preflight:`
+would claim an abort that never happens.
+
+**Canonical IDs are the registry's, and every inventory must use them.** The gate
+table in data-model.md §4 carries an `ID` column for exactly this reason. A
+referential check cannot resolve `h1_specificity` against a table that calls it
+"H1 specificity", and a fuzzy match would defeat the purpose of the check.
+
+**The three inventories are declared here, not inferred.** Each namespace resolves
+against an explicit list, because a check that has to parse prose to learn what
+exists is not a check:
+
+```python
+GATES = (
+    "reproduction", "h1_specificity", "h1_interval",
+    "h2_overlap", "h2_target", "sanity_floor",
+)
+PREFLIGHT_CHECKS = (
+    "tensor_contracts", "constant_registry", "manifest",
+    "ratification", "environment",
+)
+ENDPOINT_FNS = (
+    "target_rank1", "nta", "verify_rank_parity", "build_fit_broken_map",
+    "transport_with", "select_wrong_activation", "allocate_wrong_layers",
+    "paired_difference_by_cluster", "jaccard_top_k", "gate_record",
+    "cluster_bootstrap_median", "assemble_factorial_cells", "compose_decision",
+)
+```
+
+These are the values `check_constant_registry` receives as `gates`,
+`preflight_checks`, and `endpoint_fns`. Adding a gate or a function means adding it
+here in the same change — which is the point, since the alternative is a registry
+whose consumers drift out from under it.
 
 ---
 
@@ -116,15 +155,36 @@ Q6 pilot, not forgotten.
 | `BOOTSTRAP_CI_LEVEL` | constant | `0.99` | `h1_interval`, `h2_target` |
 | `BOOTSTRAP_ITERATIONS` | constant | `10000` | `h1_interval`, `h2_target`, `sanity_floor` |
 | `NONREDUNDANCY_MAX_JACCARD` | constant | `0.70` | `h2_overlap` |
-| `NTA_MIN_DENOMINATOR` | constant | `None` *(Q6, pilot-derived)* | `preflight:denominator_guard` |
+| `NTA_MIN_DENOMINATOR` | constant | `None` *(Q6, pilot-derived)* | `endpoint:nta` |
 | `DECODE_PARITY_TOL` | constant | `1e-5` | `preflight:tensor_contracts` |
 | `THRESHOLDS_RATIFIED` | constant | `False` | `preflight:ratification` |
+| `BROKEN_MAP_SEED` | constant | `20260726` | `endpoint:build_fit_broken_map` |
+| `WRONG_LAYER_DISTANCES` | constant | `[3, 7, 14]` *(Q7)* | `endpoint:allocate_wrong_layers` |
+| `TOP_K` | constant | `10` | `h2_overlap`, `reproduction` |
+| `MAX_PROMPT_TOKENS` | constant | `128` | `preflight:manifest` |
+| `STAGE2B_N_PROMPTS` | constant | `200` *(Q1)* | `preflight:manifest` |
+| `STAGE2B_N_CATEGORIES` | constant | `5` *(Q1)* | `preflight:manifest` |
+| `STAGE1_PROMPT_SHA256` | constant | *(inherited)* | `preflight:manifest`, `reproduction` |
+| `STAGE2_MANIFEST_DIGESTS` | constant | *(fixture)* | `preflight:manifest` |
+| `MIN_VRAM_GIB` | constant | `14.0` | `preflight:environment` |
+| `JLENS_COMMIT` | constant | `581d398…` | `preflight:environment` |
+| `MODEL_ID`, `MODEL_REVISION` | constant | *(inherited pins)* | `preflight:environment` |
+| `LENS_REPO`, `LENS_REVISION`, `LENS_FILE`, `EXPECTED_LENS_SHA256` | constant | *(inherited pins)* | `preflight:environment` |
+| `EXPECTED_MODEL_D_MODEL`, `EXPECTED_MODEL_N_LAYERS` | constant | `2048`, `28` | `preflight:environment` |
+| `SELECTED_LAYERS`, `POSITIONS` | constant | `[6,13,20,26]`, `[-2]` *(Q2)* | `preflight:environment` |
 | `nta_jacobian` | derived_field | — | `h1_specificity`, `h2_target`, `sanity_floor` |
 | `nta_fit_broken_same_layer` | derived_field | — | `h1_specificity` |
 | `nta_logit_lens` | derived_field | — | `h2_target` |
 | `nta_random_vector` | derived_field | — | `sanity_floor` |
 | `jaccard_top10_jacobian_vs_logit_lens` | derived_field | — | `h2_overlap` |
-| `target_id` | derived_field | — | every `nta_*` |
+| `target_id` | derived_field | — | `endpoint:target_rank1` |
+
+Everything from `BROKEN_MAP_SEED` down to `SELECTED_LAYERS` was absent from the
+first draft of this table, which listed only the six decision thresholds. That was
+wrong under the reverse check: the preflight and endpoint code reads all of them,
+and a constant a check compares against but nobody declared is the worse of the two
+defects this registry exists to catch. Constants inherited unchanged from Stage 2
+are marked *(inherited)* and keep their Stage 2 values.
 
 Two constants carry `None`, and both are deliberate. `check_ratification` refuses to
 accept `THRESHOLDS_RATIFIED = True` while any registered constant's declared value

@@ -17,7 +17,7 @@ that only exercises happy paths. Test tasks precede the implementation they cove
 ## Phase 1: Setup
 
 - [ ] T001 Create the test package directory `tests/jspace/` with an empty `tests/jspace/__init__.py`, matching the layout of the existing subpackages under `tests/`
-- [ ] T002 [P] Record the Stage 2 per-prompt digest list as a fixture at `tests/jspace/fixtures/stage2_manifest_digests.json`, extracted from cell 14 of `jspace-study/jspace_colab_stage2_discrimination.ipynb`, for the FR-011 disjointness check
+- [ ] T002 [P] Record the Stage 2 per-prompt digest list as a fixture at `tests/jspace/fixtures/stage2_manifest_digests.json`, extracted from cell 14 of the **tracked** notebook `sakshi notes/jspace_colab_stage2_discrimination.ipynb`, for the FR-011 disjointness check. Do not source it from `jspace-study/` in the main tree — that copy is untracked and local to one machine, which would make the fixture unreproducible
 - [ ] T003 [P] Add `stage2b-design-baseline.md` to `EvoScientist/skills/jspace-research-operations/references/` summarizing the design and pointing at `specs/001-jspace-stage2b/`, alongside the existing `stage2-discrimination-baseline.md`
 
 ---
@@ -63,8 +63,8 @@ verifiable with fixed arrays and no model — Scenario 2 of [quickstart.md](./qu
 - [ ] T019 [P] [US1] Write tests asserting `paired_difference_by_cluster` pairs strictly within layer and returns one cluster per prompt, so a caller cannot accidentally treat `prompt × layer` cells as independent
 - [ ] T045 [US1] Implement `select_wrong_activation(residuals_by_prompt, exclude_prompt_sha256, layer, seed)` in `stage2b_endpoint.py` (FR-005): pick a real residual captured at the same layer from a *different* prompt in the same manifest, rescale it to the norm of the activation it replaces, and return it alongside its source prompt digest for `factorial.wrong_activation_source_prompt_sha256`. A random vector is explicitly not acceptable here — Stage 2 already showed a norm-matched random vector is easy to beat (fraction 1.00), and it is retained only as the sanity floor
 - [ ] T046 [P] [US1] Write tests in `tests/jspace/test_stage2b_endpoint.py` asserting `select_wrong_activation` never returns the excluded prompt's own residual, matches the target norm to within float tolerance, and is deterministic under a fixed seed
-- [ ] T047 [P] [US1] Implement `allocate_wrong_layers(selected_layers, distances, n_prompts, seed)` in `stage2b_endpoint.py` (FR-008, Q7 default `|Δ| ∈ {3, 7, 14}`): equal allocation across prompts, sign balanced where the layer index permits, returning the per-prompt band assignment so results can be reported per distance band. Stage 2 did not balance this, which is why its mismatched-probe fraction of 0.40 mixes near and far regimes and cannot be interpreted
-- [ ] T048 [P] [US1] Write tests asserting `allocate_wrong_layers` produces equal counts per band, balances sign where the layer index allows, and never assigns a wrong layer outside the model's layer range
+- [ ] T047 [P] [US1] Implement `allocate_wrong_layers(selected_layers, distances, n_prompts, seed)` in `stage2b_endpoint.py` (FR-008, `WRONG_LAYER_DISTANCES` default `[3, 7, 14]`): **near-equal** allocation across prompts, sign balanced where the layer index permits, returning the per-prompt band assignment so results can be reported per distance band. Exact balance is impossible — 200 prompts across 3 bands is 66.67 — so the rule is `floor(n/k)` per band with the remainder distributed to the lowest-indexed bands under the preregistered seed, and the realized counts recorded in the artifact. Stage 2 did not balance this at all, which is why its mismatched-probe fraction of 0.40 mixes near and far regimes and cannot be interpreted
+- [ ] T048 [P] [US1] Write tests asserting `allocate_wrong_layers` produces counts differing by at most 1 across bands (not exact equality — that is unsatisfiable at n=200, k=3), balances sign where the layer index allows, never assigns a wrong layer outside the model's layer range, and is deterministic under a fixed seed
 
 ---
 
@@ -84,7 +84,11 @@ arm.
 - [ ] T024 [P] [US2] Write tests asserting `gate_record` returns `undefined` for a NaN interval bound and `fail` for a finite interval that includes zero — the distinction is the point, so both cases need a test
 - [ ] T025 [US2] Document the cluster-bootstrap idiom in `EvoScientist/skills/jspace-research-operations/references/stage2b-design-baseline.md`: `scipy.stats.bootstrap` with `data=(cluster_ids,)` and a non-vectorized statistic closing over a per-prompt lookup table, so BCa's jackknife leaves out whole clusters (research.md R6)
 - [ ] T049 [US2] Implement `cluster_bootstrap_median(cluster_values, level, iterations)` in `stage2b_endpoint.py` (FR-006), with `scipy` imported **inside the function** rather than at module scope so the module still imports on a machine without it. Return both the BCa interval and the percentile cross-check that `contracts/artifact-schema.md` requires whenever the gating method is BCa. This is the resampler H1, H2-target, and the sanity floor all gate on; leaving it documented-only would put the most load-bearing statistic in the feature outside every task
-- [ ] T050 [P] [US2] Write tests in `tests/jspace/test_stage2b_endpoint.py` for `cluster_bootstrap_median`, skipped via `pytest.importorskip("scipy")` so the suite stays green in this repo's scipy-free environment: assert whole clusters enter or leave together (a cluster's observations are never split across a resample), and that a degenerate input yielding NaN bounds propagates as non-finite rather than being silently coerced
+- [ ] T050 [P] [US2] Write tests in `tests/jspace/test_stage2b_endpoint.py` for `cluster_bootstrap_median`, skipped via `pytest.importorskip("scipy")` so the suite stays green in this repo's scipy-free environment: assert whole clusters enter or leave together (a cluster's observations are never split across a resample), that the statistic is computed within a single layer rather than over a concatenation of all layers, and that a degenerate input yielding NaN bounds propagates as non-finite rather than being silently coerced
+- [ ] T053 [US2] Implement `compose_decision(gate_records)` in `stage2b_endpoint.py` returning `pass` | `ambiguity` | `fail` | `kill` per [../data-model.md](./data-model.md) §4 (FR-007): pass = reproduction ∧ H1 ∧ H2(both clauses); ambiguity = reproduction ∧ exactly one of H1/H2; fail = reproduction ∧ neither, or sanity floor not cleared; kill = reproduction fails or any pinned identity mismatches. H1 is itself conjunctive over `h1_specificity` and `h1_interval`, evaluated per layer
+- [ ] T054 [P] [US2] Write tests for `compose_decision` covering all four outcomes plus the two rules easiest to get wrong: a gate with `outcome = "undefined"` must never be counted as a pass, and H1 passing at three of four layers must not count as H1 passing
+- [ ] T055 [US2] Implement `assemble_factorial_cells(...)` in `stage2b_endpoint.py` (FR-003) producing the four named 2×2 cells per `(prompt, layer)` from the fitted map, the broken map, the correct activation, and the wrong activation, plus the main effects and the interaction estimate. The interaction is computed and reported but is **not** a gate — no pilot estimate exists for it, and a third preregistered threshold on an unmeasured quantity would be a guess
+- [ ] T056 [P] [US2] Write tests asserting `assemble_factorial_cells` emits exactly the four cells with the naming from `contracts/artifact-schema.md`, and that the interaction estimate never reaches `compose_decision`
 
 ---
 
@@ -114,12 +118,12 @@ GPU and no measurement — Scenario 1 of [quickstart.md](./quickstart.md).
 not on `main` (plan.md, Branch dependency). Every task above is unblocked; these are
 not.
 
-- [ ] T035 Author `sakshi notes/jspace_colab_stage2b_discrimination.ipynb` as a shell over the tested modules: boundaries header, pinned identities, constant declarations, install, environment preflight, module import by path, measurement loop, artifact export. Do not reproduce Stage 2's single 18 KB measurement cell — it is the direct cause of four declared-but-unconsumed quantities surviving to an audit
+- [ ] T035 **After T051 completes.** Author `sakshi notes/jspace_colab_stage2b_discrimination.ipynb` as a shell over the tested modules: boundaries header, pinned identities, constant declarations, install, environment preflight, module import by path, measurement loop, artifact export. Do not reproduce Stage 2's single 18 KB measurement cell — it is the direct cause of four declared-but-unconsumed quantities surviving to an audit
 - [ ] T036 [P] Ship the notebook with `THRESHOLDS_RATIFIED = False` and a guard that raises before the measurement loop (FR-013). This is the boundary between this feature and execution
 - [ ] T037 Replace Stage 2's five-name transport probe (cell 12) with direct assertions on `lens.jacobians[layer]` and `lens.transport`, both confirmed present at the pinned commit (research.md R1, R3). A probe that accepts whichever of five names resolves cannot be audited against a pin
 - [ ] T038 Resolve Stage 2's three loose constants in the notebook's declarations: `SAME_RUNTIME_REPEATS`, `INFERENCE_SEEDS`, `RANDOM_VECTOR_SEEDS`. Each must either drive the loop that bears its name and be registered, or be deleted (research.md R8). Carrying them forward as declarations that happen to match hardcoded behaviour is exactly what the registry exists to stop
 - [ ] T039 [P] Generate `sakshi notes/jspace-stage2b-stimulus-v1.json` — 200 held-out prompts, 5 categories of 40, disjoint from Stage 2 by digest, Stage 1 anchor excluded, every `token_count <= 128`
-- [ ] T052 Commit the notebook with `git add -f`. `.gitignore:57` ignores `*.ipynb` repo-wide, so a plain `git add` silently skips it and the commit looks clean while the deliverable is missing. Stage 2's notebook is tracked on the docs branch only because it was force-added the same way. After committing, verify with `git ls-files "sakshi notes/*.ipynb"` rather than trusting a green `git status`
+- [ ] T052 When the notebook is committed — on request, per the constitution's "commit only when asked" — it must be staged with `git add -f`. `.gitignore:57` ignores `*.ipynb` repo-wide, so a plain `git add` silently skips it and the commit looks clean while the deliverable is missing. Stage 2's notebook is tracked on the docs branch only because it was force-added the same way. Verify with `git ls-files "sakshi notes/*.ipynb"`, not a green `git status`. This task records *how* to stage it, not an instruction to commit
 - [ ] T040 Wire the aggregate artifact export to include `registry`, `disjointness`, `gates`, `descriptive`, and `decision` as separate blocks per [contracts/artifact-schema.md](./contracts/artifact-schema.md). Keeping `descriptive` a sibling of `gates` is deliberate: the 2×2 interaction is reported but not gated, and the structure should make that impossible to misread
 
 ---
@@ -137,24 +141,42 @@ not.
 ## Dependencies
 
 ```text
-Phase 1 Setup
-    └─> Phase 2 Foundational  (PreflightError, registry, rank, NTA)
-            ├─> Phase 3 US1 (P1)  ─┐
-            ├─> Phase 4 US2 (P2)  ─┼─> Phase 7 Polish
-            └─> Phase 5 US3 (P3)  ─┘
-                     │
-                     └─> Phase 6 Notebook  [BLOCKED on PR #2]
+PR #2 merged  [gates everything below]
+    └─> Phase 1 Setup
+            └─> Phase 2 Foundational  (PreflightError, registry, rank, NTA)
+                    ├─> Phase 3 US1 (P1)  ─┐
+                    ├─> Phase 4 US2 (P2)  ─┼─> T051 Codex cross-check ─> Phase 6 Notebook
+                    └─> Phase 5 US3 (P3)  ─┘                             │
+                                                                         v
+                                                              Phase 7 remaining polish
 ```
+
+**PR #2 gates the whole feature, not just Phase 6.** Verified:
+`git ls-tree main -- EvoScientist/skills/jspace-research-operations` is empty, as is
+`git ls-tree main -- jspace-study`. Neither the skill directory that every module
+task writes into nor the Stage 2 notebook that T002 reads exists on `main` — both
+live only on `docs/jspace-research-operations`. An earlier draft of this section
+claimed only Phase 6 was blocked; that was wrong, and it was wrong in the direction
+that would have been discovered by a failing path halfway through Phase 2.
+
+Work therefore branches from `docs/jspace-research-operations`, or from `main`
+after PR #2 merges. PRs #5 and #6 remain genuinely unrelated.
+
+**T002's source must be the tracked copy.** `jspace-study/…ipynb` in the main tree
+is untracked and exists only on this machine; read the digests from
+`sakshi notes/jspace_colab_stage2_discrimination.ipynb` on the docs branch instead,
+or the fixture is unreproducible for anyone else.
+
+**T051 runs before Phase 6, not after.** It is numbered into Phase 7 for grouping,
+but the constitution requires the adversarial cross-check happen *before*
+implementing — cross-checking the endpoint design after the notebook is written
+inspects a decision already made. It is an explicit prerequisite of T035.
 
 **Story independence**: US1, US2, and US3 touch different functions and can proceed
 in parallel once Phase 2 lands. US3 is ranked P3 because it produces no scientific
-result by itself, but note the ordering subtlety — US3's preflight is a *quality
-gate on the run*, not a prerequisite for authoring US1 and US2. Nothing in US1 or
-US2 imports it.
-
-**The one hard external dependency** is PR #2 for Phase 6 only. spec.md records
-"Dependencies: none blocking" with respect to PRs #5 and #6, which stands; PR #2 is
-a different matter, because `sakshi notes/` does not exist on `main`.
+result by itself, but the ordering subtlety is worth stating — US3's preflight is a
+*quality gate on the run*, not a prerequisite for authoring US1 and US2. Nothing in
+US1 or US2 imports it.
 
 ---
 
@@ -162,14 +184,21 @@ a different matter, because `sakshi notes/` does not exist on `main`.
 
 > **Numbering note**: T045–T051 were added by `/speckit-analyze` to close coverage
 > gaps on FR-005, FR-006, FR-008, and the constitution's adversarial-review
-> obligation. They are placed in the phase where they execute, not at the end.
-> Execution order is given by this section and by Dependencies above, not by ID.
+> obligation. T053–T056 were added after a Codex review found FR-003, FR-007, and
+> the final decision composition had no covering task at all. Tasks sit in the
+> phase where they execute, not at the end; execution order comes from this
+> section and Dependencies above, never from ID order.
 
 Within Phase 2, after T004: T005, T007, T008, T009 are independent.
 
 Within Phase 3, after T011: T012, T013, T016, T019, T046, T047, T048 are
 independent; T014, T015, T017, T018, T045 all touch `stage2b_endpoint.py` and
 should be serialized against each other.
+
+Within Phase 4: T021, T024, T050, T054, T056 are test-only and independent. T020,
+T022, T023, T049, T053, T055 all write `stage2b_endpoint.py` and must serialize.
+T053 (`compose_decision`) depends on T022/T023 (`gate_record`), since it consumes
+gate records — including the `undefined` outcome it must never count as a pass.
 
 Across phases, after Phase 2: one agent per user story is a clean split — US1 in
 `stage2b_endpoint.py` + `test_stage2b_endpoint.py`, US3 in `stage2b_preflight.py` +
