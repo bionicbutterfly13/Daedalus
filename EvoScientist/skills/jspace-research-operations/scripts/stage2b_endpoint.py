@@ -114,6 +114,11 @@ def rank_score(rank: int, vocab_size: int) -> float:
         raise ValueError(f"rank must be 1-indexed and >= 1, got {rank}")
     if vocab_size < 2:
         raise ValueError(f"vocab_size must be >= 2, got {vocab_size}")
+    if rank > vocab_size:
+        raise ValueError(
+            f"rank {rank} exceeds vocab_size {vocab_size}; the claimed [-1, 0] "
+            "bound would not hold"
+        )
     return -math.log(rank) / math.log(vocab_size)
 
 
@@ -157,7 +162,16 @@ def verify_rank_parity(logits: Sequence[float], target_id: int) -> bool:
     installed, so the naive sort stands in.
     """
     order = sorted(range(len(logits)), key=lambda i: logits[i], reverse=True)
-    return target_rank1(logits, target_id) == order.index(target_id) + 1
+    # Apply the preregistered best-rank-among-ties convention to the reference
+    # too: take the FIRST position holding the target's logit value, not the
+    # target's own position. A stable sort gives tied tokens distinct positions,
+    # so comparing against those would report a parity failure on every tie --
+    # a disagreement about convention, not about the statistic.
+    target_logit = logits[target_id]
+    reference = (
+        next(i for i, token in enumerate(order) if logits[token] == target_logit) + 1
+    )
+    return target_rank1(logits, target_id) == reference
 
 
 def build_fit_broken_map(jacobian: Any, seed: int) -> Any:
@@ -191,11 +205,14 @@ def build_fit_broken_map(jacobian: Any, seed: int) -> Any:
     u, s, vt = np.linalg.svd(j, full_matrices=False)
 
     rng = np.random.default_rng(seed)
-    gaussian = rng.standard_normal((u.shape[0], u.shape[0]))
+    # Match the Jacobian's dtype. Defaulting to float64 would silently return a
+    # float64 control map for a float32 Jacobian, breaking the float32 contract
+    # the study asserts at preflight.
+    gaussian = rng.standard_normal((u.shape[0], u.shape[0])).astype(j.dtype)
     q, r = np.linalg.qr(gaussian)
     q = q * np.sign(np.diag(r))  # Mezzadri correction; without it Q is not Haar
 
-    return (q @ u) * s @ vt
+    return ((q @ u) * s @ vt).astype(j.dtype)
 
 
 def transport_with(residual: Any, jacobian: Any) -> Any:
@@ -236,8 +253,16 @@ def select_wrong_activation(
             "the manifest must hold at least two prompts at this layer"
         )
 
-    rng = np.random.default_rng(seed)
-    source = candidates[int(rng.integers(len(candidates)))]
+    # Derive a per-prompt seed. A bare default_rng(seed) reset on every call
+    # returns the same draw each time, so calling this once per prompt with one
+    # preregistered seed would concentrate every wrong activation on one or two
+    # donors -- reproducible, and useless as a control.
+    # Use the WHOLE digest, not a prefix. A prefix collides whenever digests
+    # share leading characters, and a collision here silently returns the same
+    # donor for different prompts -- the concentration this derivation exists to
+    # prevent, reintroduced quietly.
+    per_prompt = np.random.default_rng([seed, int(exclude_prompt_sha256, 16)])
+    source = candidates[int(per_prompt.integers(len(candidates)))]
 
     donor = np.asarray(residuals_by_prompt[source], dtype=np.float64)
     target = np.asarray(residuals_by_prompt[exclude_prompt_sha256], dtype=np.float64)
@@ -246,8 +271,14 @@ def select_wrong_activation(
     if donor_norm == 0.0:
         raise ValueError(f"donor residual for {source!r} has zero norm")
 
-    rescaled = donor * (float(np.linalg.norm(target)) / donor_norm)
-    return rescaled, source
+    target_norm = float(np.linalg.norm(target))
+    if target_norm == 0.0:
+        raise ValueError(
+            f"target residual for {exclude_prompt_sha256!r} has zero norm; "
+            "rescaling to it would produce a zero vector with no donor direction"
+        )
+
+    return donor * (target_norm / donor_norm), source
 
 
 def allocate_wrong_layers(
@@ -291,11 +322,23 @@ def allocate_wrong_layers(
     rng = np.random.default_rng(seed)
     rng.shuffle(bands)
 
-    assignments: list[dict[str, int]] = []
+    # Sign is balanced within each (correct_layer, distance) cell, not by
+    # positional parity. Deriving it from `index` couples direction to layer:
+    # with four loci and two options, index % 4 determines index % 2, so every
+    # eligible cell came out entirely one direction (verified: layer 6 / distance
+    # 3 gave 18 up and 0 down). That confounds direction with layer, which is the
+    # exact confound this control exists to remove.
+    cells: dict[tuple[int, int], list[int]] = {}
+    plan: list[tuple[int, int]] = []
     for index, distance in enumerate(bands):
         correct = selected_layers[index % len(selected_layers)]
+        plan.append((correct, distance))
+        cells.setdefault((correct, distance), []).append(index)
+
+    signs: dict[int, int] = {}
+    for (correct, distance), members in cells.items():
         options = [
-            correct + delta
+            delta
             for delta in (distance, -distance)
             if 0 <= correct + delta < n_layers_total
         ]
@@ -304,11 +347,21 @@ def allocate_wrong_layers(
                 f"distance {distance} does not fit around layer {correct} "
                 f"within [0, {n_layers_total})"
             )
-        # Balance sign deterministically rather than by draw, so the realized
-        # up/down split does not depend on how the shuffle happened to land.
-        wrong = options[index % len(options)]
+        # Alternate through the eligible directions so each cell splits as evenly
+        # as its membership allows, then rotate the starting direction by cell so
+        # an odd remainder does not always favour the same sign.
+        offset = (correct + distance) % len(options)
+        for position, member in enumerate(members):
+            signs[member] = options[(position + offset) % len(options)]
+
+    assignments: list[dict[str, int]] = []
+    for index, (correct, distance) in enumerate(plan):
         assignments.append(
-            {"correct_layer": correct, "wrong_layer": wrong, "distance": distance}
+            {
+                "correct_layer": correct,
+                "wrong_layer": correct + signs[index],
+                "distance": distance,
+            }
         )
     return assignments
 

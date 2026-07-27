@@ -71,6 +71,18 @@ class TestRankConvention:
             logits, target_id
         )
 
+    def test_parity_agrees_with_the_tie_convention(self):
+        """The reference must honour best-rank-among-ties too.
+
+        A stable sort gives tied tokens distinct positions, so comparing against
+        those reported a parity failure on every tie — a disagreement about
+        convention, not about the statistic.
+        """
+        logits = [5.0, 5.0, 1.0]
+        assert endpoint.target_rank1(logits, 1) == 1
+        assert endpoint.verify_rank_parity(logits, 1) is True
+        assert endpoint.verify_rank_parity(logits, 0) is True
+
     def test_convention_is_recorded_for_the_artifact(self):
         assert endpoint.RANK_CONVENTION == "strict_gt_1indexed"
 
@@ -85,6 +97,12 @@ class TestRankScore:
     def test_score_is_monotone_decreasing_in_rank(self):
         scores = [endpoint.rank_score(r, 1000) for r in (1, 2, 10, 100, 1000)]
         assert scores == sorted(scores, reverse=True)
+
+    def test_rank_beyond_the_vocabulary_raises(self):
+        """Otherwise the claimed [-1, 0] bound silently does not hold:
+        rank_score(11, 10) returned -1.04."""
+        with pytest.raises(ValueError, match="exceeds vocab_size"):
+            endpoint.rank_score(11, 10)
 
     def test_zero_or_negative_rank_raises(self):
         """Guards the ``log(0)`` that a 0-indexed rank would produce."""
@@ -223,22 +241,56 @@ class TestFitBrokenMap:
         with pytest.raises(ValueError, match="square"):
             endpoint.build_fit_broken_map(np.zeros((3, 5)), seed=0)
 
-    def test_rotation_is_haar_not_merely_orthogonal(self):
-        """The Mezzadri sign correction, tested by its observable consequence.
+    def test_mezzadri_correction_scales_columns_not_rows(self):
+        """Tested directly, because no statistic on the diagonal can tell them apart.
 
-        Raw ``qr`` on a Gaussian gives an orthogonal Q, but not a Haar-uniform
-        one: LAPACK fixes no sign convention on R's diagonal, which biases the
-        first row's sign distribution.  Under Haar measure that sign is a fair
-        coin.  Without the correction this test fails hard.
+        For ``J = I`` the SVD is ``U = Vt = I`` and ``S = 1``, so the function
+        returns Q itself — which makes the correction checkable exactly rather
+        than statistically. That matters: a review showed a diagonal-sign test
+        passes identically under correct column scaling and wrong row scaling,
+        because ``q[i, i]`` picks up ``sign[i]`` either way. The off-diagonal is
+        where they differ.
         """
         np = pytest.importorskip("numpy")
-        identity = np.eye(4)
-        signs = [
-            np.sign(endpoint.build_fit_broken_map(identity, seed=s)[0, 0])
-            for s in range(120)
-        ]
-        positive = sum(1 for x in signs if x > 0)
-        assert 35 < positive < 85, f"first-element sign is biased: {positive}/120"
+        n, seed = 5, 20260726
+        returned = endpoint.build_fit_broken_map(np.eye(n), seed=seed)
+
+        rng = np.random.default_rng(seed)
+        gaussian = rng.standard_normal((n, n)).astype(np.float64)
+        q, r = np.linalg.qr(gaussian)
+        column_scaled = q * np.sign(np.diag(r))
+        row_scaled = (q.T * np.sign(np.diag(r))).T
+
+        np.testing.assert_allclose(returned, column_scaled, atol=1e-12)
+        assert not np.allclose(returned, row_scaled), (
+            "column and row scaling coincide for this seed; pick another"
+        )
+
+    def test_correction_makes_the_r_diagonal_positive(self):
+        """The mathematical content of the Mezzadri fix: LAPACK fixes no sign
+        convention on R's diagonal, and Q is Haar only once that is pinned."""
+        np = pytest.importorskip("numpy")
+        n, seed = 5, 7
+        q_corrected = endpoint.build_fit_broken_map(np.eye(n), seed=seed)
+        rng = np.random.default_rng(seed)
+        gaussian = rng.standard_normal((n, n)).astype(np.float64)
+        r_corrected = q_corrected.T @ gaussian
+        assert np.all(np.diag(r_corrected) > 0)
+
+    def test_uncorrected_qr_would_fail_the_positivity_property(self):
+        """Proves the property above is not vacuous."""
+        np = pytest.importorskip("numpy")
+        rng = np.random.default_rng(7)
+        gaussian = rng.standard_normal((5, 5))
+        q, _ = np.linalg.qr(gaussian)
+        assert not np.all(np.diag(q.T @ gaussian) > 0)
+
+    def test_dtype_is_preserved(self):
+        """A float64 control map for a float32 Jacobian would break the float32
+        contract the study asserts at preflight."""
+        np = pytest.importorskip("numpy")
+        j = np.eye(4, dtype=np.float32)
+        assert endpoint.build_fit_broken_map(j, seed=0).dtype == np.float32
 
 
 class TestTransportWith:
@@ -289,11 +341,40 @@ class TestSelectWrongActivation:
         np.testing.assert_allclose(wrong / np.linalg.norm(wrong), donor_unit)
 
     def test_is_deterministic_under_a_fixed_seed(self):
-        _np, residuals = self._residuals()
-        assert (
-            endpoint.select_wrong_activation(residuals, "aaa", seed=7)[1]
-            == endpoint.select_wrong_activation(residuals, "aaa", seed=7)[1]
-        )
+        """Compares the returned activation, not only the donor id — the vector
+        is what enters the measurement."""
+        np, residuals = self._residuals()
+        a_vec, a_src = endpoint.select_wrong_activation(residuals, "aaa", seed=7)
+        b_vec, b_src = endpoint.select_wrong_activation(residuals, "aaa", seed=7)
+        assert a_src == b_src
+        np.testing.assert_array_equal(a_vec, b_vec)
+
+    def test_donors_vary_across_prompts_under_one_preregistered_seed(self):
+        """A bare default_rng(seed) reset per call returns the same draw every
+        time, so one seed across 200 prompts would concentrate every wrong
+        activation on a single donor — reproducible and useless as a control."""
+        np = pytest.importorskip("numpy")
+        import hashlib
+
+        residuals = {
+            hashlib.sha256(f"prompt-{i}".encode()).hexdigest(): np.array(
+                [float(i + 1), 1.0]
+            )
+            for i in range(30)
+        }
+        sources = {
+            endpoint.select_wrong_activation(residuals, key, seed=20260728)[1]
+            for key in residuals
+        }
+        assert len(sources) > 5, f"donors concentrated on {len(sources)} prompts"
+
+    def test_zero_target_norm_is_refused(self):
+        """Rescaling to a zero norm yields a zero vector: no donor direction and
+        no wrong content, which is not the control the design specifies."""
+        np = pytest.importorskip("numpy")
+        residuals = {"aaa": np.array([0.0, 0.0]), "bbb": np.array([1.0, 2.0])}
+        with pytest.raises(ValueError, match="zero norm"):
+            endpoint.select_wrong_activation(residuals, "aaa", seed=0)
 
     def test_raises_when_no_other_prompt_exists(self):
         np = pytest.importorskip("numpy")

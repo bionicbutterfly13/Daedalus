@@ -19,8 +19,10 @@ from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
 __all__ = [
+    "CONSUMER_READS",
     "ENDPOINT_FNS",
     "GATES",
+    "GATE_READS",
     "INITIAL_REGISTRY",
     "PREFLIGHT_CHECKS",
     "PreflightError",
@@ -180,7 +182,7 @@ INITIAL_REGISTRY: dict[str, dict[str, Any]] = {
     "STAGE2B_N_PROMPTS": {
         "kind": "constant",
         "declared_value": 200,  # Q1
-        "consumed_by": ["preflight:manifest"],
+        "consumed_by": ["preflight:manifest", "endpoint:allocate_wrong_layers"],
     },
     "STAGE2B_N_CATEGORIES": {
         "kind": "constant",
@@ -193,6 +195,11 @@ INITIAL_REGISTRY: dict[str, dict[str, Any]] = {
             "daeaa63881dc0f58be689307a81b1fbc347674424f1cae45819f82372804f5a6"
         ),
         "consumed_by": ["preflight:manifest", "reproduction"],
+    },
+    "STAGE2_MANIFEST_DIGESTS": {
+        "kind": "constant",
+        "declared_value": "tests/jspace/fixtures/stage2_manifest_digests.json",
+        "consumed_by": ["preflight:manifest"],
     },
     "MIN_VRAM_GIB": {
         "kind": "constant",
@@ -246,12 +253,12 @@ INITIAL_REGISTRY: dict[str, dict[str, Any]] = {
     "EXPECTED_MODEL_N_LAYERS": {
         "kind": "constant",
         "declared_value": 28,
-        "consumed_by": ["preflight:environment"],
+        "consumed_by": ["preflight:environment", "endpoint:allocate_wrong_layers"],
     },
     "SELECTED_LAYERS": {
         "kind": "constant",
         "declared_value": [6, 13, 20, 26],  # Q2
-        "consumed_by": ["preflight:environment"],
+        "consumed_by": ["preflight:environment", "endpoint:allocate_wrong_layers"],
     },
     "POSITIONS": {
         "kind": "constant",
@@ -293,6 +300,62 @@ INITIAL_REGISTRY: dict[str, dict[str, Any]] = {
         "declared_value": None,
         "consumed_by": ["endpoint:target_rank1"],
     },
+}
+
+
+#: What each non-gate consumer actually reads.
+#:
+#: This exists because the reverse check was silently inert in the shipped
+#: configuration: ``GATES`` is a tuple, so the ``isinstance(gates, Mapping)``
+#: branch never ran, and ``consumer_reads`` defaulted to ``None``. The registry
+#: therefore proved only forward and referential consistency while its contract
+#: promised all three. Declaring the read edges here makes the reverse sweep run
+#: by default rather than only when a caller remembers to supply it.
+CONSUMER_READS: dict[str, tuple[str, ...]] = {
+    "preflight:tensor_contracts": ("DECODE_PARITY_TOL", "EXPECTED_MODEL_D_MODEL"),
+    "preflight:ratification": ("THRESHOLDS_RATIFIED",),
+    "preflight:manifest": (
+        "MAX_PROMPT_TOKENS",
+        "STAGE2B_N_PROMPTS",
+        "STAGE2B_N_CATEGORIES",
+        "STAGE1_PROMPT_SHA256",
+        "STAGE2_MANIFEST_DIGESTS",
+    ),
+    "preflight:environment": (
+        "MIN_VRAM_GIB",
+        "JLENS_COMMIT",
+        "MODEL_ID",
+        "MODEL_REVISION",
+        "LENS_REPO",
+        "LENS_REVISION",
+        "LENS_FILE",
+        "EXPECTED_LENS_SHA256",
+        "EXPECTED_MODEL_D_MODEL",
+        "EXPECTED_MODEL_N_LAYERS",
+        "SELECTED_LAYERS",
+        "POSITIONS",
+    ),
+    "endpoint:nta": ("NTA_MIN_DENOMINATOR",),
+    "endpoint:target_rank1": ("target_id",),
+    "endpoint:build_fit_broken_map": ("BROKEN_MAP_SEED",),
+    "endpoint:select_wrong_activation": ("WRONG_ACTIVATION_SEED",),
+    "endpoint:allocate_wrong_layers": (
+        "WRONG_LAYER_DISTANCES",
+        "WRONG_LAYER_SEED",
+        "SELECTED_LAYERS",
+        "STAGE2B_N_PROMPTS",
+        "EXPECTED_MODEL_N_LAYERS",
+    ),
+}
+
+#: Which constant each gate compares against, so the reverse check covers gates
+#: even when ``gates`` is passed as a plain sequence of IDs.
+GATE_READS: dict[str, str] = {
+    "reproduction": "STAGE1_RERUN_NOISE_MAX_ABS_LOGIT_DIFF",
+    "h1_specificity": "SPEC_MIN_EFFECT",
+    "h1_interval": "BOOTSTRAP_CI_LEVEL",
+    "h2_overlap": "NONREDUNDANCY_MAX_JACCARD",
+    "h2_target": "BOOTSTRAP_CI_LEVEL",
 }
 
 
@@ -379,7 +442,15 @@ def check_constant_registry(
     # same defect as a gate doing it, and restricting the sweep to gates would
     # leave the larger surface unguarded -- most registered constants here are
     # read by preflight, not by a gate.
-    for consumer, reads in (consumer_reads or {}).items():
+    # Defaults to the declared read edges rather than to nothing. An empty
+    # default made the reverse guarantee vacuous in exactly the configuration
+    # the project ships.
+    if consumer_reads is None:
+        consumer_reads = {
+            **CONSUMER_READS,
+            **{gate: (constant,) for gate, constant in GATE_READS.items()},
+        }
+    for consumer, reads in consumer_reads.items():
         for read in reads:
             if read not in registry:
                 raise PreflightError(
