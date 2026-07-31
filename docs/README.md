@@ -7,6 +7,10 @@
 | Document | Description |
 |----------|-------------|
 | [Archimedes Cognitive Lab Architecture](cognitive-lab-architecture.md) | Working role, control, evidence, and experimental boundaries for Hermes, EvoScientist, Jacobian Lens/J-space, Elume, and Sakshi |
+| [J-space Global Workspace: Stage 2b Colab Integration Experience](jspace-stage2b-colab-integration-experience.md) | Evidence-driven account of three instrument-validation smoke attempts and the completed, scientifically inconclusive Stage 2b pilot |
+| [Stage 2b Pilot Public Record](../runs/stage2b-pilot-public-record-20260731/README.md) | Curated aggregate result, source hashes, custody boundary, and the distinction between the positive sensitivity signal and undefined robust result |
+| [J-space Wiki](wiki/Home.md) | Public project status, Stage 2b result, evidence ledger, and reproducibility gates |
+| [J-space Research Program](research/README.md) | Evidence taxonomy, falsifiable hypothesis ledger, EvoScientist paper pipeline, and the Thoughtseeds/IWMT research horizon |
 
 | Example                                                     | Description                                                                     |
 |------------------------------------------------------------|---------------------------------------------------------------------------------|

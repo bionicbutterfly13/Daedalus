@@ -1,0 +1,159 @@
+{
+  "artifact": {
+    "filename": "jspace_discrimination_s2b_pilot_d138846e7a189ad4.json",
+    "present_in_repository": false,
+    "retained_location": "Google Colab runtime",
+    "sha256": "d138846e7a189ad42955a5990e6d1a5c00553ba768cd838c5b6bf0334095daef",
+    "size_mib": 5.43,
+    "transferred": false
+  },
+  "boundaries": {
+    "confirmation_authorized": false,
+    "confirmation_subset_runtime_sealed": true,
+    "confirmation_thresholds_ratified": false,
+    "consciousness_claim": false,
+    "downstream_instrument_use_authorized": false,
+    "full_logits_persisted": false,
+    "full_stimulus_manifest_publicly_specified": true,
+    "holdout_accessed": false,
+    "raw_activations_persisted": false,
+    "raw_prompts_persisted_in_result_artifact": false
+  },
+  "coverage": {
+    "primary": {
+      "all_layer_inferences_defined": false,
+      "arithmetic_completion_eligible": 2,
+      "eligible_prompts_per_layer": 18,
+      "name": "input_embedding_decoded",
+      "reason": "arithmetic-completion coverage was below the preregistered category minimum",
+      "required_minimum_per_category": 3
+    },
+    "sensitivity": {
+      "all_layer_inferences_defined": true,
+      "category_counts": [
+        4,
+        4,
+        4,
+        4,
+        3
+      ],
+      "eligible_prompts_per_layer": 19,
+      "name": "layer0_residual_decoded"
+    }
+  },
+  "denominator_guard": 0.3388633415411974,
+  "execution": {
+    "accelerator": "Tesla T4",
+    "broken_map_draws": 8,
+    "colab_side_artifact_sha_recomputed": true,
+    "colab_side_record_cardinality_confirmed": 80,
+    "date": "2026-07-31",
+    "donor_assignments": 8,
+    "full_crossing": "8x8",
+    "logical_crossings_per_locus": 64,
+    "prompt_floors": [
+      "input_embedding_decoded",
+      "layer0_residual_decoded"
+    ],
+    "prompt_layer_records": 80,
+    "selected_layers": [
+      6,
+      13,
+      20,
+      26
+    ],
+    "unique_factorized_readouts_per_locus": 81,
+    "validator_errors": [],
+    "vram_gib": 14.563
+  },
+  "schema": "jspace-stage2b-pilot-public-summary/v1",
+  "sensitivity_floor_estimates": [
+    {
+      "correct_effect": 0.227463,
+      "correct_effect_ci_99": [
+        0.115254,
+        0.348893
+      ],
+      "crossed_interaction_ci_99": [
+        0.02889,
+        0.268815
+      ],
+      "interaction": 0.145338,
+      "interaction_ci_99": [
+        0.022161,
+        0.276533
+      ],
+      "layer": 6
+    },
+    {
+      "correct_effect": 0.619655,
+      "correct_effect_ci_99": [
+        0.514904,
+        0.725212
+      ],
+      "crossed_interaction_ci_99": [
+        0.215001,
+        0.503494
+      ],
+      "interaction": 0.357396,
+      "interaction_ci_99": [
+        0.230835,
+        0.485453
+      ],
+      "layer": 13
+    },
+    {
+      "correct_effect": 1.079363,
+      "correct_effect_ci_99": [
+        0.940763,
+        1.214811
+      ],
+      "crossed_interaction_ci_99": [
+        0.68654,
+        1.024303
+      ],
+      "interaction": 0.865902,
+      "interaction_ci_99": [
+        0.723859,
+        1.005829
+      ],
+      "layer": 20
+    },
+    {
+      "correct_effect": 1.421609,
+      "correct_effect_ci_99": [
+        1.248721,
+        1.574974
+      ],
+      "crossed_interaction_ci_99": [
+        0.628573,
+        0.88945
+      ],
+      "interaction": 0.771675,
+      "interaction_ci_99": [
+        0.653027,
+        0.88072
+      ],
+      "layer": 26
+    }
+  ],
+  "source_identities": {
+    "authorization_record_sha256": "1af4ec95bf1c0f257fa5f559b7a91c939723cb7382eb0f5812ebc113d842b63c",
+    "canonical_notebook_sha256": "9564236a1f49d7ffe2bea44f8b04be5a584c0ff9740b11dd1e563c93b8dba2fe",
+    "code_bundle_sha256": "aeec8a76a426fa82f3fb96dc6700289a689fcb92fd9952da681fe03fe12dbef4",
+    "pilot_view_sha256": "5bef8316f72682a628fc1240bf6068a91aa7c8a330377206cbd9145434b797e4"
+  },
+  "status": {
+    "instrument_interpretation": "observed prompt-floor dependence; generalized instrument fragility remains an inference pending mechanism audit",
+    "operational_execution": "success",
+    "pilot_decision": null,
+    "preregistered_robust_result": "undefined",
+    "publication_stage": "E4-pilot-observed",
+    "scientific_evidence_class": 1,
+    "sensitivity_floor_signal": "positive at all four layers under both uncertainty methods"
+  },
+  "threshold_derivation": {
+    "reason": "all eight required primary-floor source means were not defined, finite, and positive",
+    "status": "unavailable"
+  }
+}
