@@ -57,6 +57,8 @@ Before publishing a Wiki update:
 - `Global-Workspace-and-J-space.md`: theoretical motivation, operational bridge,
   and claim boundaries.
 - `Stage-2b-Experiment.md`: estimand, controls, floors, and factorial design.
+- `Stage-2b-Pilot-Result.md`: observed pilot result and custody boundary.
+- `Primary-Floor-Decision.md`: live mechanism alternatives and decision gate.
 - `Evidence-Ledger.md`: observations, inferences, and unknowns.
 - `Runtime-Failure-Lab-Notes.md`: exact obstacles and repairs.
 - `Reproducibility-and-Gates.md`: source hashes, commands, and authorization chain.

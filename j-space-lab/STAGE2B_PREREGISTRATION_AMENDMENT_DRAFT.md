@@ -214,7 +214,11 @@ and authorization-record SHA-256
 It produced 80 prompt-layer records and a retained Colab artifact with SHA-256
 `d138846e7a189ad42955a5990e6d1a5c00553ba768cd838c5b6bf0334095daef`.
 The artifact was not transferred and the 180-prompt confirmation set was not
-accessed.
+accessed. A later check found both exact inputs absent from the active `/content`
+runtime before the bounded primary-floor mechanism audit could read them. That
+state is consistent with a reset or replacement, but the precise lifecycle event
+is unknown. The diagnostic stopped at its file-identity gate; no artifact was
+reconstructed or uploaded.
 
 The primary floor met 18/20 total coverage but failed the preregistered category
 minimum because only two arithmetic-completion prompts remained eligible per

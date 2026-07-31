@@ -31,3 +31,8 @@ workspace or consciousness.
 The machine-readable aggregates are in
 [`pilot-result-summary.json`](pilot-result-summary.json). The
 source and custody boundary is recorded in [`PROVENANCE.md`](PROVENANCE.md).
+The exact artifact was retained in Colab at pilot completion and was never
+transferred. A later active-runtime probe found the artifact and pilot view
+absent from `/content`. That state is consistent with a runtime reset or
+replacement, but the precise lifecycle event is unknown; no prompt-level
+mechanism audit was completed.

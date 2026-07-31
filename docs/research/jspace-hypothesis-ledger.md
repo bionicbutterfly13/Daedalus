@@ -31,6 +31,42 @@ measurements rather than validated scientific instruments.
 
 ## Priority queue
 
+### H-JS-INST-011: Cause of primary-floor arithmetic exclusion
+
+**Claim.** The primary-floor arithmetic exclusions are reproducibly associated
+with at least one preregistered mechanism class: prompt construction,
+tokenization, target properties, output-to-floor geometry, or interaction with
+the globally derived guard.
+
+**Null.** The two pilot exclusions do not reproduce on a disjoint development
+set, or no mechanism class predicts eligibility beyond chance and sampling
+variation.
+
+**Intervention and controls.** Freeze a newly generated development set outside
+all 200 scientific prompts. Record every candidate before measuring eligibility.
+Fit prompt-template, tokenizer, target, and denominator-geometry explanations
+jointly, with simple held-out baselines. Do not inspect the confirmation set or
+select individual prompts because they pass.
+
+**Outcome.** Reproducible primary-floor eligibility and guard-margin prediction,
+category coverage under a frozen template-level sampler, and agreement or
+disagreement between the two floors.
+
+**Current evidence.** The frozen retained-artifact diagnostic received
+independent GO and merged through PR #10. Its first Colab run stopped before
+artifact read because both exact inputs were absent from the active `/content`
+runtime. That state is consistent with a reset or replacement, but the precise
+lifecycle event is unknown. No mechanism association was observed. The five
+alternatives and Options A through E are specified in
+`j-space-lab/STAGE2B_PRIMARY_FLOOR_OPTIONS_PACKET.md`.
+
+**Failure condition.** No association reproduces, the result requires
+item-level pass selection, a guard is relaxed after observation, or any
+confirmation input is accessed.
+
+**Status.** `HYPOTHESIS`; immediate instrument gate, evidence path awaiting Dr.
+Mani's decision.
+
 ### H-JS-TS-001: J-space information and Thoughtseed competition
 
 **Claim.** A candidate's J-space alignment predicts which Thoughtseed wins local

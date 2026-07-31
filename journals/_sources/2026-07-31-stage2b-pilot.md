@@ -31,14 +31,17 @@ prompt-floor-dependent instrument behavior, not a robust Stage 2b result.
 
 ## Custody boundary
 
-The retained artifact is
+The artifact was
 `jspace_discrimination_s2b_pilot_d138846e7a189ad4.json`, SHA-256
 `d138846e7a189ad42955a5990e6d1a5c00553ba768cd838c5b6bf0334095daef`,
-size 5.43 MiB. It remains in Colab and was not transferred. The full 200-prompt
-manifest was already public, but the confirmation subset remained runtime-sealed
-and unaccessed. The retained result artifact contains no raw prompt text,
-activations, or full logits; the separately tracked stimulus and pilot-view inputs
-remain part of the protocol record.
+size 5.43 MiB. It was retained in Colab at run completion and was not transferred.
+A later check found it and the pilot view absent from the active `/content`
+runtime before the bounded mechanism audit could read them. That state is
+consistent with a reset or replacement, but the precise lifecycle event is
+unknown. The full 200-prompt manifest was already public, but the confirmation
+subset remained runtime-sealed and unaccessed. The result artifact contained no
+raw prompt text, activations, or full logits; the separately tracked stimulus and
+pilot-view inputs remain part of the protocol record.
 
 Repository publication is limited to the curated aggregates and provenance in
 [`runs/stage2b-pilot-public-record-20260731/`](../../runs/stage2b-pilot-public-record-20260731/README.md).

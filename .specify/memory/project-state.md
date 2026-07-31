@@ -174,7 +174,7 @@ was 4.095703 GiB. Model load took 166.485052 seconds, lens load 4.259576
 seconds, nine-input capture 4.914328 seconds, and selected-layer parity probes
 0.041844 seconds.
 
-The runtime-only report remains in Colab at
+The runtime-only report was retained in Colab at
 `/content/jspace_stage2b_integration_smoke/stage2b_integration_smoke_71b58ce846d319c6.json`;
 its SHA-256 is
 `71b58ce846d319c6c26562a7765c67ab3a3468609f67306d8a767ea8f73a477c`
@@ -182,7 +182,10 @@ and its recorded size is 5,172 bytes. The transfer cell remained unexecuted, so
 the report was not downloaded or copied into this repository. No pilot or
 confirmation input was accessed. The report's 91.251723-second extrapolation to
 6,480 readouts is labelled an engineering projection, not measured pilot
-runtime.
+runtime. A later check found this transient report absent from the active
+`/content` runtime. That state is consistent with a reset or replacement, but
+the precise lifecycle event is unknown; its verified identity and bounded public
+record remain.
 
 This success establishes bounded runtime compatibility only. The subsequent
 adversarial findings in target derivation, excluded-floor propagation, recursive
@@ -210,13 +213,39 @@ across seven notebooks; and `git diff --check` passed. The superseding freeze th
 received independent PASS/GO, the exact source identities received one-time pilot
 authorization, and the 2026-07-31 pilot completed as recorded above.
 
+## Publication and post-pilot diagnostic status — 2026-07-31
+
+The recovery and curated public record merged through fork-internal PR #9 as
+`e2a20c49a2a719d85bf54f71f73f074ef831058a` after all seven CI checks passed.
+Historical PR #8 was closed as superseded. The GitHub Wiki was initialized and
+published at commit `f81e8d3`; all 12 tracked `docs/wiki/*.md` pages matched a
+fresh clone byte-for-byte and the rendered Home page, Mermaid diagram,
+navigation, and sidebar were verified in GitHub.
+
+The primary-floor diagnostic was frozen before prompt-level inspection. Source
+commit `3c26569b0d3fe4bb8a5fa79d311b231418cdb85c`, source SHA-256
+`f8bf8563ec8085ab0ca98bbf266aa93ee346ef7917abc7e5287d93d1b0edc32b`,
+independent verdict GO, `495 passed` J-space, `3553 passed, 12 skipped`
+repository-wide, and six green CI checks. Fork-internal PR #10 merged as
+`66fe6843854f380e5eec7bc17c46207c3c9c0544`.
+
+The first bounded Colab diagnostic attempt then stopped before reading either
+input. The active `/content` runtime no longer contained the artifact or pilot
+view; a filename-only probe found only `.config` and `sample_data`. This is
+consistent with a Colab runtime reset or replacement, but the precise lifecycle
+event is unknown. The artifact was not reconstructed, uploaded, downloaded, or
+transferred, and confirmation was not accessed. The pilot artifact had been
+retained at run completion, but it is no longer present in the active Colab
+runtime. No prompt-level mechanism association has therefore been established.
+
 ## Open items
 
-1. Publish and independently verify the scoped recovery code, Spec Kit record,
-   post-pilot journal, and public wiki without transferring the retained artifact.
-2. Investigate why the decoded-input-embedding floor excluded two arithmetic
-   prompts per layer and decide whether that is a terminal instrument ambiguity
-   or motivates a newly preregistered pilot design.
+1. Decide how to obtain lawful mechanism evidence now that the transient Colab
+   artifact is absent. Do not reconstruct, upload, or rerun without a separate
+   explicit decision and, where applicable, new authorization.
+2. Use `j-space-lab/STAGE2B_PRIMARY_FLOOR_OPTIONS_PACKET.md` to decide whether
+   the decoded-input-embedding ambiguity motivates Options A through D or the
+   terminal stop in Option E. No option is yet selected.
 3. Keep the 180-prompt confirmation runtime-sealed. Do not derive or ratify
    confirmation thresholds unless a future primary-floor pilot analysis is
    defined.

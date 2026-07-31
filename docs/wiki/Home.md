@@ -35,6 +35,8 @@ Updated 2026-07-31.
 | 20-prompt pilot | Operationally complete; publication-workflow E4, scientific evidence class 1 |
 | Pilot result | Sensitivity signal positive; preregistered robust result undefined |
 | Thresholds and decision | Threshold derivation unavailable; no pilot pass/fail decision |
+| Artifact custody | Retained at pilot completion, never transferred, and later absent from the active Colab runtime; reset or replacement is plausible, but unproven |
+| Mechanism audit | Frozen diagnostic merged; prompt-level audit not run because both exact runtime inputs were absent |
 | 180-prompt confirmation | Publicly specified, but runtime-sealed, unaccessed, and unauthorized |
 
 After two safe integration failures, a third exact-hash-authorized smoke
@@ -43,6 +45,12 @@ authorized pilot then completed. Its sensitivity floor was positive at all four
 layers, but the primary floor had only two eligible arithmetic-completion prompts
 against a minimum of three, so all primary inferences were undefined. Confirmation
 remains blocked; see [[Stage 2b Pilot Result]].
+
+The next question is why the primary floor excluded two arithmetic prompts.
+The diagnostic code is reviewed and merged, but the transient Colab artifact was
+absent from the later active runtime before it could be read. That state is
+consistent with a reset or replacement, but the precise lifecycle event is
+unknown. No mechanism has therefore been selected. See [[Primary Floor Decision]].
 
 ## The question in one picture
 
@@ -71,6 +79,7 @@ preserving the information the experiment claims to measure.
 - [[Thoughtseeds, IWMT, and the J-space Research Horizon|Thoughtseeds-IWMT-and-the-J-space-Research-Horizon]]
 - [[Stage 2b Experiment]]
 - [[Stage 2b Pilot Result]]
+- [[Primary Floor Decision]]
 - [[Evidence Ledger]]
 - [[Runtime Failure Lab Notes]]
 - [[Reproducibility and Gates]]

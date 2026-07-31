@@ -169,17 +169,20 @@ accessed.
 
 The independently reviewed, exact-hash-authorized 20-prompt pilot completed on
 2026-07-31. Its public summary is under
-`runs/stage2b-pilot-public-record-20260731/`; the retained 5.43 MiB artifact stays
-in Colab and is identified only by SHA-256
+`runs/stage2b-pilot-public-record-20260731/`. The 5.43 MiB artifact was retained
+in Colab at completion and is identified by SHA-256
 `d138846e7a189ad42955a5990e6d1a5c00553ba768cd838c5b6bf0334095daef`.
-The primary floor was undefined for insufficient arithmetic-category coverage,
-while the sensitivity floor showed positive effects at all layers. No threshold
-vectors or pilot decision were produced.
+It was never transferred. A later check found the artifact and pilot view absent
+from the active `/content` runtime before the bounded mechanism audit could read
+them. That state is consistent with a reset or replacement, but the precise
+lifecycle event is unknown. The primary floor was undefined for insufficient
+arithmetic-category coverage, while the sensitivity floor showed positive
+effects at all layers. No threshold vectors or pilot decision were produced.
 
 ## What remains deliberately unavailable
 
-No quickstart command authorizes a repeat pilot, transfers the retained artifact,
-accesses confirmation inputs, or emits a scientific decision. The completed
-pilot's one-time authorization is spent. Confirmation remains blocked because
-the primary-floor threshold sources were undefined and the confirmation
+No quickstart command authorizes a repeat pilot, reconstructs or transfers the
+artifact, accesses confirmation inputs, or emits a scientific decision. The
+completed pilot's one-time authorization is spent. Confirmation remains blocked
+because the primary-floor threshold sources were undefined and the confirmation
 per-category coverage minimum remains unratified.
