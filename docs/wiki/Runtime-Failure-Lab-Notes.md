@@ -111,6 +111,33 @@ because the primary floor missed the preregistered category-coverage minimum. Se
 [[Stage 2b Pilot Result]] for the scientific outcome; the smoke report described
 here remains an engineering record.
 
+## Attempt 4: the transient evidence is gone before diagnosis
+
+The primary-floor diagnostic was deliberately frozen before prompt-level
+inspection. It passed independent review, 495 J-space tests, 3,553 repository
+tests, and six GitHub CI checks. The first Colab execution then stopped at the
+input gate:
+
+```text
+ValueError: required regular file is absent:
+/content/jspace_discrimination_s2b_pilot_d138846e7a189ad4.json
+```
+
+A filename-only probe found only `.config` and `sample_data`; the artifact and
+pilot view were both absent. This default-only state is consistent with a Colab
+runtime reset or replacement, but it does not reveal the precise lifecycle event.
+
+The failure is about custody, not mechanism. No artifact bytes were read, moved,
+or reconstructed. No confirmation input was accessed. Therefore the run says
+nothing about whether prompt construction, tokenization, target properties,
+floor geometry, or the global guard caused the arithmetic exclusions.
+
+The mistake was relying on transient runtime storage as the sole location for a
+future authorized audit while simultaneously forbidding transfer. That boundary
+protected the artifact from casual movement, but it also made later inspection
+depend on the lifetime of one Colab runtime. Any future protocol must decide
+artifact custody before execution rather than after a result becomes interesting.
+
 ## Why no live repair
 
 Editing a running notebook would create source bytes that were never reviewed or

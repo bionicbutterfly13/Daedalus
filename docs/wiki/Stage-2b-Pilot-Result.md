@@ -66,14 +66,19 @@ the undefined primary-floor result.
 | Pilot view | `5bef8316f72682a628fc1240bf6068a91aa7c8a330377206cbd9145434b797e4` |
 | Authorization record | `1af4ec95bf1c0f257fa5f559b7a91c939723cb7382eb0f5812ebc113d842b63c` |
 
-The retained artifact,
+The artifact,
 `jspace_discrimination_s2b_pilot_d138846e7a189ad4.json`, has SHA-256
 `d138846e7a189ad42955a5990e6d1a5c00553ba768cd838c5b6bf0334095daef`
-and was 5.43 MiB. It remains in Colab and is not in this repository. The full
-200-prompt manifest was already publicly specified, but the confirmation subset
-remained runtime-sealed and unaccessed. The retained result artifact contains no
-raw prompt text, activations, or full logits; the separately tracked stimulus and
-pilot-view inputs remain part of the public protocol record.
+and was 5.43 MiB. It was retained in Colab at pilot completion and was never
+transferred into this repository. A later check found both the artifact and pilot
+view absent from the active `/content` runtime before the bounded mechanism audit
+could read them. That state is consistent with a reset or replacement, but the
+precise lifecycle event is unknown. The diagnostic stopped at its exact-file
+gate; neither input was reconstructed or uploaded. The full 200-prompt manifest
+was already publicly specified, but the confirmation subset remained
+runtime-sealed and unaccessed. The result artifact
+contained no raw prompt text, activations, or full logits; the separately tracked
+stimulus and pilot-view inputs remain part of the public protocol record.
 
 The repository contains a curated [public aggregate record](https://github.com/bionicbutterfly13/EvoScientist/tree/main/runs/stage2b-pilot-public-record-20260731)
 and its provenance note, alongside the separately tracked protocol inputs.

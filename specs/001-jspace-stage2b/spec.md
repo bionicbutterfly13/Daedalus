@@ -383,10 +383,14 @@ The run produced 80 prompt-layer records under the dual-floor fully crossed 8×8
 design. The in-memory validator returned no errors. A final Colab-side audit
 matched artifact SHA-256
 `d138846e7a189ad42955a5990e6d1a5c00553ba768cd838c5b6bf0334095daef`
-and the 80-record cardinality. The 5.43 MiB artifact remains in Colab and was not
-transferred. The 180-prompt holdout was not accessed. The retained result artifact
-contains no raw prompt text, activations, or full logits; the separately tracked
-stimulus and pilot-view inputs remain part of the protocol record.
+and the 80-record cardinality. The 5.43 MiB artifact was retained in Colab at run
+completion and was not transferred. A later check found both exact inputs absent
+from the active `/content` runtime before the bounded mechanism audit could read
+them. That state is consistent with a reset or replacement, but the precise
+lifecycle event is unknown; the artifact was not reconstructed or uploaded. The
+180-prompt holdout was not accessed. The result artifact contained no raw prompt
+text, activations, or full logits; the separately tracked stimulus and pilot-view
+inputs remain part of the protocol record.
 
 The derived denominator guard was `0.3388633415411974`. The primary
 `input_embedding_decoded` floor retained 18 prompts per layer but only two

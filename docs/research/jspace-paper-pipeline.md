@@ -111,7 +111,13 @@ geometry-preserving broken-map, and fully crossed donor-by-map design.
 **Current evidence:** publication-workflow E4, pilot observed, and scientific
 evidence class 1. Operational execution succeeded, but
 the primary floor failed category coverage, threshold derivation was unavailable,
-and no pilot decision was emitted. Confirmation remains blocked.
+and no pilot decision was emitted. Confirmation remains blocked. The
+retained-artifact mechanism audit has not run because both exact inputs were
+absent from the later active `/content` runtime before read. That state is
+consistent with a reset or replacement, but the precise lifecycle event is
+unknown; the absence is a custody fact, not evidence for any mechanism. The
+lawful next-study alternatives are in
+`j-space-lab/STAGE2B_PRIMARY_FLOOR_OPTIONS_PACKET.md`.
 
 ### P-JS-TS-002: Thoughtseed competition meets measured J-space content
 

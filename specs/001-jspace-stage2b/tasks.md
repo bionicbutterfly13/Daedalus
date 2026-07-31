@@ -346,9 +346,33 @@ No pilot, confirmation, artifact transfer, commit, or scientific decision.
 - [x] T151 Reconcile the post-pilot result across Spec Kit, project state, the
   companion result notebook, public docs, wiki source, and journals without
   transferring the retained artifact or claiming a robust result.
-- [ ] T152 Run final validation and independent review, commit the scoped recovery
+- [x] T152 Run final validation and independent review, commit the scoped recovery
   and public record, supersede historical PR #8, merge the reviewed recovery PR,
-  and publish/verify the GitHub wiki.
+  and publish/verify the GitHub wiki. Recovery PR #9 merged as
+  `e2a20c49a2a719d85bf54f71f73f074ef831058a`; PR #8 was closed as historical;
+  all seven recovery CI checks passed. GitHub Wiki commit `f81e8d3` publishes all
+  12 tracked pages, which byte-match a fresh clone and render with the expected
+  Home page, Mermaid diagram, navigation, and sidebar.
+
+## N. Primary-floor mechanism decision
+
+- [x] T153 Implement and independently review a read-only, exact-hash-bound
+  primary-floor diagnostic before inspecting prompt-level mechanism data. The
+  diagnostic received GO, passed `495` J-space tests and `3553 passed, 12
+  skipped` repository-wide, passed six CI checks, and merged through fork-internal
+  PR #10 as `66fe6843854f380e5eec7bc17c46207c3c9c0544`.
+- [ ] T154 Run the frozen diagnostic inside Colab without transferring the
+  artifact or accessing confirmation. The first attempt failed closed before
+  artifact read: the active runtime contained only `.config` and `sample_data`;
+  both exact `/content` inputs were absent. That state is consistent with a reset
+  or replacement, but the precise lifecycle event is unknown. No artifact was
+  reconstructed, uploaded, downloaded, or transferred.
+- [x] T155 Prepare a preregistration-ready options packet with falsifiable prompt,
+  tokenization, target, floor-geometry, and global-guard explanations; disjoint
+  development-set requirements; risks; and stop conditions. The packet records
+  no mechanism association because T154 has not completed.
+- [ ] T156 Obtain Dr. Mani's decision about the lawful next evidence path and one
+  of Options A through E before implementing or authorizing a revised pilot.
 
 ## Observed recovery verification
 

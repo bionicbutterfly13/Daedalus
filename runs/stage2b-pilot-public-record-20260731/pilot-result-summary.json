@@ -1,8 +1,12 @@
 {
   "artifact": {
+    "active_runtime_artifact_present_2026_07_31": false,
+    "active_runtime_pilot_view_present_2026_07_31": false,
+    "active_runtime_presence_checked_2026_07_31": true,
+    "custody_status": "retained at pilot completion; never transferred; absent from a later active Colab runtime",
     "filename": "jspace_discrimination_s2b_pilot_d138846e7a189ad4.json",
     "present_in_repository": false,
-    "retained_location": "Google Colab runtime",
+    "retained_location_at_pilot_completion": "Google Colab runtime",
     "sha256": "d138846e7a189ad42955a5990e6d1a5c00553ba768cd838c5b6bf0334095daef",
     "size_mib": 5.43,
     "transferred": false

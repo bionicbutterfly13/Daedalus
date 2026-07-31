@@ -12,6 +12,7 @@ This page distinguishes what the project has measured from what it merely expect
 | 2026-07-30 | Integration smoke attempt 2 | Same T4 class; fresh process and identity checks passed; Torchvision operator failure before model-weight load | Optional compiled dependency must be removed or matched |
 | 2026-07-30 | Integration smoke attempt 3 | Pinned model and lens loaded; four layers probed; one 81-readout/64-crossing locus completed in 1.14064654s; peak allocation 4.074223 GiB | Bounded real-runtime compatibility established |
 | 2026-07-31 | Stage 2b pilot, 20 prompts | 80 records; validator empty; sensitivity interactions positive at four layers; primary arithmetic coverage 2 against minimum 3 | Operational success, but robust result and threshold derivation undefined; no pilot decision |
+| 2026-07-31 | Primary-floor diagnostic attempt | Frozen source passed independent review and CI; execution stopped before input read because both exact `/content` files were absent | Absence is consistent with a reset or replacement, but the precise lifecycle event is unknown; no mechanism association established |
 
 ## Current verified software evidence
 
@@ -24,6 +25,7 @@ The recovery worktree contains:
 - canonical excluded-input Colab smoke notebook;
 - code-only deterministic bundle;
 - aggregate validator with adversarial corruption tests.
+- exact-hash-bound, read-only primary-floor diagnostic with independent GO.
 
 Local tests demonstrate source and CPU behavior. The third smoke and pilot now
 separately demonstrate bounded runtime and observed pilot behavior. They do not
@@ -53,6 +55,8 @@ Not established:
 - threshold derivation or a pilot pass/fail decision;
 - confirmation authorization or execution;
 - artifact transfer.
+- a completed prompt-level mechanism audit; the transient inputs were absent from
+  the later active runtime.
 
 ## Unknowns that matter
 

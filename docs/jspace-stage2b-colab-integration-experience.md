@@ -176,10 +176,14 @@ was false and confirmation thresholds were not ratified. The retained result
 artifact contains no raw prompt text, activations, or full logits; the separately
 tracked stimulus and pilot-view inputs remain part of the protocol record.
 
-The 5.43 MiB pilot artifact remains in Colab as
+The 5.43 MiB pilot artifact was retained in Colab at run completion as
 `jspace_discrimination_s2b_pilot_d138846e7a189ad4.json`, SHA-256
 `d138846e7a189ad42955a5990e6d1a5c00553ba768cd838c5b6bf0334095daef`.
-It was not transferred into this repository.
+It was not transferred into this repository. A later check found the artifact
+and pilot view absent from the active `/content` runtime before the bounded
+primary-floor mechanism audit could read them. That state is consistent with a
+reset or replacement, but the precise lifecycle event is unknown. The diagnostic
+stopped at its exact-file gate; neither input was reconstructed or uploaded.
 
 ## Engineering lessons
 

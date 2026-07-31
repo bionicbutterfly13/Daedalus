@@ -43,9 +43,13 @@ Exact-hash authorized and run 2026-07-31:
 
 The retained artifact SHA-256 is
 `d138846e7a189ad42955a5990e6d1a5c00553ba768cd838c5b6bf0334095daef`.
-It remains in Colab. The curated aggregate [public record](https://github.com/bionicbutterfly13/EvoScientist/tree/main/runs/stage2b-pilot-public-record-20260731)
-is published alongside separately tracked protocol inputs; the retained result
-artifact itself is not present here.
+It was retained in Colab at pilot completion and was never transferred. A later
+check found the artifact and pilot view absent from the active `/content` runtime
+before the bounded mechanism audit could read them. That state is consistent
+with a reset or replacement, but the precise lifecycle event is unknown. The
+curated aggregate [public record](https://github.com/bionicbutterfly13/EvoScientist/tree/main/runs/stage2b-pilot-public-record-20260731)
+is published alongside separately tracked protocol inputs; the result artifact
+itself is not present here or in the active Colab runtime.
 
 ## Local verification
 

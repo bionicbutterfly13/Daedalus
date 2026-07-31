@@ -101,7 +101,11 @@ prompts per layer but only two arithmetic-completion prompts, below the minimum
 of three per category. Primary inference and threshold derivation are therefore
 `undefined`.
 
-The supported interpretation is prompt-floor dependence and instrument
-fragility. It is not a robust Stage 2b pass, does not validate a consciousness
-claim, and does not authorize confirmation. The content-addressed artifact
-remains in Colab; public records cite its SHA-256 without transferring it.
+The supported observation is prompt-floor dependence; generalized instrument
+fragility remains a mechanism hypothesis. This is not a robust Stage 2b pass,
+does not validate a consciousness claim, and does not authorize confirmation.
+The content-addressed artifact was retained in Colab at pilot completion and was
+never transferred. A later check found it absent from the active `/content`
+runtime. That state is consistent with a reset or replacement, but the precise
+lifecycle event is unknown. Public records retain its independently verified
+SHA-256 and curated aggregates.
