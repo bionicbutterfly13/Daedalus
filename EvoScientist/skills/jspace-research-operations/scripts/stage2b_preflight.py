@@ -3,9 +3,9 @@
 Contract: ``specs/001-jspace-stage2b/contracts/preflight-api.md``.
 
 This module MUST import cleanly with neither ``torch``, ``jlens``, nor ``scipy``
-installed.  It is the only part of Stage 2b the repo test suite exercises, and the
-machine running that suite has no GPU and no interpretability stack.  Every check
-therefore takes already-extracted metadata -- shape tuples, dtype *strings*, device
+installed.  The repository exercises it on CPU without an interpretability stack.
+Every check therefore takes already-extracted metadata -- shape tuples, dtype
+*strings*, device
 *strings*, digests, floats -- never a live tensor.
 
 That constraint is what makes US3 testable at all.  Stage 2 put the equivalent
@@ -15,8 +15,33 @@ constants survived to an audit: no test could reach any of it.
 
 from __future__ import annotations
 
+import hashlib
+import importlib.util
+import json
+import math
+import re
+import string
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any
+from datetime import datetime
+from pathlib import Path
+from typing import Any, NoReturn
+
+try:
+    from stage2b_statistics import (
+        bootstrap_rng_identity,
+        derive_crossing_seed_vectors,
+    )
+except ModuleNotFoundError:
+    _statistics_path = Path(__file__).with_name("stage2b_statistics.py")
+    _statistics_spec = importlib.util.spec_from_file_location(
+        "stage2b_statistics", _statistics_path
+    )
+    if _statistics_spec is None or _statistics_spec.loader is None:
+        raise
+    _statistics_module = importlib.util.module_from_spec(_statistics_spec)
+    _statistics_spec.loader.exec_module(_statistics_module)
+    bootstrap_rng_identity = _statistics_module.bootstrap_rng_identity
+    derive_crossing_seed_vectors = _statistics_module.derive_crossing_seed_vectors
 
 __all__ = [
     "CONSUMER_READS",
@@ -27,10 +52,13 @@ __all__ = [
     "PREFLIGHT_CHECKS",
     "PreflightError",
     "check_constant_registry",
+    "check_crossing_registry",
     "check_environment",
     "check_ratification",
     "check_tensor_contracts",
     "emit_registry_record",
+    "load_pilot_authorization_record",
+    "materialize_pilot_authorization",
 ]
 
 
@@ -48,6 +76,12 @@ class PreflightError(Exception):
         self.detail = detail
 
 
+PILOT_AUTHORIZATION_SCHEMA = "jspace-stage2b-pilot-authorization/v1"
+_PILOT_AUTHORIZATION_FILENAME = re.compile(
+    r"stage2b-pilot-authorization-([0-9a-f]{64})\.json"
+)
+
+
 # --------------------------------------------------------------------------
 # Consumer inventories.
 #
@@ -57,14 +91,10 @@ class PreflightError(Exception):
 # is a registry whose consumers drift out from under it.
 # --------------------------------------------------------------------------
 
-GATES: tuple[str, ...] = (
-    "reproduction",
-    "h1_specificity",
-    "h1_interval",
-    "h2_overlap",
-    "h2_target",
-    "sanity_floor",
-)
+# Scientific gate composition remains unratified. Deferred inference inputs are
+# consumed only by ``preflight:ratification``, which blocks execution until a
+# separately approved protocol supplies them.
+GATES: tuple[str, ...] = ()
 
 #: Bare check names.  The implementing function for ``"manifest"`` is
 #: ``check_manifest``; the ``check_`` prefix is not part of the identifier, so
@@ -74,6 +104,7 @@ GATES: tuple[str, ...] = (
 PREFLIGHT_CHECKS: tuple[str, ...] = (
     "tensor_contracts",
     "constant_registry",
+    "crossing_registry",
     "manifest",
     "ratification",
     "environment",
@@ -84,101 +115,242 @@ ENDPOINT_FNS: tuple[str, ...] = (
     "nta",
     "verify_rank_parity",
     "build_fit_broken_map",
+    "build_fit_broken_maps",
+    "singular_spectrum_evidence",
     "transport_with",
     "select_wrong_activation",
-    "allocate_wrong_layers",
-    "paired_difference_by_cluster",
-    "jaccard_top_k",
-    "gate_record",
-    "cluster_bootstrap_median",
     "assemble_factorial_cells",
-    "compose_decision",
+    "dual_floor_nta",
+    "materialize_crossed_factorials",
+    "derive_crossing_seed_vectors",
+    "derive_nta_min_denominator",
+    "crossed_prompt_effects",
+    "check_floor_layer_coverage",
+    "category_balanced_mean",
+    "category_stratified_prompt_interval",
+    "product_weight_interval",
+    "derive_pilot_thresholds",
 )
 
 #: Constants and derived fields, each mapped to the consumers that read it.
 #:
-#: ``declared_value`` of ``None`` means deliberately deferred to the Q6 pilot, not
-#: forgotten.  :func:`check_ratification` refuses to accept a signed ratification
-#: while any registered constant is still ``None``, which makes deferring a
-#: threshold and signing the ratification mutually exclusive rather than merely
-#: discouraged.
+#: ``declared_value`` of ``None`` means deliberately unresolved, not forgotten.
+#: Pilot-derived thresholds may remain unset only in pilot mode; every other
+#: execution-critical unset value blocks both modes. ``status`` independently
+#: distinguishes ratification from implementation and derivation.
+_CROSSING_VECTORS = derive_crossing_seed_vectors()
+_PILOT_BOOTSTRAP_IDENTITY = bootstrap_rng_identity(
+    "pilot",
+    numpy_version="runtime-recorded",
+)
+
 INITIAL_REGISTRY: dict[str, dict[str, Any]] = {
-    # -- decision thresholds -------------------------------------------------
+    # -- ratified pilot statistics and derived outputs ------------------------
     "STAGE1_RERUN_NOISE_MAX_ABS_LOGIT_DIFF": {
         "kind": "constant",
         "declared_value": 0.0,
-        "consumed_by": ["reproduction"],
+        "consumed_by": ["preflight:ratification"],
     },
     "SPEC_MIN_EFFECT": {
-        "kind": "constant",
-        "declared_value": None,  # Q5, pilot-derived
-        "consumed_by": ["h1_specificity"],
+        "kind": "derived_field",
+        "declared_value": None,
+        "consumed_by": ["endpoint:derive_pilot_thresholds"],
     },
     "BOOTSTRAP_CI_LEVEL": {
         "kind": "constant",
         "declared_value": 0.99,
-        "consumed_by": ["h1_interval", "h2_target"],
+        "consumed_by": [
+            "endpoint:category_stratified_prompt_interval",
+            "endpoint:product_weight_interval",
+        ],
+    },
+    "UNCERTAINTY_METHOD": {
+        "kind": "constant",
+        "declared_value": {
+            "primary": "category_stratified_prompt_percentile",
+            "sensitivity": "prompt_donor_map_product_weight_percentile",
+        },
+        "consumed_by": ["preflight:ratification"],
+    },
+    "RESAMPLING_UNIT": {
+        "kind": "constant",
+        "declared_value": {
+            "primary": "prompt_within_category",
+            "sensitivity": "prompt_x_donor_assignment_x_map_draw",
+        },
+        "consumed_by": ["preflight:ratification"],
+    },
+    "INTERVAL_METHOD": {
+        "kind": "constant",
+        "declared_value": "two_sided_99_percentile_linear",
+        "consumed_by": ["preflight:ratification"],
     },
     "BOOTSTRAP_ITERATIONS": {
         "kind": "constant",
-        "declared_value": 10_000,
-        "consumed_by": ["h1_interval", "h2_target", "sanity_floor"],
+        "declared_value": 20_000,
+        "consumed_by": [
+            "endpoint:category_stratified_prompt_interval",
+            "endpoint:product_weight_interval",
+        ],
     },
-    "NONREDUNDANCY_MAX_JACCARD": {
+    "BOOTSTRAP_SEED": {
         "kind": "constant",
-        "declared_value": 0.70,
-        "consumed_by": ["h2_overlap"],
+        "declared_value": {
+            key: value
+            for key, value in _PILOT_BOOTSTRAP_IDENTITY.items()
+            if key != "numpy_version"
+        },
+        "consumed_by": [
+            "endpoint:category_stratified_prompt_interval",
+            "endpoint:product_weight_interval",
+        ],
     },
-    # Two decisions T051 surfaced, declared here so the run refuses until they
-    # are made. Leaving them out of the registry would have meant a notebook that
-    # runs while the questions are open; leaving them unset means it cannot.
-    # This is the same mechanism SPEC_MIN_EFFECT uses, applied to a decision
-    # rather than a threshold.
-    "INTERACTION_GATED": {
+    "AGGREGATION_RULE": {
         "kind": "constant",
-        "declared_value": None,  # open item 7 -- research.md R10
-        "consumed_by": ["endpoint:compose_decision"],
+        "declared_value": "equal_draw_mean_then_equal_category_mean_per_layer",
+        "consumed_by": ["preflight:ratification"],
     },
+    "THRESHOLD_DERIVATION_RULES": {
+        "kind": "constant",
+        "declared_value": {
+            "SPEC_MIN_EFFECT": "0.5 * primary_floor_correct_effect_mean_by_layer",
+            "INTERACTION_MIN_EFFECT": "0.5 * primary_floor_interaction_mean_by_layer",
+            "NTA_MIN_DENOMINATOR": "linear_quantile_0.05_of_80_primary_denominators",
+        },
+        "consumed_by": [
+            "endpoint:derive_nta_min_denominator",
+            "endpoint:derive_pilot_thresholds",
+        ],
+    },
+    "MULTIPLICITY_RULE": {
+        "kind": "constant",
+        "declared_value": "single_intersection_union_all_components_required",
+        "consumed_by": ["preflight:ratification"],
+    },
+    "NTA_GUARD_QUANTILE": {
+        "kind": "constant",
+        "declared_value": 0.05,
+        "consumed_by": ["endpoint:derive_nta_min_denominator"],
+    },
+    "NTA_GUARD_QUANTILE_METHOD": {
+        "kind": "constant",
+        "declared_value": "linear",
+        "consumed_by": ["endpoint:derive_nta_min_denominator"],
+    },
+    "PILOT_MIN_LAYER_PROMPTS": {
+        "kind": "constant",
+        "declared_value": 18,
+        "consumed_by": ["endpoint:check_floor_layer_coverage"],
+    },
+    "PILOT_MIN_CATEGORY_PROMPTS": {
+        "kind": "constant",
+        "declared_value": 3,
+        "consumed_by": ["endpoint:check_floor_layer_coverage"],
+    },
+    "INTERACTION_MIN_EFFECT": {
+        "kind": "derived_field",
+        "declared_value": None,
+        "consumed_by": ["endpoint:derive_pilot_thresholds"],
+    },
+    # Open item 8, decided 2026-07-27: Stage 2's construction, unchanged. The
+    # token embedding at the measured position decoded through final norm and
+    # lm_head -- the surface prompt with no transformer computation applied,
+    # which is what "transporting nothing" means. Keeping it identical also
+    # keeps Stage 2's NTA values usable as a magnitude reference.
     "PROMPT_ONLY_CONSTRUCTION": {
         "kind": "constant",
-        "declared_value": None,  # open item 8 -- research.md R11
+        "declared_value": "input_embedding_decoded",
         "consumed_by": ["endpoint:nta"],
     },
-    "NTA_MIN_DENOMINATOR": {
+    "TARGET_SOURCE": {
         "kind": "constant",
-        "declared_value": None,  # Q6, pilot-derived
-        "consumed_by": ["endpoint:nta"],
+        "declared_value": "model_argmax",
+        "consumed_by": ["endpoint:target_rank1"],
+    },
+    "PRIMARY_FLOOR_ID": {
+        "kind": "constant",
+        "declared_value": "input_embedding_decoded",
+        "consumed_by": ["endpoint:dual_floor_nta"],
+    },
+    "SENSITIVITY_FLOOR_ID": {
+        "kind": "constant",
+        "declared_value": "layer0_residual_decoded",
+        "consumed_by": ["endpoint:dual_floor_nta"],
+    },
+    "NTA_MIN_DENOMINATOR": {
+        "kind": "derived_field",
+        "declared_value": None,
+        "consumed_by": ["endpoint:nta", "endpoint:derive_nta_min_denominator"],
     },
     "TOP_K": {
         "kind": "constant",
         "declared_value": 10,
-        "consumed_by": ["h2_overlap", "reproduction"],
+        "consumed_by": ["preflight:ratification"],
     },
     # -- construction constants ----------------------------------------------
-    "BROKEN_MAP_SEED": {
+    "WRONG_ACTIVATION_ASSIGNMENT_COUNT": {
         "kind": "constant",
-        "declared_value": 20260726,
-        "consumed_by": ["endpoint:build_fit_broken_map"],
+        "declared_value": 8,
+        "consumed_by": [
+            "preflight:crossing_registry",
+            "endpoint:materialize_crossed_factorials",
+        ],
     },
-    "WRONG_LAYER_DISTANCES": {
+    "BROKEN_MAP_DRAW_COUNT": {
         "kind": "constant",
-        "declared_value": [3, 7, 14],  # Q7
-        "consumed_by": ["endpoint:allocate_wrong_layers"],
+        "declared_value": 8,
+        "consumed_by": [
+            "preflight:crossing_registry",
+            "endpoint:materialize_crossed_factorials",
+        ],
     },
-    # Each stochastic construction gets its own seed rather than sharing one.
-    # A shared seed couples three independent draws, so changing the wrong-layer
-    # allocation would silently change which broken map was built.
-    "WRONG_LAYER_SEED": {
+    "UNIQUE_READOUT_COUNT": {
         "kind": "constant",
-        "declared_value": 20260727,
-        "consumed_by": ["endpoint:allocate_wrong_layers"],
+        "declared_value": 81,
+        "consumed_by": ["endpoint:materialize_crossed_factorials"],
     },
-    "WRONG_ACTIVATION_SEED": {
+    "LOGICAL_COMBINATION_COUNT": {
         "kind": "constant",
-        "declared_value": 20260728,
-        "consumed_by": ["endpoint:select_wrong_activation"],
+        "declared_value": 64,
+        "consumed_by": ["endpoint:materialize_crossed_factorials"],
+    },
+    "BROKEN_MAP_DRAWS": {
+        "kind": "constant",
+        "declared_value": _CROSSING_VECTORS["maps"],
+        "consumed_by": [
+            "preflight:crossing_registry",
+            "endpoint:build_fit_broken_maps",
+        ],
+    },
+    "BROKEN_MAP_SPECTRUM_RTOL": {
+        "kind": "constant",
+        "declared_value": 1e-5,
+        "consumed_by": ["endpoint:singular_spectrum_evidence"],
+    },
+    "BROKEN_MAP_SPECTRUM_ATOL": {
+        "kind": "constant",
+        "declared_value": 1e-6,
+        "consumed_by": ["endpoint:singular_spectrum_evidence"],
+    },
+    "WRONG_ACTIVATION_ASSIGNMENTS": {
+        "kind": "constant",
+        "declared_value": _CROSSING_VECTORS["donors"],
+        "consumed_by": [
+            "preflight:crossing_registry",
+            "endpoint:select_wrong_activation",
+        ],
     },
     # -- preflight constants -------------------------------------------------
+    "PILOT_AUTHORIZED": {
+        "kind": "constant",
+        "declared_value": False,
+        "consumed_by": ["preflight:ratification"],
+    },
+    "PILOT_PROTOCOL_RATIFIED": {
+        "kind": "constant",
+        "declared_value": False,
+        "consumed_by": ["preflight:ratification"],
+    },
     "DECODE_PARITY_TOL": {
         "kind": "constant",
         "declared_value": 1e-5,
@@ -197,7 +369,7 @@ INITIAL_REGISTRY: dict[str, dict[str, Any]] = {
     "STAGE2B_N_PROMPTS": {
         "kind": "constant",
         "declared_value": 200,  # Q1
-        "consumed_by": ["preflight:manifest", "endpoint:allocate_wrong_layers"],
+        "consumed_by": ["preflight:manifest"],
     },
     "STAGE2B_N_CATEGORIES": {
         "kind": "constant",
@@ -209,7 +381,7 @@ INITIAL_REGISTRY: dict[str, dict[str, Any]] = {
         "declared_value": (
             "daeaa63881dc0f58be689307a81b1fbc347674424f1cae45819f82372804f5a6"
         ),
-        "consumed_by": ["preflight:manifest", "reproduction"],
+        "consumed_by": ["preflight:manifest"],
     },
     "STAGE2_MANIFEST_DIGESTS": {
         "kind": "constant",
@@ -268,12 +440,12 @@ INITIAL_REGISTRY: dict[str, dict[str, Any]] = {
     "EXPECTED_MODEL_N_LAYERS": {
         "kind": "constant",
         "declared_value": 28,
-        "consumed_by": ["preflight:environment", "endpoint:allocate_wrong_layers"],
+        "consumed_by": ["preflight:environment"],
     },
     "SELECTED_LAYERS": {
         "kind": "constant",
         "declared_value": [6, 13, 20, 26],  # Q2
-        "consumed_by": ["preflight:environment", "endpoint:allocate_wrong_layers"],
+        "consumed_by": ["preflight:environment"],
     },
     "POSITIONS": {
         "kind": "constant",
@@ -288,27 +460,12 @@ INITIAL_REGISTRY: dict[str, dict[str, Any]] = {
     "nta_jacobian": {
         "kind": "derived_field",
         "declared_value": None,
-        "consumed_by": ["h1_specificity", "h2_target", "sanity_floor"],
+        "consumed_by": ["endpoint:assemble_factorial_cells"],
     },
     "nta_fit_broken_same_layer": {
         "kind": "derived_field",
         "declared_value": None,
-        "consumed_by": ["h1_specificity"],
-    },
-    "nta_logit_lens": {
-        "kind": "derived_field",
-        "declared_value": None,
-        "consumed_by": ["h2_target"],
-    },
-    "nta_random_vector": {
-        "kind": "derived_field",
-        "declared_value": None,
-        "consumed_by": ["sanity_floor"],
-    },
-    "jaccard_top10_jacobian_vs_logit_lens": {
-        "kind": "derived_field",
-        "declared_value": None,
-        "consumed_by": ["h2_overlap"],
+        "consumed_by": ["endpoint:assemble_factorial_cells"],
     },
     "target_id": {
         "kind": "derived_field",
@@ -316,6 +473,47 @@ INITIAL_REGISTRY: dict[str, dict[str, Any]] = {
         "consumed_by": ["endpoint:target_rank1"],
     },
 }
+
+_RATIFIED_REGISTRY_ENTRIES = {
+    "TARGET_SOURCE",
+    "PROMPT_ONLY_CONSTRUCTION",
+    "PRIMARY_FLOOR_ID",
+    "SENSITIVITY_FLOOR_ID",
+    "BOOTSTRAP_CI_LEVEL",
+    "UNCERTAINTY_METHOD",
+    "RESAMPLING_UNIT",
+    "INTERVAL_METHOD",
+    "BOOTSTRAP_ITERATIONS",
+    "BOOTSTRAP_SEED",
+    "AGGREGATION_RULE",
+    "THRESHOLD_DERIVATION_RULES",
+    "MULTIPLICITY_RULE",
+    "NTA_GUARD_QUANTILE",
+    "NTA_GUARD_QUANTILE_METHOD",
+    "PILOT_MIN_LAYER_PROMPTS",
+    "PILOT_MIN_CATEGORY_PROMPTS",
+    "WRONG_ACTIVATION_ASSIGNMENT_COUNT",
+    "BROKEN_MAP_DRAW_COUNT",
+    "UNIQUE_READOUT_COUNT",
+    "LOGICAL_COMBINATION_COUNT",
+    "BROKEN_MAP_DRAWS",
+    "WRONG_ACTIVATION_ASSIGNMENTS",
+}
+_UNRATIFIED_REGISTRY_ENTRIES = {
+    "PILOT_AUTHORIZED",
+    "PILOT_PROTOCOL_RATIFIED",
+    "THRESHOLDS_RATIFIED",
+}
+for _name, _entry in INITIAL_REGISTRY.items():
+    if _entry["kind"] == "derived_field":
+        _entry["status"] = "derived"
+    elif _name in _RATIFIED_REGISTRY_ENTRIES:
+        _entry["status"] = "ratified"
+    elif _name in _UNRATIFIED_REGISTRY_ENTRIES:
+        _entry["status"] = "unratified"
+    else:
+        # Historical pins/defaults are implemented, not retroactively ratified.
+        _entry["status"] = "implemented"
 
 
 #: What each non-gate consumer actually reads.
@@ -328,7 +526,28 @@ INITIAL_REGISTRY: dict[str, dict[str, Any]] = {
 #: by default rather than only when a caller remembers to supply it.
 CONSUMER_READS: dict[str, tuple[str, ...]] = {
     "preflight:tensor_contracts": ("DECODE_PARITY_TOL", "EXPECTED_MODEL_D_MODEL"),
-    "preflight:ratification": ("THRESHOLDS_RATIFIED",),
+    "preflight:ratification": (
+        "STAGE1_RERUN_NOISE_MAX_ABS_LOGIT_DIFF",
+        "BOOTSTRAP_CI_LEVEL",
+        "UNCERTAINTY_METHOD",
+        "RESAMPLING_UNIT",
+        "INTERVAL_METHOD",
+        "BOOTSTRAP_ITERATIONS",
+        "BOOTSTRAP_SEED",
+        "AGGREGATION_RULE",
+        "THRESHOLD_DERIVATION_RULES",
+        "MULTIPLICITY_RULE",
+        "TOP_K",
+        "PILOT_AUTHORIZED",
+        "PILOT_PROTOCOL_RATIFIED",
+        "THRESHOLDS_RATIFIED",
+    ),
+    "preflight:crossing_registry": (
+        "WRONG_ACTIVATION_ASSIGNMENT_COUNT",
+        "BROKEN_MAP_DRAW_COUNT",
+        "BROKEN_MAP_DRAWS",
+        "WRONG_ACTIVATION_ASSIGNMENTS",
+    ),
     "preflight:manifest": (
         "MAX_PROMPT_TOKENS",
         "STAGE2B_N_PROMPTS",
@@ -351,28 +570,56 @@ CONSUMER_READS: dict[str, tuple[str, ...]] = {
         "POSITIONS",
     ),
     "endpoint:nta": ("NTA_MIN_DENOMINATOR", "PROMPT_ONLY_CONSTRUCTION"),
-    "endpoint:compose_decision": ("INTERACTION_GATED",),
-    "endpoint:target_rank1": ("target_id",),
-    "endpoint:build_fit_broken_map": ("BROKEN_MAP_SEED",),
-    "endpoint:select_wrong_activation": ("WRONG_ACTIVATION_SEED",),
-    "endpoint:allocate_wrong_layers": (
-        "WRONG_LAYER_DISTANCES",
-        "WRONG_LAYER_SEED",
-        "SELECTED_LAYERS",
-        "STAGE2B_N_PROMPTS",
-        "EXPECTED_MODEL_N_LAYERS",
+    "endpoint:target_rank1": ("TARGET_SOURCE", "target_id"),
+    "endpoint:dual_floor_nta": (
+        "PRIMARY_FLOOR_ID",
+        "SENSITIVITY_FLOOR_ID",
+    ),
+    "endpoint:materialize_crossed_factorials": (
+        "WRONG_ACTIVATION_ASSIGNMENT_COUNT",
+        "BROKEN_MAP_DRAW_COUNT",
+        "UNIQUE_READOUT_COUNT",
+        "LOGICAL_COMBINATION_COUNT",
+    ),
+    "endpoint:assemble_factorial_cells": (
+        "nta_jacobian",
+        "nta_fit_broken_same_layer",
+    ),
+    "endpoint:build_fit_broken_maps": ("BROKEN_MAP_DRAWS",),
+    "endpoint:singular_spectrum_evidence": (
+        "BROKEN_MAP_SPECTRUM_RTOL",
+        "BROKEN_MAP_SPECTRUM_ATOL",
+    ),
+    "endpoint:select_wrong_activation": ("WRONG_ACTIVATION_ASSIGNMENTS",),
+    "endpoint:derive_nta_min_denominator": (
+        "NTA_MIN_DENOMINATOR",
+        "NTA_GUARD_QUANTILE",
+        "NTA_GUARD_QUANTILE_METHOD",
+        "THRESHOLD_DERIVATION_RULES",
+    ),
+    "endpoint:check_floor_layer_coverage": (
+        "PILOT_MIN_LAYER_PROMPTS",
+        "PILOT_MIN_CATEGORY_PROMPTS",
+    ),
+    "endpoint:category_stratified_prompt_interval": (
+        "BOOTSTRAP_CI_LEVEL",
+        "BOOTSTRAP_ITERATIONS",
+        "BOOTSTRAP_SEED",
+    ),
+    "endpoint:product_weight_interval": (
+        "BOOTSTRAP_CI_LEVEL",
+        "BOOTSTRAP_ITERATIONS",
+        "BOOTSTRAP_SEED",
+    ),
+    "endpoint:derive_pilot_thresholds": (
+        "SPEC_MIN_EFFECT",
+        "INTERACTION_MIN_EFFECT",
+        "THRESHOLD_DERIVATION_RULES",
     ),
 }
 
-#: Which constant each gate compares against, so the reverse check covers gates
-#: even when ``gates`` is passed as a plain sequence of IDs.
-GATE_READS: dict[str, str] = {
-    "reproduction": "STAGE1_RERUN_NOISE_MAX_ABS_LOGIT_DIFF",
-    "h1_specificity": "SPEC_MIN_EFFECT",
-    "h1_interval": "BOOTSTRAP_CI_LEVEL",
-    "h2_overlap": "NONREDUNDANCY_MAX_JACCARD",
-    "h2_target": "BOOTSTRAP_CI_LEVEL",
-}
+# Populated only after scientific gate composition is separately ratified.
+GATE_READS: dict[str, str] = {}
 
 
 def _resolve(
@@ -442,6 +689,38 @@ def check_constant_registry(
                     consumer=consumer,
                 )
 
+        kind = entry.get("kind")
+        value = entry.get("declared_value")
+        status = entry.get("status")
+        allowed_statuses = {"ratified", "unratified", "implemented", "derived"}
+        if status not in allowed_statuses:
+            raise PreflightError(
+                "invalid_registry_status",
+                f"{name!r} has unknown or missing registry status {status!r}",
+                constant=name,
+                status=status,
+            )
+        inconsistent = (
+            (kind == "derived_field" and status != "derived")
+            or (kind == "constant" and status == "derived")
+            or (status == "ratified" and value is None)
+            or (
+                status == "unratified"
+                and value is not None
+                and value is not False
+                and value != []
+            )
+        )
+        if inconsistent:
+            raise PreflightError(
+                "inconsistent_registry_status",
+                f"{name!r} status {status!r} is inconsistent with {kind!r} value {value!r}",
+                constant=name,
+                kind=kind,
+                status=status,
+                declared_value=value,
+            )
+
     if isinstance(gates, Mapping):
         for gate_name, gate in gates.items():
             read = gate.get("constant_name") if isinstance(gate, Mapping) else None
@@ -495,6 +774,7 @@ def emit_registry_record(
                 "name": name,
                 "kind": entry.get("kind"),
                 "declared_value": entry.get("declared_value"),
+                "status": entry.get("status"),
                 "consumed_by": list(entry.get("consumed_by") or []),
             }
             for name, entry in sorted(registry.items())
@@ -577,6 +857,29 @@ def check_tensor_contracts(observed: Mapping[str, Any], d_model: int = 2048) -> 
             tolerance=tol,
         )
 
+    if observed.get("rank_parity_verified") is not True:
+        raise PreflightError(
+            "rank_parity",
+            "rank parity against the pinned reference was not explicitly verified",
+            observed=observed.get("rank_parity_verified"),
+            expected=True,
+        )
+
+    expected_floors = {
+        "primary_floor_id": "input_embedding_decoded",
+        "sensitivity_floor_id": "layer0_residual_decoded",
+    }
+    for field, expected in expected_floors.items():
+        actual = observed.get(field)
+        if actual != expected:
+            raise PreflightError(
+                "floor_identity",
+                f"{field} is {actual!r}, expected {expected!r}",
+                field=field,
+                observed=actual,
+                expected=expected,
+            )
+
     softcap = observed.get("logit_softcapping")
     if softcap is not None:
         raise PreflightError(
@@ -587,37 +890,574 @@ def check_tensor_contracts(observed: Mapping[str, Any], d_model: int = 2048) -> 
         )
 
 
+def check_crossing_registry(
+    donor_assignments: Sequence[Mapping[str, Any]],
+    map_draws: Sequence[Mapping[str, Any]],
+) -> None:
+    """Require exact SHA-derived identities for the ratified 8x8 crossing."""
+    if len(donor_assignments) != 8 or len(map_draws) != 8:
+        raise PreflightError(
+            "crossing_registry_size",
+            "crossing requires exactly eight donor assignments and eight map draws",
+            donor_count=len(donor_assignments),
+            map_count=len(map_draws),
+        )
+    expected_vectors = derive_crossing_seed_vectors()
+    for kind, entries, expected in (
+        ("donor", donor_assignments, expected_vectors["donors"]),
+        ("map", map_draws, expected_vectors["maps"]),
+    ):
+        if not all(isinstance(entry, Mapping) for entry in entries):
+            raise PreflightError(
+                "crossing_registry_identity",
+                f"every {kind} crossing entry must be an object",
+            )
+        identities = [entry.get("id") for entry in entries]
+        seeds = [entry.get("seed") for entry in entries]
+        if not all(isinstance(value, str) and value for value in identities):
+            raise PreflightError(
+                "crossing_registry_identity",
+                f"every {kind} crossing entry needs a non-empty string id",
+            )
+        if not all(
+            isinstance(value, int) and not isinstance(value, bool) for value in seeds
+        ):
+            raise PreflightError(
+                "crossing_registry_seed",
+                f"every {kind} crossing entry needs an integer seed",
+            )
+        if len(set(identities)) != 8 or len(set(seeds)) != 8:
+            raise PreflightError(
+                "crossing_registry_duplicate",
+                f"{kind} crossing IDs and seeds must each be unique",
+            )
+        if list(entries) != expected:
+            raise PreflightError(
+                "crossing_registry_derivation",
+                f"{kind} crossing entries do not match the ratified SHA-256 derivation",
+                observed=list(entries),
+                expected=expected,
+            )
+
+
+def _authorization_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """Reject duplicate JSON keys instead of accepting the last value silently."""
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate key {key!r}")
+        result[key] = value
+    return result
+
+
+def _require_exact_fields(
+    value: Any,
+    expected: set[str],
+    *,
+    context: str,
+) -> Mapping[str, Any]:
+    if not isinstance(value, Mapping):
+        raise PreflightError(
+            "authorization_record_schema",
+            f"{context} must be a JSON object",
+            context=context,
+        )
+    observed = set(value)
+    if observed != expected:
+        raise PreflightError(
+            "authorization_record_schema",
+            f"{context} fields do not match the contract",
+            context=context,
+            missing=sorted(expected - observed),
+            unknown=sorted(observed - expected),
+        )
+    return value
+
+
+def load_pilot_authorization_record(
+    path: str | Path,
+    *,
+    approved_record_sha256: str,
+    expected_pilot_view_sha256: str,
+    observed_code_bundle_sha256: str,
+) -> dict[str, Any]:
+    """Load one content-addressed, pilot-only authorization record.
+
+    The record is external to the notebook, so an authorization transition never
+    requires editing executable source. The independently supplied approved digest
+    binds both the filename and exact bytes, while the scope block keeps
+    confirmation access and artifact transfer false.
+    """
+    record_path = Path(path)
+    if re.fullmatch(r"[0-9a-f]{64}", approved_record_sha256) is None:
+        raise PreflightError(
+            "authorization_record_approval",
+            "independently approved authorization SHA-256 must be 64 lowercase hex",
+            observed=approved_record_sha256,
+        )
+    match = _PILOT_AUTHORIZATION_FILENAME.fullmatch(record_path.name)
+    if match is None:
+        raise PreflightError(
+            "authorization_record_name",
+            "pilot authorization filename must contain its lowercase SHA-256",
+            path=str(record_path),
+        )
+    if match.group(1) != approved_record_sha256:
+        raise PreflightError(
+            "authorization_record_approval",
+            "authorization filename does not match the independently approved digest",
+            approved=approved_record_sha256,
+            observed=match.group(1),
+        )
+    try:
+        payload = record_path.read_bytes()
+    except OSError as exc:
+        raise PreflightError(
+            "authorization_record_unreadable",
+            f"pilot authorization record cannot be read: {exc}",
+            path=str(record_path),
+        ) from exc
+    observed_sha256 = hashlib.sha256(payload).hexdigest()
+    if observed_sha256 != approved_record_sha256:
+        raise PreflightError(
+            "authorization_record_digest",
+            "pilot authorization record bytes do not match the approved digest",
+            expected=approved_record_sha256,
+            observed=observed_sha256,
+        )
+    try:
+        record = json.loads(
+            payload.decode("utf-8"),
+            object_pairs_hook=_authorization_object,
+        )
+    except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+        raise PreflightError(
+            "authorization_record_json",
+            f"pilot authorization record is not unambiguous UTF-8 JSON: {exc}",
+        ) from exc
+
+    root = _require_exact_fields(
+        record,
+        {"schema", "run_mode", "decision", "scope", "source", "registry_updates"},
+        context="authorization record",
+    )
+    if root["schema"] != PILOT_AUTHORIZATION_SCHEMA or root["run_mode"] != "pilot":
+        raise PreflightError(
+            "authorization_record_scope",
+            "authorization record must use the pilot schema and pilot run mode",
+            schema=root["schema"],
+            run_mode=root["run_mode"],
+        )
+
+    decision = _require_exact_fields(
+        root["decision"],
+        {"authority", "authorized_at_utc", "instruction", "instruction_sha256"},
+        context="authorization record decision",
+    )
+    for name in ("authority", "authorized_at_utc", "instruction"):
+        if not isinstance(decision[name], str) or not decision[name].strip():
+            raise PreflightError(
+                "authorization_record_decision",
+                f"decision field {name!r} must be a non-empty string",
+                field=name,
+            )
+    if decision["authority"] != "Dr. Mani":
+        raise PreflightError(
+            "authorization_record_authority",
+            "pilot execution authority must be exactly 'Dr. Mani'",
+            observed=decision["authority"],
+        )
+    try:
+        datetime.strptime(decision["authorized_at_utc"], "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError:
+        raise PreflightError(
+            "authorization_record_decision",
+            "authorized_at_utc must use second-resolution UTC RFC 3339 form",
+            observed=decision["authorized_at_utc"],
+        ) from None
+    instruction_sha256 = hashlib.sha256(
+        (decision["instruction"] + "\n").encode("utf-8")
+    ).hexdigest()
+    if decision["instruction_sha256"] != instruction_sha256:
+        raise PreflightError(
+            "authorization_record_decision",
+            "decision instruction does not match its recorded SHA-256",
+            expected=instruction_sha256,
+            observed=decision["instruction_sha256"],
+        )
+
+    scope = _require_exact_fields(
+        root["scope"],
+        {
+            "pilot_view_sha256",
+            "confirmation_access_authorized",
+            "artifact_transfer_authorized",
+        },
+        context="authorization record scope",
+    )
+    if scope["pilot_view_sha256"] != expected_pilot_view_sha256:
+        raise PreflightError(
+            "authorization_record_pilot_view",
+            "authorization record targets a different pilot view",
+            expected=expected_pilot_view_sha256,
+            observed=scope["pilot_view_sha256"],
+        )
+    if (
+        scope["confirmation_access_authorized"] is not False
+        or scope["artifact_transfer_authorized"] is not False
+    ):
+        raise PreflightError(
+            "authorization_record_boundary",
+            "pilot authorization cannot grant confirmation access or artifact transfer",
+        )
+
+    source = _require_exact_fields(
+        root["source"],
+        {"notebook_sha256", "code_bundle_sha256"},
+        context="authorization record source",
+    )
+    notebook_sha256 = source["notebook_sha256"]
+    if (
+        not isinstance(notebook_sha256, str)
+        or re.fullmatch(r"[0-9a-f]{64}", notebook_sha256) is None
+    ):
+        raise PreflightError(
+            "authorization_record_source",
+            "authorization record notebook_sha256 is not a lowercase SHA-256",
+            field="notebook_sha256",
+            approved=notebook_sha256,
+        )
+    approved_bundle_sha256 = source["code_bundle_sha256"]
+    if (
+        not isinstance(approved_bundle_sha256, str)
+        or re.fullmatch(r"[0-9a-f]{64}", approved_bundle_sha256) is None
+        or approved_bundle_sha256 != observed_code_bundle_sha256
+    ):
+        raise PreflightError(
+            "authorization_record_source",
+            "authorization record code_bundle_sha256 does not match the observed bundle bytes",
+            field="code_bundle_sha256",
+            approved=approved_bundle_sha256,
+            observed=observed_code_bundle_sha256,
+        )
+
+    updates = _require_exact_fields(
+        root["registry_updates"],
+        set(root["registry_updates"])
+        if isinstance(root["registry_updates"], Mapping)
+        else set(),
+        context="authorization record registry_updates",
+    )
+    if not updates:
+        raise PreflightError(
+            "authorization_record_schema",
+            "authorization record registry_updates must not be empty",
+        )
+    for name, update in updates.items():
+        _require_exact_fields(
+            update,
+            {"declared_value", "status"},
+            context=f"authorization record registry_updates.{name}",
+        )
+    return {**root, "_record_sha256": observed_sha256}
+
+
+def materialize_pilot_authorization(
+    record: Mapping[str, Any],
+    registry: Mapping[str, Mapping[str, Any]],
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+    """Apply a complete pilot decision record without mutating the base registry."""
+    required_updates = {"PILOT_AUTHORIZED", "PILOT_PROTOCOL_RATIFIED"}
+    updates = record.get("registry_updates")
+    if not isinstance(updates, Mapping) or set(updates) != required_updates:
+        observed = set(updates) if isinstance(updates, Mapping) else set()
+        raise PreflightError(
+            "authorization_record_incomplete",
+            "pilot authorization may update exactly the protocol and execution flags",
+            missing=sorted(required_updates - observed),
+            unknown=sorted(observed - required_updates),
+        )
+
+    resolved = {name: dict(entry) for name, entry in registry.items()}
+    check_constant_registry(resolved, GATES)
+    check_crossing_registry(
+        resolved["WRONG_ACTIVATION_ASSIGNMENTS"]["declared_value"],
+        resolved["BROKEN_MAP_DRAWS"]["declared_value"],
+    )
+    for name in sorted(required_updates):
+        base = resolved.get(name)
+        update = updates[name]
+        if base is None or base.get("status") != "unratified":
+            raise PreflightError(
+                "authorization_record_registry",
+                f"{name!r} is not an unresolved registry entry",
+                constant=name,
+            )
+        if not isinstance(update, Mapping) or set(update) != {
+            "declared_value",
+            "status",
+        }:
+            raise PreflightError(
+                "authorization_record_schema",
+                f"registry update {name!r} must contain declared_value and status",
+                constant=name,
+            )
+        if update.get("status") != "ratified":
+            raise PreflightError(
+                "authorization_record_unratified",
+                f"registry update {name!r} is not explicitly ratified",
+                constant=name,
+            )
+        resolved[name] = {
+            **base,
+            "declared_value": update.get("declared_value"),
+            "status": "ratified",
+        }
+
+    configuration = {
+        name: resolved[name]["declared_value"]
+        for name in (
+            "PILOT_AUTHORIZED",
+            "PILOT_PROTOCOL_RATIFIED",
+            "THRESHOLDS_RATIFIED",
+            "BROKEN_MAP_DRAWS",
+            "WRONG_ACTIVATION_ASSIGNMENTS",
+        )
+    }
+    return configuration, resolved
+
+
 def check_ratification(
     thresholds: Mapping[str, Any],
     registry: Mapping[str, Mapping[str, Any]] | None = None,
+    *,
+    mode: str = "confirmatory",
 ) -> None:
-    """The execution boundary (FR-013, Q10).
-
-    Runs **last**, so every other check is exercisable against the unratified
-    configuration the notebook ships in — which is the state every test runs
-    against.
-
-    A signed ratification with a still-unset threshold is refused.  Stage 2's
-    failure mode was setting a margin without a pilot and then being unable to say
-    whether its controls were inseparable or merely under-resolved at that value;
-    ``unset_constant`` makes the inverse mistake impossible too, so deferring a
-    threshold and signing the ratification are mutually exclusive rather than
-    merely discouraged.
-    """
-    if not thresholds.get("THRESHOLDS_RATIFIED"):
+    """Fail closed unless the selected run mode is explicitly and fully ratified."""
+    if mode not in {"pilot", "confirmatory"}:
         raise PreflightError(
-            "not_ratified",
-            "THRESHOLDS_RATIFIED is not set; execution requires Dr. Mani's "
-            "ratification of the ten open parameters",
+            "invalid_run_mode",
+            f"run mode must be 'pilot' or 'confirmatory', got {mode!r}",
+            mode=mode,
         )
+    if registry is None:
+        raise PreflightError(
+            "registry_required",
+            "pilot and confirmatory execution require an explicitly supplied registry",
+            mode=mode,
+        )
+    check_constant_registry(registry, GATES)
 
-    for name, entry in (registry or {}).items():
-        if entry.get("kind") == "constant" and entry.get("declared_value") is None:
+    if mode == "pilot":
+        pilot_authorization = registry.get("PILOT_AUTHORIZED", {})
+        if (
+            thresholds.get("PILOT_AUTHORIZED") is not True
+            or pilot_authorization.get("declared_value") is not True
+            or pilot_authorization.get("status") != "ratified"
+        ):
             raise PreflightError(
-                "unset_constant",
-                f"{name!r} is still unset while THRESHOLDS_RATIFIED is true",
+                "pilot_not_authorized",
+                "PILOT_AUTHORIZED must be explicitly true and ratified in the registry for a pilot run",
+            )
+        if thresholds.get("PILOT_PROTOCOL_RATIFIED") is not True:
+            raise PreflightError(
+                "pilot_protocol_not_ratified",
+                "PILOT_PROTOCOL_RATIFIED must be explicitly true for a pilot run",
+            )
+    else:
+        threshold_ratification = registry.get("THRESHOLDS_RATIFIED", {})
+        if (
+            thresholds.get("THRESHOLDS_RATIFIED") is not True
+            or threshold_ratification.get("declared_value") is not True
+            or threshold_ratification.get("status") != "ratified"
+        ):
+            raise PreflightError(
+                "not_ratified",
+                "THRESHOLDS_RATIFIED must be explicitly true and ratified in the registry for confirmatory execution",
+            )
+
+    donors = thresholds.get("WRONG_ACTIVATION_ASSIGNMENTS", ())
+    maps = thresholds.get("BROKEN_MAP_DRAWS", ())
+    check_crossing_registry(donors, maps)
+    for name, supplied in (
+        ("WRONG_ACTIVATION_ASSIGNMENTS", donors),
+        ("BROKEN_MAP_DRAWS", maps),
+    ):
+        entry = registry.get(name, {})
+        if entry.get("declared_value") != supplied:
+            raise PreflightError(
+                "registry_value_mismatch",
+                f"{name!r} differs between authorization and registry",
                 constant=name,
             )
+
+    required_ratification = (
+        {"PILOT_AUTHORIZED", "PILOT_PROTOCOL_RATIFIED"}
+        if mode == "pilot"
+        else {"THRESHOLDS_RATIFIED"}
+    )
+    for name in sorted(required_ratification):
+        entry = registry.get(name, {})
+        value = entry.get("declared_value")
+        if value is None:
+            raise PreflightError(
+                "unset_constant",
+                f"{name!r} remains unset for {mode} execution",
+                constant=name,
+            )
+        if entry.get("status") != "ratified":
+            raise PreflightError(
+                "unratified_constant",
+                f"{name!r} has a value but is not explicitly ratified",
+                constant=name,
+                status=entry.get("status"),
+            )
+
+    expected_bootstrap_seed = {
+        key: value
+        for key, value in bootstrap_rng_identity(
+            "pilot" if mode == "pilot" else "confirmatory",
+            numpy_version="runtime-recorded",
+        ).items()
+        if key != "numpy_version"
+    }
+    expected_protocol = {
+        "BOOTSTRAP_CI_LEVEL": 0.99,
+        "UNCERTAINTY_METHOD": {
+            "primary": "category_stratified_prompt_percentile",
+            "sensitivity": "prompt_donor_map_product_weight_percentile",
+        },
+        "RESAMPLING_UNIT": {
+            "primary": "prompt_within_category",
+            "sensitivity": "prompt_x_donor_assignment_x_map_draw",
+        },
+        "INTERVAL_METHOD": "two_sided_99_percentile_linear",
+        "BOOTSTRAP_ITERATIONS": 20_000,
+        "BOOTSTRAP_SEED": expected_bootstrap_seed,
+        "AGGREGATION_RULE": "equal_draw_mean_then_equal_category_mean_per_layer",
+        "THRESHOLD_DERIVATION_RULES": {
+            "SPEC_MIN_EFFECT": "0.5 * primary_floor_correct_effect_mean_by_layer",
+            "INTERACTION_MIN_EFFECT": "0.5 * primary_floor_interaction_mean_by_layer",
+            "NTA_MIN_DENOMINATOR": "linear_quantile_0.05_of_80_primary_denominators",
+        },
+        "MULTIPLICITY_RULE": "single_intersection_union_all_components_required",
+        "NTA_GUARD_QUANTILE": 0.05,
+        "NTA_GUARD_QUANTILE_METHOD": "linear",
+        "PILOT_MIN_LAYER_PROMPTS": 18,
+        "PILOT_MIN_CATEGORY_PROMPTS": 3,
+    }
+    for name, expected in expected_protocol.items():
+        entry = registry.get(name, {})
+        if entry.get("declared_value") != expected or entry.get("status") != "ratified":
+            code = (
+                "pilot_protocol_incomplete" if mode == "pilot" else "invalid_constant"
+            )
+            raise PreflightError(
+                code,
+                f"{name!r} does not match the ratified protocol",
+                constant=name,
+                observed=entry.get("declared_value"),
+                expected=expected,
+            )
+
+    if mode == "pilot":
+        for name in (
+            "NTA_MIN_DENOMINATOR",
+            "SPEC_MIN_EFFECT",
+            "INTERACTION_MIN_EFFECT",
+        ):
+            entry = registry.get(name, {})
+            if entry.get("kind") != "derived_field" or entry.get("status") != "derived":
+                raise PreflightError(
+                    "pilot_derived_input",
+                    f"{name!r} must remain a derived pilot output",
+                    constant=name,
+                )
+            if entry.get("declared_value") is not None:
+                raise PreflightError(
+                    "pilot_derived_input",
+                    f"{name!r} cannot be supplied before pilot measurement",
+                    constant=name,
+                    observed=entry.get("declared_value"),
+                )
+    else:
+        nta_guard = registry["NTA_MIN_DENOMINATOR"]["declared_value"]
+        if not (
+            isinstance(nta_guard, (int, float))
+            and not isinstance(nta_guard, bool)
+            and math.isfinite(float(nta_guard))
+            and float(nta_guard) > 0
+        ):
+            raise PreflightError(
+                "invalid_constant",
+                "'NTA_MIN_DENOMINATOR' must be finite and positive",
+                constant="NTA_MIN_DENOMINATOR",
+                observed=nta_guard,
+            )
+        for name in ("SPEC_MIN_EFFECT", "INTERACTION_MIN_EFFECT"):
+            value = registry[name]["declared_value"]
+            if not (
+                isinstance(value, Sequence)
+                and not isinstance(value, (str, bytes))
+                and len(value) == 4
+                and all(
+                    isinstance(item, (int, float))
+                    and not isinstance(item, bool)
+                    and math.isfinite(float(item))
+                    and float(item) > 0
+                    for item in value
+                )
+            ):
+                raise PreflightError(
+                    "invalid_constant",
+                    f"{name!r} must be four finite positive layer values",
+                    constant=name,
+                    observed=value,
+                )
+
+
+def installed_vcs_commit(
+    direct_url_text: str | None,
+    *,
+    expected_repo_url: str,
+) -> str:
+    """Read a full commit from pip-generated ``direct_url.json`` metadata.
+
+    The expected pin is intentionally not accepted as an input or fallback. A
+    missing distribution record, non-VCS install, different repository, or
+    abbreviated commit makes the installed source identity unverifiable.
+    """
+
+    def fail(detail: str) -> NoReturn:
+        raise PreflightError(
+            "jlens_identity_unverifiable",
+            detail,
+        )
+
+    if not isinstance(direct_url_text, str):
+        fail("installed distribution has no direct_url.json metadata")
+    try:
+        record = json.loads(direct_url_text)
+    except (TypeError, json.JSONDecodeError) as exc:
+        fail(f"installed direct_url.json is not valid JSON: {exc}")
+    if not isinstance(record, dict):
+        fail("installed direct_url.json is not an object")
+    if record.get("url") != expected_repo_url:
+        fail(
+            f"installed source URL is {record.get('url')!r}, expected "
+            f"{expected_repo_url!r}"
+        )
+    vcs_info = record.get("vcs_info")
+    if not isinstance(vcs_info, dict) or vcs_info.get("vcs") != "git":
+        fail("installed direct_url.json does not record a git VCS source")
+    commit = vcs_info.get("commit_id")
+    if not (
+        isinstance(commit, str)
+        and len(commit) == 40
+        and all(character in string.hexdigits for character in commit)
+    ):
+        fail(f"installed VCS commit is not a full 40-hex identity: {commit!r}")
+    return commit.lower()
 
 
 def check_environment(env: Mapping[str, Any], pins: Mapping[str, Any]) -> None:

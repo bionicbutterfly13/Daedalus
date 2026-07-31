@@ -62,4 +62,4 @@ botpy.log
 large_tool_results/
 
 # Canonical J-space research notebooks are tracked evidence artifacts
-!sakshi notes/*.ipynb
+!j-space-lab/*.ipynb

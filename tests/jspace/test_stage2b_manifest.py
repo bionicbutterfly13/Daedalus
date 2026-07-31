@@ -69,6 +69,13 @@ def _check(manifest, **kw):
     manifest_mod.check_manifest(manifest, STAGE2_DIGESTS, **kw)
 
 
+def _pilot_ids():
+    """Four preregistered IDs from each category block."""
+    return [
+        f"s{base + offset:03d}" for base in range(0, 200, 40) for offset in range(4)
+    ]
+
+
 class TestFixtureIntegrity:
     """The fixture is the referent for every disjointness claim."""
 
@@ -245,6 +252,92 @@ class TestManifestDigest:
         assert "digest" not in built
 
 
+class TestRunPartition:
+    """The pilot process must have no path to the 180-prompt holdout."""
+
+    def test_pilot_returns_exactly_the_pinned_twenty_in_original_order(self):
+        built = _manifest()
+        selected = manifest_mod.select_partition(
+            built,
+            mode="pilot",
+            pilot_ids=_pilot_ids(),
+        )
+        assert [prompt["id"] for prompt in selected["prompts"]] == _pilot_ids()
+        assert selected["n_prompts"] == 20
+        assert set(selected["category_counts"].values()) == {4}
+
+    def test_confirmatory_partition_is_the_disjoint_remaining_180(self):
+        built = _manifest()
+        pilot = manifest_mod.select_partition(
+            built, mode="pilot", pilot_ids=_pilot_ids()
+        )
+        confirmatory = manifest_mod.select_partition(
+            built,
+            mode="confirmatory",
+            pilot_ids=_pilot_ids(),
+        )
+        pilot_ids = {prompt["id"] for prompt in pilot["prompts"]}
+        confirmatory_ids = {prompt["id"] for prompt in confirmatory["prompts"]}
+        assert len(confirmatory_ids) == 180
+        assert pilot_ids.isdisjoint(confirmatory_ids)
+        assert pilot_ids | confirmatory_ids == {
+            prompt["id"] for prompt in built["prompts"]
+        }
+
+    def test_independently_pinned_subset_digest_is_checked(self):
+        built = _manifest()
+        selected = manifest_mod.select_partition(
+            built,
+            mode="pilot",
+            pilot_ids=_pilot_ids(),
+        )
+        assert selected["pilot_subset_sha256"]
+        with pytest.raises(preflight.PreflightError) as exc:
+            manifest_mod.select_partition(
+                built,
+                mode="pilot",
+                pilot_ids=_pilot_ids(),
+                expected_pilot_subset_sha256="0" * 64,
+            )
+        assert exc.value.code == "pilot_subset_digest"
+
+    def test_unknown_pilot_id_is_rejected(self):
+        with pytest.raises(preflight.PreflightError) as exc:
+            manifest_mod.select_partition(
+                _manifest(),
+                mode="pilot",
+                pilot_ids=[*_pilot_ids()[:-1], "s999"],
+            )
+        assert exc.value.code == "unknown_pilot_prompt"
+
+    def test_duplicate_pilot_id_is_rejected(self):
+        ids = _pilot_ids()
+        ids[-1] = ids[0]
+        with pytest.raises(preflight.PreflightError) as exc:
+            manifest_mod.select_partition(_manifest(), mode="pilot", pilot_ids=ids)
+        assert exc.value.code == "pilot_subset_size"
+
+    def test_single_category_first_twenty_is_rejected(self):
+        """The shipped manifest is category-blocked, so literal first-20 is biased."""
+        with pytest.raises(preflight.PreflightError) as exc:
+            manifest_mod.select_partition(
+                _manifest(),
+                mode="pilot",
+                pilot_ids=[f"s{index:03d}" for index in range(20)],
+            )
+        assert exc.value.code == "pilot_category_imbalance"
+
+    @pytest.mark.parametrize("mode", ["", "exploratory", "PILOT"])
+    def test_unknown_partition_mode_is_rejected(self, mode):
+        with pytest.raises(preflight.PreflightError) as exc:
+            manifest_mod.select_partition(
+                _manifest(),
+                mode=mode,
+                pilot_ids=_pilot_ids(),
+            )
+        assert exc.value.code == "invalid_run_mode"
+
+
 class TestShippedManifest:
     """Tests the file that will actually be used, not just the generator.
 
@@ -253,7 +346,7 @@ class TestShippedManifest:
     """
 
     SHIPPED = pathlib.Path(__file__).resolve().parents[2] / (
-        "sakshi notes/jspace-stage2b-stimulus-v1.json"
+        "j-space-lab/jspace-stage2b-stimulus-v1.json"
     )
 
     def _shipped(self):
@@ -290,3 +383,70 @@ class TestShippedManifest:
         assert manifest_mod.canonical_digest(
             manifest_mod.build_manifest(stimuli)
         ) == manifest_mod.canonical_digest(self._shipped())
+
+
+class TestSyntheticPilotViewContract:
+    """Exercise an isolated view without opening the real pilot-view file."""
+
+    SOURCE_DIGEST = "a" * 64
+
+    def _pilot(self):
+        categories = [f"category-{index}" for index in range(5)]
+        prompts = []
+        for index in range(20):
+            text = f"synthetic pilot fixture {index}"
+            prompts.append(
+                {
+                    "id": f"fixture-{index:03d}",
+                    "text": text,
+                    "sha256": hashlib.sha256(text.encode()).hexdigest(),
+                    "utf8_byte_count": len(text.encode()),
+                    "category": categories[index // 4],
+                }
+            )
+        subset = {
+            "manifest_sha256": self.SOURCE_DIGEST,
+            "pilot_prompts": [
+                {"id": prompt["id"], "sha256": prompt["sha256"]} for prompt in prompts
+            ],
+        }
+        return {
+            "manifest_version": "jspace-stage2b-pilot-view/v1",
+            "source_manifest_sha256": self.SOURCE_DIGEST,
+            "source_n_prompts": 200,
+            "n_prompts": 20,
+            "categories": categories,
+            "pilot_subset_sha256": manifest_mod.canonical_digest(subset),
+            "prompts": prompts,
+        }
+
+    def _check(self, view):
+        expected = self._pilot()
+        manifest_mod.check_pilot_view(
+            view,
+            STAGE2_DIGESTS,
+            expected_view_digest=manifest_mod.canonical_digest(expected),
+            expected_source_manifest_digest=self.SOURCE_DIGEST,
+            expected_source_n_prompts=200,
+            expected_n_categories=5,
+            expected_pilot_subset_digest=expected["pilot_subset_sha256"],
+            expected_pilot_ids=[prompt["id"] for prompt in expected["prompts"]],
+            token_counts=_counts(view),
+            stage1_anchor_sha256=STAGE1_ANCHOR,
+        )
+
+    def test_synthetic_pilot_view_passes_without_the_full_manifest(self):
+        self._check(self._pilot())
+
+    def test_source_manifest_identity_is_not_self_asserting(self):
+        bad = {**self._pilot(), "source_manifest_sha256": "0" * 64}
+        with pytest.raises(preflight.PreflightError) as exc:
+            self._check(bad)
+        assert exc.value.code == "pilot_source_manifest_digest"
+
+    def test_prompt_text_tampering_is_rejected(self):
+        bad = self._pilot()
+        bad["prompts"][0]["text"] = "tampered after partitioning"
+        with pytest.raises(preflight.PreflightError) as exc:
+            self._check(bad)
+        assert exc.value.code in {"pilot_prompt_digest", "pilot_view_digest"}

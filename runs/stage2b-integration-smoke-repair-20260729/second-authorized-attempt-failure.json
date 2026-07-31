@@ -1,0 +1,48 @@
+{
+  "attempt": {
+    "authorization_record_sha256": "12369206a9f7cd01a8f09081eb71996404b20ea63660a06b74097d6d03c9dcef",
+    "authorized_launch_notebook_sha256": "1dc43fe664242784bb343d545e8ebc26c47ee5bcdbdb95e4a5808c13cf2d8bf3",
+    "canonical_notebook_sha256": "9c31cfa540c5feccfb664e1c21cc0bcdf07d09628c4655caaf10ff08da95e07a",
+    "code_bundle_sha256": "226152be91708c438a7a96b3bf46d8ddd80760a1c920013db71c16743a05d3e6",
+    "failed_at": "2026-07-30T02:09:02-0400"
+  },
+  "completed_checks": {
+    "artifact_transfer_authorized": false,
+    "bundle_sha256_gate_passed": true,
+    "confirmatory_inputs_accessed": false,
+    "excluded_input_identity_checks_passed": true,
+    "fresh_process_after_install": true,
+    "gpu_count": 1,
+    "gpu_name": "Tesla T4",
+    "gpu_total_vram_mib": 15360,
+    "immutable_model_revision_check_passed": true,
+    "immutable_lens_revision_check_passed": true,
+    "instrumentation_commit_check_passed": true,
+    "minimum_vram_gate_passed": true,
+    "pilot_inputs_accessed": false,
+    "runtime_package_version_checks_passed": true,
+    "source_bundle_identity_checks_passed": true
+  },
+  "failure": {
+    "cell": 9,
+    "elapsed_seconds": 12,
+    "exception_chain": [
+      "RuntimeError: operator torchvision::nms does not exist",
+      "ModuleNotFoundError: Could not import module 'Qwen3ForCausalLM'. Are this object's requirements defined correctly?"
+    ],
+    "phase": "AutoModelForCausalLM class resolution before model-weight load",
+    "trigger": "transformers.AutoModelForCausalLM.from_pretrained"
+  },
+  "retention_and_execution_boundary": {
+    "artifact_transferred": false,
+    "confirmatory_input_accessed": false,
+    "lens_downloaded": false,
+    "live_notebook_repaired": false,
+    "model_config_and_tokenizer_metadata_accessed": true,
+    "model_weights_loaded": false,
+    "pilot_input_accessed": false,
+    "runtime_report_created": false,
+    "scientific_gate_changed": false
+  },
+  "schema": "stage2b-integration-smoke-failure/v1"
+}

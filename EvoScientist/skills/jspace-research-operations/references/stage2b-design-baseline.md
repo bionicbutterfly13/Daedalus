@@ -5,8 +5,11 @@ did; this one records what Stage 2b changes and why, so the skill can answer
 questions about the current design without re-reading the spec tree.
 
 Full specification: `specs/001-jspace-stage2b/`. Design document:
-`sakshi notes/STAGE2B_DESIGN.md`. **Execution is not authorized** — ten
-parameters await ratification and `THRESHOLDS_RATIFIED` ships as `False`.
+`j-space-lab/STAGE2B_DESIGN.md`. The pilot protocol is ratified and locally
+implemented. The exact-hash-authorized 20-prompt pilot completed on 2026-07-31.
+`THRESHOLDS_RATIFIED` correctly remains `False`: primary-floor category coverage
+failed, threshold vectors were unavailable, and confirmation is blocked. The
+consumed pilot authorization does not authorize a repeat.
 
 ## What changed from Stage 2, and why
 
@@ -19,15 +22,16 @@ disagreement from an arbitrary one, so the strongest available conclusion was
 always non-identity. Stage 2b replaces it with normalized target attainment:
 
 ```
-rank1(t, r) = (logits_r > logits_r[t]).sum() + 1     # strict >, 1-indexed
+rank1(t, r) = (logits_r > logits_r[t]).sum() + 1
 s(r)        = -log(rank1(t, r)) / log(V)
-NTA(r)      = (s(r) - s(prompt_only)) / (s(output) - s(prompt_only))
+NTA_f(r)    = (s(r) - s(f)) / (s(output) - s(f))
 ```
 
-`prompt_only` is 0 and `output` is 1 by construction. Stage 2's preregistration
-required separation from both baselines and the implemented gate omitted that
-clause; defining the endpoint in terms of them makes the omission
-unrepresentable rather than merely forbidden.
+The primary floor `f` is the decoded input embedding and the sensitivity floor is
+the decoded layer-0 residual. Both are computed and retained; neither is selected
+after observation. Stage 2's preregistration required separation from baselines
+and the implemented gate omitted that clause. Defining the endpoint relative to
+explicit floors makes that omission unrepresentable rather than merely forbidden.
 
 **The controls confounded two factors.** Shuffled-layer moved the map and the
 layer; mismatched-probe moved the probe and the layer. When both failed, the
@@ -47,55 +51,57 @@ cause was unrecoverable. Stage 2b crosses them:
   diagonal, so the Mezzadri correction `q * sign(diag(r))` is required. It scales
   *columns*. A diagonal-sign test cannot detect a wrong-axis correction, because
   `q[i,i]` picks up `sign[i]` either way.
-- **The wrong activation** is a real norm-matched residual from a different
-  prompt, not a random vector — Stage 2 showed a norm-matched random vector is
-  beaten on every prompt, so it survives only as the sanity floor. The donor seed
-  is derived per prompt from the full digest; a bare `default_rng(seed)` reset
-  per call returns the same draw every time and concentrates every wrong
-  activation on one donor.
-- **Wrong-layer distances** are balanced within each `(layer, distance)` cell.
-  Deriving the sign from a positional index couples direction to layer, because
-  with four loci and two directions `index % 4` determines `index % 2`.
+  The pilot decomposes each fitted map once, reuses that decomposition for its
+  eight draws, and independently checks the full singular spectrum of every
+  realized map. The artifact retains both spectrum digests and the maximum error
+  under fixed implemented tolerances `rtol=1e-5`, `atol=1e-6`.
+- **Wrong activations** are real residuals from different prompts, not random
+  vectors. The pilot uses eight deterministic assignment identities
+  `donor-0..donor-7`, each derived from its ratified SHA-256 namespace, and
+  preserves every recipient→donor digest and realized residual hash.
+- **Wrong-layer controls are not part of the executable pilot.** Their old
+  distance, balancing, remainder, randomization, and sign rules remain deferred
+  design history rather than dormant policy.
 - **Target rank** is a comparison count, not a sort. `jlens.vis._ranks_of` chunks
   along the sequence dimension but still argsorts the full vocabulary per chunk,
   so it is the *reference* for FR-010's parity check, not the implementation.
+- **Source identity is external evidence.** The trusted launch preparer hashes
+  exact notebook and bundle bytes into a new exclusive directory. The artifact
+  validator receives those identities separately; provenance strings carried by
+  the artifact cannot authenticate themselves.
 
-## The cluster bootstrap
+## Ratified pilot uncertainty
 
-`scipy.stats.bootstrap` has no cluster parameter. The idiom:
+The primary interval resamples prompts with replacement within each of the five
+categories and recomputes a category-balanced mean independently for each layer.
+The sensitivity interval applies independent mean-one `Exp(1)` weights at prompt,
+donor, and map levels. Both use 20,000 explicit
+`Generator(PCG64(seed))` replicates and linear 0.005/0.995 quantiles. Neither
+method pools layers, changes the floor-specific exclusion mask, or discards the
+donor/map crossing before inference.
 
-```python
-indices = np.arange(len(prompt_keys))          # one entry PER PROMPT
-def statistic(idx):                             # non-vectorized
-    return float(np.median(table[idx.astype(int)]))
-bootstrap((indices,), statistic, method="bca", ...)
-```
+BCa/median/scipy text in older design notes is historical and not executable
+authority. Non-finite replicate output remains `undefined`, never a measured
+failure.
 
-Resampling the index array draws whole prompts with replacement, and BCa's
-jackknife then leaves out one *cluster* at a time rather than one observation.
+## Resolved estimand conflict
 
-**The table holds one value per prompt at one layer.** The bootstrap runs once
-per layer; it never concatenates across layers, which would pool depth into the
-gate — the defect the design forbids for absolute NTA, one level down and harder
-to see because each individual difference is already within-layer.
+The ratified pilot reports both the correct-activation fitted-over-broken effect
+and the correct-versus-wrong interaction. The pilot derives one four-layer
+threshold vector from each positive primary-floor category-balanced mean but
+emits no decision. Later confirmation requires both effects across every layer,
+floor, and uncertainty method under one intersection-union conjunction.
 
-**BCa is unstable for a median.** The acceleration term comes from the skewness
-of leave-one-out replicates, and a median jumps discontinuously under
-leave-one-out. scipy returns NaN bounds on a degenerate bootstrap. A gate reading
-a NaN bound must report `undefined`, never `fail`: an absent measurement and a
-measured null are different results, and collapsing them lets a failed
-computation be published as evidence of no effect. Every BCa interval is recorded
-alongside a percentile cross-check for exactly this reason.
+## Pilot outcome carried forward
 
-## The one open design conflict
+The layer-0 sensitivity floor produced positive correct effects and positive
+correct-versus-wrong interactions at every selected layer under both ratified
+99% interval methods. The decoded-input-embedding primary floor retained 18
+prompts per layer but only two arithmetic-completion prompts, below the minimum
+of three per category. Primary inference and threshold derivation are therefore
+`undefined`.
 
-`STAGE2B_DESIGN.md` defines H1's statistic two incompatible ways. §2 and §6 say
-the simple paired difference at the correct activation; §4 says the 2×2 main
-effect of map. They coincide only if the interaction is zero, and §4 predicts a
-nonzero one.
-
-The implementation gates on the §2/§6 form and reports the main effect as
-descriptive. Reasoning and the open question are in
-`specs/001-jspace-stage2b/research.md` R9 and open item 6 of
-`.specify/memory/project-state.md`. Which reading was intended is Dr. Mani's
-call, not an implementation detail.
+The supported interpretation is prompt-floor dependence and instrument
+fragility. It is not a robust Stage 2b pass, does not validate a consciousness
+claim, and does not authorize confirmation. The content-addressed artifact
+remains in Colab; public records cite its SHA-256 without transferring it.

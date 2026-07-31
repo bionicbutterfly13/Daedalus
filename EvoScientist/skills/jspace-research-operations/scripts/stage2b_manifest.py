@@ -25,6 +25,8 @@ __all__ = [
     "build_manifest",
     "canonical_digest",
     "check_manifest",
+    "check_pilot_view",
+    "select_partition",
 ]
 
 MANIFEST_VERSION = "jspace-stage2b-stimulus/v1"
@@ -84,6 +86,265 @@ def build_manifest(raw_stimuli: Sequence[tuple[str, str]]) -> dict[str, Any]:
         "n_prompts": len(prompts),
         "categories": sorted({c for c, _ in raw_stimuli}),
         "prompts": prompts,
+    }
+
+
+def check_pilot_view(
+    view: Mapping[str, Any],
+    stage2_digests: Sequence[str],
+    *,
+    expected_view_digest: str,
+    expected_source_manifest_digest: str,
+    expected_source_n_prompts: int,
+    expected_n_categories: int,
+    expected_pilot_subset_digest: str,
+    expected_pilot_ids: Sequence[str],
+    token_counts: Mapping[str, int],
+    stage1_anchor_sha256: str,
+    max_prompt_tokens: int = 128,
+) -> None:
+    """Validate the isolated 20-prompt pilot file without loading the holdout.
+
+    The source-manifest digest binds the view to the separately audited 200-prompt
+    document. The subset digest binds its ordered ``(id, sha256)`` pairs to that
+    source identity. Neither check requires pilot code to read a confirmatory text.
+    """
+    if view.get("manifest_version") != "jspace-stage2b-pilot-view/v1":
+        raise PreflightError(
+            "pilot_view_version",
+            f"unexpected pilot view version {view.get('manifest_version')!r}",
+        )
+    source_digest = view.get("source_manifest_sha256")
+    if source_digest != expected_source_manifest_digest:
+        raise PreflightError(
+            "pilot_source_manifest_digest",
+            f"pilot view names source {source_digest!r}, expected "
+            f"{expected_source_manifest_digest!r}",
+            observed=source_digest,
+            expected=expected_source_manifest_digest,
+        )
+    if view.get("source_n_prompts") != expected_source_n_prompts:
+        raise PreflightError(
+            "pilot_source_manifest_size",
+            f"pilot view names {view.get('source_n_prompts')!r} source prompts, "
+            f"expected {expected_source_n_prompts}",
+        )
+    if canonical_digest(view) != expected_view_digest:
+        raise PreflightError(
+            "pilot_view_digest",
+            "pilot view bytes do not match the independently pinned digest",
+            observed=canonical_digest(view),
+            expected=expected_view_digest,
+        )
+
+    prompts = view.get("prompts")
+    if (
+        not isinstance(prompts, list)
+        or view.get("n_prompts") != 20
+        or len(prompts) != 20
+    ):
+        raise PreflightError(
+            "pilot_subset_size",
+            "isolated pilot view must contain exactly 20 prompts",
+            observed_count=len(prompts) if isinstance(prompts, list) else None,
+        )
+    observed_ids = [
+        prompt.get("id") for prompt in prompts if isinstance(prompt, Mapping)
+    ]
+    if observed_ids != list(expected_pilot_ids):
+        raise PreflightError(
+            "pilot_subset_identity",
+            "pilot view IDs do not match the preregistered ordered subset",
+            observed=observed_ids,
+        )
+
+    categories = view.get("categories")
+    category_counts: dict[str, int] = {}
+    seen_digests: set[str] = set()
+    stage2 = set(stage2_digests)
+    for prompt in prompts:
+        if not isinstance(prompt, Mapping):
+            raise PreflightError("pilot_prompt_shape", "pilot prompt must be an object")
+        text = prompt.get("text")
+        digest = prompt.get("sha256")
+        if not isinstance(text, str) or not isinstance(digest, str):
+            raise PreflightError(
+                "pilot_prompt_shape", "pilot prompt text/digest is malformed"
+            )
+        encoded = text.encode("utf-8")
+        if hashlib.sha256(encoded).hexdigest() != digest:
+            raise PreflightError(
+                "pilot_prompt_digest",
+                f"pilot prompt {prompt.get('id')!r} text does not match its digest",
+            )
+        if prompt.get("utf8_byte_count") != len(encoded):
+            raise PreflightError(
+                "pilot_prompt_bytes",
+                f"pilot prompt {prompt.get('id')!r} byte count is stale",
+            )
+        if digest in seen_digests:
+            raise PreflightError("duplicate_prompt", f"duplicate pilot digest {digest}")
+        seen_digests.add(digest)
+        if digest in stage2:
+            raise PreflightError(
+                "stage2_overlap", f"pilot prompt overlaps Stage 2: {digest}"
+            )
+        if digest == stage1_anchor_sha256:
+            raise PreflightError(
+                "anchor_contamination", "Stage 1 anchor is in pilot view"
+            )
+        category = str(prompt.get("category"))
+        category_counts[category] = category_counts.get(category, 0) + 1
+        measured = token_counts.get(text)
+        if not isinstance(measured, int) or isinstance(measured, bool):
+            raise PreflightError(
+                "prompt_too_long",
+                f"pilot prompt {prompt.get('id')!r} has no measured token count",
+            )
+        if measured > max_prompt_tokens:
+            raise PreflightError(
+                "prompt_too_long",
+                f"pilot prompt {prompt.get('id')!r} has {measured} tokens, max is "
+                f"{max_prompt_tokens}",
+            )
+    if (
+        not isinstance(categories, list)
+        or len(categories) != expected_n_categories
+        or set(category_counts) != set(categories)
+        or set(category_counts.values()) != {4}
+    ):
+        raise PreflightError(
+            "pilot_category_imbalance",
+            f"pilot view must contain four prompts in every category, got {category_counts}",
+        )
+
+    subset_identity = {
+        "manifest_sha256": source_digest,
+        "pilot_prompts": [
+            {"id": prompt["id"], "sha256": prompt["sha256"]} for prompt in prompts
+        ],
+    }
+    observed_subset_digest = canonical_digest(subset_identity)
+    if (
+        view.get("pilot_subset_sha256") != expected_pilot_subset_digest
+        or observed_subset_digest != expected_pilot_subset_digest
+    ):
+        raise PreflightError(
+            "pilot_subset_digest",
+            f"pilot subset recomputed {observed_subset_digest!r}, expected "
+            f"{expected_pilot_subset_digest!r}",
+        )
+
+
+def select_partition(
+    manifest: Mapping[str, Any],
+    *,
+    mode: str,
+    pilot_ids: Sequence[str],
+    expected_pilot_subset_sha256: str | None = None,
+) -> dict[str, Any]:
+    """Return only the prompts authorized for one run mode.
+
+    The caller must supply the preregistered pilot IDs. Their identity is hashed
+    together with the full-manifest digest, and that hash can be pinned outside
+    the manifest. Pilot code receives only the 20 selected prompt records;
+    confirmatory code receives only the disjoint complement.
+    """
+    if mode not in {"pilot", "confirmatory"}:
+        raise PreflightError(
+            "invalid_run_mode",
+            f"run mode must be 'pilot' or 'confirmatory', got {mode!r}",
+            mode=mode,
+        )
+
+    unique_pilot_ids = set(pilot_ids)
+    if len(pilot_ids) != 20 or len(unique_pilot_ids) != 20:
+        raise PreflightError(
+            "pilot_subset_size",
+            "the preregistered pilot subset must contain exactly 20 unique IDs",
+            observed_count=len(pilot_ids),
+            unique_count=len(unique_pilot_ids),
+        )
+
+    prompts = manifest.get("prompts")
+    if not isinstance(prompts, list):
+        raise PreflightError("manifest_size", "manifest.prompts must be a list")
+    prompt_by_id = {
+        prompt.get("id"): prompt for prompt in prompts if isinstance(prompt, Mapping)
+    }
+    unknown = sorted(unique_pilot_ids - prompt_by_id.keys())
+    if unknown:
+        raise PreflightError(
+            "unknown_pilot_prompt",
+            f"pilot IDs are absent from the pinned manifest: {unknown}",
+            prompt_ids=unknown,
+        )
+
+    pilot_prompts = [
+        prompt for prompt in prompts if prompt.get("id") in unique_pilot_ids
+    ]
+    category_counts: dict[str, int] = {}
+    for prompt in pilot_prompts:
+        category = str(prompt.get("category"))
+        category_counts[category] = category_counts.get(category, 0) + 1
+    raw_categories = manifest.get("categories")
+    manifest_categories = (
+        [str(category) for category in raw_categories]
+        if isinstance(raw_categories, list)
+        else []
+    )
+    category_total = len(manifest_categories)
+    expected_per_category, remainder = divmod(20, category_total or 1)
+    if (
+        category_total == 0
+        or remainder
+        or set(category_counts) != set(manifest_categories)
+        or set(category_counts.values()) != {expected_per_category}
+    ):
+        raise PreflightError(
+            "pilot_category_imbalance",
+            f"pilot must be balanced across manifest categories, got {category_counts}",
+            observed=category_counts,
+        )
+
+    manifest_sha256 = canonical_digest(dict(manifest))
+    subset_identity = {
+        "manifest_sha256": manifest_sha256,
+        "pilot_prompts": [
+            {"id": prompt["id"], "sha256": prompt["sha256"]} for prompt in pilot_prompts
+        ],
+    }
+    pilot_subset_sha256 = canonical_digest(subset_identity)
+    if (
+        expected_pilot_subset_sha256 is not None
+        and pilot_subset_sha256 != expected_pilot_subset_sha256
+    ):
+        raise PreflightError(
+            "pilot_subset_digest",
+            f"recomputed {pilot_subset_sha256!r}, expected "
+            f"{expected_pilot_subset_sha256!r}",
+            observed=pilot_subset_sha256,
+            expected=expected_pilot_subset_sha256,
+        )
+
+    selected = (
+        pilot_prompts
+        if mode == "pilot"
+        else [prompt for prompt in prompts if prompt.get("id") not in unique_pilot_ids]
+    )
+    selected_category_counts: dict[str, int] = {}
+    for prompt in selected:
+        category = str(prompt.get("category"))
+        selected_category_counts[category] = (
+            selected_category_counts.get(category, 0) + 1
+        )
+    return {
+        "mode": mode,
+        "manifest_sha256": manifest_sha256,
+        "pilot_subset_sha256": pilot_subset_sha256,
+        "n_prompts": len(selected),
+        "category_counts": selected_category_counts,
+        "prompts": selected,
     }
 
 

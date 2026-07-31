@@ -63,7 +63,7 @@ from formatters and linters before committing, and re-verify the digest after.
 
 ## Scientific Protocol (J-space lab)
 
-Binds all work under `sakshi notes/` and
+Binds all work under `j-space-lab/` and
 `EvoScientist/skills/jspace-research-operations/`.
 
 - **Stage gates are hard.** Observation-only stages produce evidence class 1.

@@ -1,0 +1,548 @@
+{
+  "base_commit": "fa7980b56a091d9bbd6e32d4136ddcfccbc6d867",
+  "boundaries": {
+    "artifact_transfer_authorized": false,
+    "commit_or_push_authorized": false,
+    "confirmation_access_authorized": false,
+    "pilot_execution_authorized": false
+  },
+  "branch": "recover/jspace-stage2b-contract",
+  "created_at_utc": "2026-07-30T14:59:53Z",
+  "entries": [
+    {
+      "byte_count": 918,
+      "path": ".gitignore",
+      "sha256": "85c5138342508b845b7361d211a5ac470c2547442a68862ad80665fe03dd2478",
+      "status": " M"
+    },
+    {
+      "byte_count": 9398,
+      "path": ".specify/memory/constitution.md",
+      "sha256": "d68c1644beaf19527ea0bc6326f913e6a126a10e3308e74b0b920834c23ce1c5",
+      "status": " M"
+    },
+    {
+      "byte_count": 14946,
+      "path": ".specify/memory/project-state.md",
+      "sha256": "384a96acbbef7827ec95e1dfde96210fe04fdc50fb9b0c94c13830e575ca8250",
+      "status": " M"
+    },
+    {
+      "byte_count": 16798,
+      "path": "EvoScientist/skills/jspace-research-operations/SKILL.md",
+      "sha256": "e26807b8ff04c54be777eb2cc152f75dfb36408c684835fe82a40281c287648d",
+      "status": " M"
+    },
+    {
+      "byte_count": 4410,
+      "path": "EvoScientist/skills/jspace-research-operations/references/stage2b-design-baseline.md",
+      "sha256": "11a5984f5c5099cb45f98428bfe9f22b5796617481848b67a8cc80f1691205b6",
+      "status": " M"
+    },
+    {
+      "byte_count": 4649,
+      "path": "EvoScientist/skills/jspace-research-operations/scripts/authorize_stage2b_integration_smoke_notebook.py",
+      "sha256": "e43b1b68212d1cdae7ae06d977cc5351e7315f31efcaeb2ed24920bf0c48e803",
+      "status": "??"
+    },
+    {
+      "byte_count": 25644,
+      "path": "EvoScientist/skills/jspace-research-operations/scripts/build_stage2b_integration_smoke_notebook.py",
+      "sha256": "0dcbb93719e200e432e374ddca0059fe498c1a6b9ebf1e9dfe09bdc8e446ca61",
+      "status": "??"
+    },
+    {
+      "byte_count": 3745,
+      "path": "EvoScientist/skills/jspace-research-operations/scripts/build_stage2b_pilot_bundle.py",
+      "sha256": "51886149b4b3bf0165ec0a8ba4c8bc3d28ccf2d5a327e6e0e700bf5a24b0b142",
+      "status": "??"
+    },
+    {
+      "byte_count": 3077,
+      "path": "EvoScientist/skills/jspace-research-operations/scripts/build_stage2b_smoke_bundle.py",
+      "sha256": "f66576384b5124f61a31127a9e4ce1b6f6dea4cac40422d7fe098c34b65b3651",
+      "status": "??"
+    },
+    {
+      "byte_count": 18853,
+      "path": "EvoScientist/skills/jspace-research-operations/scripts/stage2b_endpoint.py",
+      "sha256": "71a5e6d39c87b418691a9108426025aa6c3cb99a9917fd46e49a59fc201ea9a0",
+      "status": " M"
+    },
+    {
+      "byte_count": 13746,
+      "path": "EvoScientist/skills/jspace-research-operations/scripts/stage2b_integration_smoke.py",
+      "sha256": "b1297362205e90d26e2ced85d98749559705ab1d8610e423346d9d30c96bb46c",
+      "status": "??"
+    },
+    {
+      "byte_count": 17622,
+      "path": "EvoScientist/skills/jspace-research-operations/scripts/stage2b_manifest.py",
+      "sha256": "fdba5705672e704cdf9b44f94b477013b763965abebcee34173015dfb1b1d241",
+      "status": " M"
+    },
+    {
+      "byte_count": 29698,
+      "path": "EvoScientist/skills/jspace-research-operations/scripts/stage2b_pilot_harness.py",
+      "sha256": "a48958d6aec1cbff8321a778044e55c17db63c5e10b4615372b38c1be0d9881e",
+      "status": "??"
+    },
+    {
+      "byte_count": 54650,
+      "path": "EvoScientist/skills/jspace-research-operations/scripts/stage2b_preflight.py",
+      "sha256": "303b0bcc5e584f3061694ccfd86c614cd7265a17dfd94e291ec2b5c53563f962",
+      "status": " M"
+    },
+    {
+      "byte_count": 40848,
+      "path": "EvoScientist/skills/jspace-research-operations/scripts/stage2b_statistics.py",
+      "sha256": "390988856574883ec31833b935e999e689463923f042c909516c0730d04c73a5",
+      "status": "??"
+    },
+    {
+      "byte_count": 82907,
+      "path": "EvoScientist/skills/jspace-research-operations/scripts/validate_observation.py",
+      "sha256": "e564c6181331e1290e10001ed1871122e401a9485aa80f615fcfb5e80fa99c76",
+      "status": " M"
+    },
+    {
+      "byte_count": 3390,
+      "path": "docs/README.md",
+      "sha256": "72f48cd4f543e7aa4235a40a03fdc90d6be0f71896078b9debea41a13ac04c8a",
+      "status": " M"
+    },
+    {
+      "byte_count": 7265,
+      "path": "docs/jspace-stage2b-colab-integration-experience.md",
+      "sha256": "7bb817ca7550537f08e4385051492b813adc24dcbb310655ad2be6fbaae8f940",
+      "status": "??"
+    },
+    {
+      "byte_count": 4180,
+      "path": "docs/wiki/Concepts-and-Relationships.md",
+      "sha256": "6cce6dde2caa8a122cf3d574e5a6bb9f84571067882a5584ddd9d012e1762c8e",
+      "status": "??"
+    },
+    {
+      "byte_count": 2755,
+      "path": "docs/wiki/Evidence-Ledger.md",
+      "sha256": "55a5ef7679066483bf994b80717203516b7b5b5e9c2b13081d8df8404ebc890b",
+      "status": "??"
+    },
+    {
+      "byte_count": 4993,
+      "path": "docs/wiki/Global-Workspace-and-J-space.md",
+      "sha256": "d04f175f9a5e1f4528490c211d6553364562385f7cece0b24b7f2360fc9a4741",
+      "status": "??"
+    },
+    {
+      "byte_count": 3784,
+      "path": "docs/wiki/Home.md",
+      "sha256": "fd38e4199a773e96def6bfae4b9c62ac8535913977585b9af7defe4b360afeea",
+      "status": "??"
+    },
+    {
+      "byte_count": 2556,
+      "path": "docs/wiki/Reproducibility-and-Gates.md",
+      "sha256": "ade7196ae403fa9da47444ecf4249fdfef3915661809b3946f5c525ec04b75ba",
+      "status": "??"
+    },
+    {
+      "byte_count": 4678,
+      "path": "docs/wiki/Runtime-Failure-Lab-Notes.md",
+      "sha256": "2e8e2fdd66fab37a90b0561623d8123cec7edfae3b6f521e3ca21c01af2d198d",
+      "status": "??"
+    },
+    {
+      "byte_count": 2935,
+      "path": "docs/wiki/Stage-2b-Experiment.md",
+      "sha256": "417b2e23aabda2a4e912e42c803665918f9f2e35366f049cd82f098186706ac0",
+      "status": "??"
+    },
+    {
+      "byte_count": 21194,
+      "path": "docs/wiki/Thoughtseeds-IWMT-and-the-J-space-Research-Horizon.md",
+      "sha256": "5c0e4cd6d3300b6fb1a0f47cba7e51fdf1a920cb64991ceae0f1297b905a15fd",
+      "status": "??"
+    },
+    {
+      "byte_count": 2631,
+      "path": "docs/wiki/Wiki-Maintenance.md",
+      "sha256": "9d98ad9c148f491cbf6726a9e76b2daf342c445dfb506bb1b061cd00250f6b62",
+      "status": "??"
+    },
+    {
+      "byte_count": 353,
+      "path": "docs/wiki/_Sidebar.md",
+      "sha256": "2fdfe75cfd3550d68d78dc424a9e9db2dd6a1521e4174641f6fc4b6c69a215b8",
+      "status": "??"
+    },
+    {
+      "byte_count": 4523,
+      "path": "j-space-lab/CCPROXY_UPSTREAM_ISSUE_DRAFT.md",
+      "sha256": "a1c4bd25762346acfa9b904b1a4330b0f7e395509aeb4114c00af5c0b677fe4a",
+      "status": "??"
+    },
+    {
+      "byte_count": 10271,
+      "path": "j-space-lab/CLAUDE_CODE_SESSION_HISTORY.md",
+      "sha256": "369825547487ed71eeece0a6cdb48116bfe3f0e70c555759703c9c5d456414a2",
+      "status": "??"
+    },
+    {
+      "byte_count": 17625,
+      "path": "j-space-lab/EVOSCIENTIST_STAGE2_SCIENTIFIC_TREATMENT.md",
+      "sha256": "073047a220b31d8775231b186599dcbd216f7d8517b67abe2cd23a93ddb0b807",
+      "status": "??"
+    },
+    {
+      "byte_count": 8999,
+      "path": "j-space-lab/HANDOFF_2026-07-26.md",
+      "sha256": "bacef61b6536d3acae2fadff0cdf425cb55c789b170ceb49185ef5ab9f6ab0eb",
+      "status": "??"
+    },
+    {
+      "byte_count": 12146,
+      "path": "j-space-lab/INGOING_BRIEF_ARCHIMEDES_EVOSCIENTIST.md",
+      "sha256": "9c719888864c8e947a22b7fd61a88ae8d5e9390bc91a77b789d3101842f6ebf3",
+      "status": "??"
+    },
+    {
+      "byte_count": 6486,
+      "path": "j-space-lab/JSPACE_COLAB_SMOKE_TEST_PROVENANCE.md",
+      "sha256": "fc9a81a6a27739d222616393a6d05aa38abf6e31777efc38750de70b9cd3f3c7",
+      "status": "??"
+    },
+    {
+      "byte_count": 19915,
+      "path": "j-space-lab/STAGE2B_DESIGN.md",
+      "sha256": "273862ddda6035f94fbb44177903f95e8f76b390c3c06092b6bf0bacbba53969",
+      "status": "??"
+    },
+    {
+      "byte_count": 13083,
+      "path": "j-space-lab/STAGE2B_OPEN_PARAMETERS.md",
+      "sha256": "5491ca29066b0482603d948afc5942b7a22a1e48b87ab52c60ce7295c1438066",
+      "status": "??"
+    },
+    {
+      "byte_count": 11052,
+      "path": "j-space-lab/STAGE2B_PREREGISTRATION_AMENDMENT_DRAFT.md",
+      "sha256": "36cdfe82311d71da8d8ed009207482ad59631c46089ebcce4d190619e6100b40",
+      "status": "??"
+    },
+    {
+      "byte_count": 21293,
+      "path": "j-space-lab/STAGE2_DISCRIMINATION_PROPOSAL.md",
+      "sha256": "0afbc1957588677b8e26c919b61b68d9c02153cd2895b11bb3a8d93d1f98e889",
+      "status": "??"
+    },
+    {
+      "byte_count": 22917,
+      "path": "j-space-lab/STAGE2_DISCRIMINATION_REPORT.md",
+      "sha256": "00a1440847f296f2b7dd437c7d35013cca74fd6a6aab8eef936ef5b140ae58a1",
+      "status": "??"
+    },
+    {
+      "byte_count": 5728,
+      "path": "j-space-lab/STAGE2_PROVISIONAL_DEFAULTS.md",
+      "sha256": "976099362992263c1628d2147df41097731bd1cbfebf36526faeff95a921ed38",
+      "status": "??"
+    },
+    {
+      "byte_count": 5427,
+      "path": "j-space-lab/jspace-stage2b-pilot-v1.json",
+      "sha256": "5bef8316f72682a628fc1240bf6068a91aa7c8a330377206cbd9145434b797e4",
+      "status": "??"
+    },
+    {
+      "byte_count": 50231,
+      "path": "j-space-lab/jspace-stage2b-stimulus-v1.json",
+      "sha256": "ba29c629c7b9601980b6c0bb9cd9730242d7cd6b7eacb1166c307837416d4bbf",
+      "status": "??"
+    },
+    {
+      "byte_count": 16832,
+      "path": "j-space-lab/jspace_colab_smoke_test.ipynb",
+      "sha256": "9696e90ed456eae5640afbcdfa1c47d6fbabe8b50f16ff85dc0ec035a21ebe85",
+      "status": "??"
+    },
+    {
+      "byte_count": 52259,
+      "path": "j-space-lab/jspace_colab_stage2_discrimination.ipynb",
+      "sha256": "353479b0f0e959f2e207446b1383ebf632c05bf8c9a9656508cc91d98d4f28f5",
+      "status": "??"
+    },
+    {
+      "byte_count": 43036,
+      "path": "j-space-lab/jspace_colab_stage2b_discrimination.ipynb",
+      "sha256": "c1dd3080efcca25b2298b3ced05afd309384b80b82b5b6bba242b007f6f8f1c8",
+      "status": "??"
+    },
+    {
+      "byte_count": 30799,
+      "path": "j-space-lab/jspace_colab_stage2b_integration_smoke.ipynb",
+      "sha256": "e3e0cdcfa73732138dcfaf374f9946a7993f1647cb424f8acbed91cf3ae9b5fc",
+      "status": "??"
+    },
+    {
+      "byte_count": 4815,
+      "path": "pyproject.toml",
+      "sha256": "03723cf7b7ba5a0d6ee8412278467605e57cb7b222f732cd9e7c550c467b672b",
+      "status": " M"
+    },
+    {
+      "byte_count": null,
+      "path": "sakshi notes/CCPROXY_UPSTREAM_ISSUE_DRAFT.md",
+      "sha256": null,
+      "status": " D"
+    },
+    {
+      "byte_count": null,
+      "path": "sakshi notes/CLAUDE_CODE_SESSION_HISTORY.md",
+      "sha256": null,
+      "status": " D"
+    },
+    {
+      "byte_count": null,
+      "path": "sakshi notes/EVOSCIENTIST_STAGE2_SCIENTIFIC_TREATMENT.md",
+      "sha256": null,
+      "status": " D"
+    },
+    {
+      "byte_count": null,
+      "path": "sakshi notes/HANDOFF_2026-07-26.md",
+      "sha256": null,
+      "status": " D"
+    },
+    {
+      "byte_count": null,
+      "path": "sakshi notes/INGOING_BRIEF_ARCHIMEDES_EVOSCIENTIST.md",
+      "sha256": null,
+      "status": " D"
+    },
+    {
+      "byte_count": null,
+      "path": "sakshi notes/JSPACE_COLAB_SMOKE_TEST_PROVENANCE.md",
+      "sha256": null,
+      "status": " D"
+    },
+    {
+      "byte_count": null,
+      "path": "sakshi notes/STAGE2B_DESIGN.md",
+      "sha256": null,
+      "status": " D"
+    },
+    {
+      "byte_count": null,
+      "path": "sakshi notes/STAGE2B_OPEN_PARAMETERS.md",
+      "sha256": null,
+      "status": " D"
+    },
+    {
+      "byte_count": null,
+      "path": "sakshi notes/STAGE2_DISCRIMINATION_PROPOSAL.md",
+      "sha256": null,
+      "status": " D"
+    },
+    {
+      "byte_count": null,
+      "path": "sakshi notes/STAGE2_DISCRIMINATION_REPORT.md",
+      "sha256": null,
+      "status": " D"
+    },
+    {
+      "byte_count": null,
+      "path": "sakshi notes/STAGE2_PROVISIONAL_DEFAULTS.md",
+      "sha256": null,
+      "status": " D"
+    },
+    {
+      "byte_count": null,
+      "path": "sakshi notes/jspace-stage2b-stimulus-v1.json",
+      "sha256": null,
+      "status": " D"
+    },
+    {
+      "byte_count": null,
+      "path": "sakshi notes/jspace_colab_smoke_test.ipynb",
+      "sha256": null,
+      "status": " D"
+    },
+    {
+      "byte_count": null,
+      "path": "sakshi notes/jspace_colab_stage2_discrimination.ipynb",
+      "sha256": null,
+      "status": " D"
+    },
+    {
+      "byte_count": null,
+      "path": "sakshi notes/jspace_colab_stage2b_discrimination.ipynb",
+      "sha256": null,
+      "status": " D"
+    },
+    {
+      "byte_count": 13706,
+      "path": "specs/001-jspace-stage2b/contracts/artifact-schema.md",
+      "sha256": "f151f6b4e9ab7baba9fbad2855d5411bcb7e010f3e95c2b09208e86cbe3c2423",
+      "status": " M"
+    },
+    {
+      "byte_count": 7310,
+      "path": "specs/001-jspace-stage2b/contracts/constant-registry.md",
+      "sha256": "d875ba82b3f3eb57c22db3d58e24fbbd303fd29bb0fb47a52a7b84058544ed19",
+      "status": " M"
+    },
+    {
+      "byte_count": 13372,
+      "path": "specs/001-jspace-stage2b/contracts/integration-smoke-launch-packet.md",
+      "sha256": "ced1ab4d279d60090a3df73fbd96f4cff4ecdecb8cb9b897738541066dcb795e",
+      "status": "??"
+    },
+    {
+      "byte_count": 8461,
+      "path": "specs/001-jspace-stage2b/contracts/preflight-api.md",
+      "sha256": "60d571becec9495b30db76ace74ae732c8fe96468888fbc042a8e4279eb21be6",
+      "status": " M"
+    },
+    {
+      "byte_count": 11115,
+      "path": "specs/001-jspace-stage2b/data-model.md",
+      "sha256": "729ed51b39ec8b51a59c8823d69b3cb2210030be3da42de8d2b0608978280697",
+      "status": " M"
+    },
+    {
+      "byte_count": 11370,
+      "path": "specs/001-jspace-stage2b/plan.md",
+      "sha256": "0b70c74f9af8f77c16213d03b3830ae6bb1c7eb90763c01026e374fbb02d6d43",
+      "status": " M"
+    },
+    {
+      "byte_count": 6817,
+      "path": "specs/001-jspace-stage2b/quickstart.md",
+      "sha256": "c5262f81b5b9ec1cdac47d7f0a6f2ef0bd3caf6d4b5cea7fbb5a509b9fbdec1d",
+      "status": " M"
+    },
+    {
+      "byte_count": 38800,
+      "path": "specs/001-jspace-stage2b/research.md",
+      "sha256": "f67798dd730697ff9cae866c7bc19ce270d0babf86f52f47f285341937034479",
+      "status": " M"
+    },
+    {
+      "byte_count": 18426,
+      "path": "specs/001-jspace-stage2b/spec.md",
+      "sha256": "73913b0be760688b779679ce88a93b45624a8a391e8af43e8470a2569b0d8c52",
+      "status": " M"
+    },
+    {
+      "byte_count": 18394,
+      "path": "specs/001-jspace-stage2b/tasks.md",
+      "sha256": "f68f0911163f4cb8d4f7f0610109b1b11832fb4a14724208e368bf93f3aa039d",
+      "status": " M"
+    },
+    {
+      "byte_count": 4105,
+      "path": "tests/jspace/fixtures/stage2_manifest_digests.json",
+      "sha256": "de168f5dd3d2e482817967e95effd979c8f8c7d8a7947ac6fa0b6120fba544b7",
+      "status": " M"
+    },
+    {
+      "byte_count": 23609,
+      "path": "tests/jspace/test_stage2b_endpoint.py",
+      "sha256": "3333fed04157fa861683172533fe4e5b052d15ac0973033b0bbd54974c9fb441",
+      "status": " M"
+    },
+    {
+      "byte_count": 7911,
+      "path": "tests/jspace/test_stage2b_integration_smoke.py",
+      "sha256": "98cdf08aaaad71e4106349d9d706884ca301e3ea37ebecfa397fb7685164c0ad",
+      "status": "??"
+    },
+    {
+      "byte_count": 8734,
+      "path": "tests/jspace/test_stage2b_integration_smoke_notebook.py",
+      "sha256": "fdef6b5ce18045acc2e381b328c7c653528d71b9b6b5aa210486391159918de3",
+      "status": "??"
+    },
+    {
+      "byte_count": 17474,
+      "path": "tests/jspace/test_stage2b_manifest.py",
+      "sha256": "7aa774a8efd5fbe815eeb402e1971397a1efc1353b0a688be59e9ea297ace7ff",
+      "status": " M"
+    },
+    {
+      "byte_count": 23602,
+      "path": "tests/jspace/test_stage2b_notebook.py",
+      "sha256": "58e5d595cf7d1af5701a275600e8d5bc40c5c1a2cd2991d45421d469d622f396",
+      "status": " M"
+    },
+    {
+      "byte_count": 2273,
+      "path": "tests/jspace/test_stage2b_pilot_bundle.py",
+      "sha256": "a66f5353ad247a1279ee713d57b4f5a19bed891b4b2eb9272a496a8ec0632d32",
+      "status": "??"
+    },
+    {
+      "byte_count": 8581,
+      "path": "tests/jspace/test_stage2b_pilot_harness.py",
+      "sha256": "fdb121b69ecd5a8b55fb813c8acbdb842eda6da039f5016bd1567163a61b613b",
+      "status": "??"
+    },
+    {
+      "byte_count": 46771,
+      "path": "tests/jspace/test_stage2b_preflight.py",
+      "sha256": "ceac78fcac2b13c490836b6f16970cab007b304ba28f5a6d4081671c8089fe2a",
+      "status": " M"
+    },
+    {
+      "byte_count": 1949,
+      "path": "tests/jspace/test_stage2b_smoke_bundle.py",
+      "sha256": "372201da85b9b9e74fa7b95891478831f3e2fd6652f724315f486479c9138bd0",
+      "status": "??"
+    },
+    {
+      "byte_count": 4083,
+      "path": "tests/jspace/test_stage2b_smoke_launch_copy.py",
+      "sha256": "dba4c0b548be350b5e872d59f7e8474802deea271d96efe098bbb21a18926ad1",
+      "status": "??"
+    },
+    {
+      "byte_count": 16640,
+      "path": "tests/jspace/test_stage2b_statistics.py",
+      "sha256": "b3c209c9dfb1ca05de65e998771b361f954ef054f73ca52198fceea33287273e",
+      "status": "??"
+    },
+    {
+      "byte_count": 40956,
+      "path": "tests/jspace/test_stage2b_validator.py",
+      "sha256": "9c9509c9b27c95e25f3adb2ddef34b1e11b492db8a01a580ef220aa623f3101a",
+      "status": " M"
+    }
+  ],
+  "schema": "stage2b-statistical-freeze/v1",
+  "scope": "Stage 2b ratified statistical pilot candidate; prior runs excluded",
+  "source_entry_count": 85,
+  "source_tree_sha256": "af97c7f41e6873f77fde6b91613e9a9b622d5f5d7755a856130a984841a154e6",
+  "verification": {
+    "focused": {
+      "passed": 317,
+      "seconds": 175.11
+    },
+    "git_diff_check": "passed",
+    "jspace_final": {
+      "passed": 464,
+      "seconds": 81.72
+    },
+    "notebooks": 4,
+    "ordinary_code_cells_parsed": 31,
+    "repository_final": {
+      "passed": 3522,
+      "seconds": 162.35,
+      "skipped": 12,
+      "warnings": 2
+    },
+    "ruff": "passed",
+    "ruff_formatted_files": 417
+  }
+}

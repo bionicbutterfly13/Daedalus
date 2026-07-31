@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import importlib.util
 import pathlib
-from typing import ClassVar
+import sys
 
 import pytest
 
@@ -15,11 +15,23 @@ _MODULE_PATH = (
     pathlib.Path(__file__).resolve().parents[2]
     / "EvoScientist/skills/jspace-research-operations/scripts/stage2b_endpoint.py"
 )
+sys.path.insert(0, str(_MODULE_PATH.parent))
 _spec = importlib.util.spec_from_file_location("stage2b_endpoint", _MODULE_PATH)
 assert _spec is not None
 assert _spec.loader is not None
 endpoint = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(endpoint)
+
+
+def test_unratified_inference_and_decision_helpers_are_not_shipped():
+    for name in (
+        "cluster_bootstrap_median",
+        "combine_per_layer",
+        "compose_decision",
+        "gate_record",
+        "jaccard_top_k",
+    ):
+        assert not hasattr(endpoint, name), name
 
 
 def _naive_rank1(logits, target_id):
@@ -129,6 +141,31 @@ class TestNTAAnchors:
         """Not clamped.  A readout worse than the surface prompt is a real
         result and must not be floored to zero, which would hide it."""
         assert endpoint.nta(-0.9, -0.8, -0.2, min_denominator=0.01) < 0.0
+
+
+class TestDualFloorNTA:
+    def test_records_both_floors_and_named_sensitivity_difference(self):
+        result = endpoint.dual_floor_nta(
+            s_readout=-0.25,
+            s_input_embedding=-0.75,
+            s_layer0_residual=-0.5,
+            s_output=0.0,
+            min_denominator=0.01,
+        )
+        assert result["input_embedding_decoded"] == pytest.approx(2 / 3)
+        assert result["layer0_residual_decoded"] == pytest.approx(0.5)
+        assert result["sensitivity_minus_primary"] == pytest.approx(-1 / 6)
+
+    def test_one_excluded_floor_makes_the_difference_unavailable(self):
+        result = endpoint.dual_floor_nta(
+            s_readout=-0.25,
+            s_input_embedding=-0.75,
+            s_layer0_residual=0.0,
+            s_output=0.0,
+            min_denominator=0.01,
+        )
+        assert isinstance(result["layer0_residual_decoded"], endpoint.NTAExcluded)
+        assert result["sensitivity_minus_primary"] is None
 
 
 class TestDenominatorGuard:
@@ -292,6 +329,81 @@ class TestFitBrokenMap:
         j = np.eye(4, dtype=np.float32)
         assert endpoint.build_fit_broken_map(j, seed=0).dtype == np.float32
 
+    def test_batch_builder_reuses_one_fitted_decomposition(self, monkeypatch):
+        np, j = self._fixture(n=8)
+        original_svd = np.linalg.svd
+        calls = []
+
+        def counted_svd(*args, **kwargs):
+            calls.append((args, kwargs))
+            return original_svd(*args, **kwargs)
+
+        monkeypatch.setattr(np.linalg, "svd", counted_svd)
+        maps, singular_values = endpoint.build_fit_broken_maps(j, [1, 2, 3])
+        assert len(maps) == 3
+        assert singular_values.shape == (8,)
+        assert len(calls) == 1
+        for seed, broken in zip([1, 2, 3], maps, strict=True):
+            expected = endpoint.build_fit_broken_map(j, seed)
+            np.testing.assert_array_equal(broken, expected)
+
+    def test_batch_builder_rejects_empty_or_non_integer_seeds(self):
+        _np, j = self._fixture(n=8)
+        with pytest.raises(ValueError, match="at least one"):
+            endpoint.build_fit_broken_maps(j, [])
+        with pytest.raises(TypeError, match="integers"):
+            endpoint.build_fit_broken_maps(j, [False])
+
+    def test_runtime_spectrum_evidence_covers_every_singular_value(self):
+        _np, j = self._fixture(n=8)
+        broken = endpoint.build_fit_broken_map(j, seed=20260726)
+        evidence = endpoint.singular_spectrum_evidence(j, broken)
+        assert evidence == {
+            **evidence,
+            "schema": "stage2b-map-spectrum-check/v1",
+            "method": "numpy.linalg.svd-allclose/v1",
+            "singular_value_count": 8,
+            "rtol": endpoint.SINGULAR_SPECTRUM_RTOL,
+            "atol": endpoint.SINGULAR_SPECTRUM_ATOL,
+            "verified": True,
+        }
+        assert evidence["max_normalized_error"] <= 1.0
+        assert len(evidence["fitted_singular_values_sha256"]) == 64
+        assert len(evidence["broken_singular_values_sha256"]) == 64
+
+    def test_runtime_spectrum_evidence_accepts_shared_fitted_values(self):
+        _np, j = self._fixture(n=8)
+        maps, fitted_values = endpoint.build_fit_broken_maps(j, [20260726])
+        observed = endpoint.singular_spectrum_evidence(
+            j,
+            maps[0],
+            fitted_singular_values=fitted_values,
+        )
+        direct = endpoint.singular_spectrum_evidence(j, maps[0])
+        assert observed["verified"] is True
+        assert direct["verified"] is True
+        assert (
+            observed["broken_singular_values_sha256"]
+            == direct["broken_singular_values_sha256"]
+        )
+        assert observed["singular_value_count"] == direct["singular_value_count"] == 8
+
+    def test_runtime_spectrum_evidence_rejects_invalid_shared_values(self):
+        np, j = self._fixture(n=8)
+        broken = endpoint.build_fit_broken_map(j, seed=20260726)
+        with pytest.raises(ValueError, match="finite vector"):
+            endpoint.singular_spectrum_evidence(
+                j,
+                broken,
+                fitted_singular_values=np.ones(7),
+            )
+
+    def test_runtime_spectrum_evidence_rejects_a_different_spectrum(self):
+        _np, j = self._fixture(n=8)
+        evidence = endpoint.singular_spectrum_evidence(j, j * 2.0)
+        assert evidence["verified"] is False
+        assert evidence["max_normalized_error"] > 1.0
+
 
 class TestTransportWith:
     def test_applies_the_supplied_map(self):
@@ -349,6 +461,41 @@ class TestSelectWrongActivation:
         assert a_src == b_src
         np.testing.assert_array_equal(a_vec, b_vec)
 
+    def test_pure_source_selection_matches_the_real_activation_path(self):
+        _np, residuals = self._residuals()
+        source = endpoint.select_wrong_activation_source(
+            tuple(residuals),
+            "aaa",
+            7,
+        )
+        _, observed = endpoint.select_wrong_activation(residuals, "aaa", seed=7)
+        assert observed == source
+
+    def test_pure_source_selection_changes_when_seed_changes(self):
+        import hashlib
+
+        prompts = [
+            hashlib.sha256(f"donor-source-{index}".encode()).hexdigest()
+            for index in range(20)
+        ]
+        recipient = prompts[0]
+        sources = {
+            endpoint.select_wrong_activation_source(prompts, recipient, seed)
+            for seed in range(32)
+        }
+        assert recipient not in sources
+        assert len(sources) > 5
+
+    def test_preserves_the_float32_tensor_contract(self):
+        """The NumPy adapter must not silently widen a live float32 residual."""
+        np = pytest.importorskip("numpy")
+        residuals = {
+            "1" * 64: np.array([1.0, 2.0], dtype=np.float32),
+            "2" * 64: np.array([3.0, 4.0], dtype=np.float32),
+        }
+        wrong, _ = endpoint.select_wrong_activation(residuals, "1" * 64, seed=7)
+        assert wrong.dtype == np.float32
+
     def test_donors_vary_across_prompts_under_one_preregistered_seed(self):
         """A bare default_rng(seed) reset per call returns the same draw every
         time, so one seed across 200 prompts would concentrate every wrong
@@ -382,250 +529,9 @@ class TestSelectWrongActivation:
             endpoint.select_wrong_activation({"only": np.array([1.0])}, "only", seed=0)
 
 
-class TestAllocateWrongLayers:
-    def test_band_counts_differ_by_at_most_one(self):
-        """Exact balance is unsatisfiable at n=200 over 3 bands (66.67)."""
-        pytest.importorskip("numpy")
-        out = endpoint.allocate_wrong_layers(
-            [6, 13, 20, 26], [3, 7, 14], 200, 28, seed=1
-        )
-        counts = {d: sum(1 for a in out if a["distance"] == d) for d in (3, 7, 14)}
-        assert sum(counts.values()) == 200
-        assert max(counts.values()) - min(counts.values()) <= 1
-
-    def test_exact_balance_when_it_divides_evenly(self):
-        pytest.importorskip("numpy")
-        out = endpoint.allocate_wrong_layers(
-            [6, 13, 20, 26], [3, 7, 14], 201, 28, seed=1
-        )
-        counts = {d: sum(1 for a in out if a["distance"] == d) for d in (3, 7, 14)}
-        assert set(counts.values()) == {67}
-
-    def test_every_wrong_layer_is_in_range(self):
-        pytest.importorskip("numpy")
-        out = endpoint.allocate_wrong_layers(
-            [6, 13, 20, 26], [3, 7, 14], 200, 28, seed=1
-        )
-        assert all(0 <= a["wrong_layer"] < 28 for a in out)
-
-    def test_realized_distance_matches_the_declared_one(self):
-        """Clamping to an edge layer would make these silently disagree."""
-        pytest.importorskip("numpy")
-        out = endpoint.allocate_wrong_layers(
-            [6, 13, 20, 26], [3, 7, 14], 200, 28, seed=1
-        )
-        for a in out:
-            assert abs(a["wrong_layer"] - a["correct_layer"]) == a["distance"]
-
-    def test_sign_is_balanced_rather_than_all_one_direction(self):
-        pytest.importorskip("numpy")
-        out = endpoint.allocate_wrong_layers(
-            [6, 13, 20, 26], [3, 7, 14], 200, 28, seed=1
-        )
-        up = sum(1 for a in out if a["wrong_layer"] > a["correct_layer"])
-        assert 0 < up < len(out)
-
-    def test_raises_rather_than_clamping_when_a_distance_cannot_fit(self):
-        pytest.importorskip("numpy")
-        with pytest.raises(ValueError, match="does not fit"):
-            endpoint.allocate_wrong_layers([5], [40], 4, 10, seed=0)
-
-    def test_is_deterministic_under_a_fixed_seed(self):
-        pytest.importorskip("numpy")
-        kw = {"n_layers_total": 28, "seed": 3}
-        a = endpoint.allocate_wrong_layers([6, 13], [3, 7], 20, **kw)
-        b = endpoint.allocate_wrong_layers([6, 13], [3, 7], 20, **kw)
-        assert a == b
-
-
-class TestPairedDifferenceByCluster:
-    def test_one_difference_per_prompt(self):
-        out = endpoint.paired_difference_by_cluster(
-            {"p1": 0.8, "p2": 0.5}, {"p1": 0.3, "p2": 0.5}
-        )
-        assert out == {"p1": pytest.approx(0.5), "p2": pytest.approx(0.0)}
-
-    def test_excluded_instrument_cell_drops_the_pair(self):
-        """An absent measurement is not a zero effect.
-
-        Treating the two alike is how an undefined cell quietly becomes a null.
-        """
-        out = endpoint.paired_difference_by_cluster(
-            {"p1": endpoint.NTAExcluded("denominator_below_min", 0.0)}, {"p1": 0.3}
-        )
-        assert out == {}
-
-    def test_excluded_control_cell_drops_the_pair(self):
-        out = endpoint.paired_difference_by_cluster(
-            {"p1": 0.8}, {"p1": endpoint.NTAExcluded("denominator_below_min", 0.0)}
-        )
-        assert out == {}
-
-    def test_prompt_missing_from_the_control_drops_the_pair(self):
-        out = endpoint.paired_difference_by_cluster({"p1": 0.8, "p2": 0.4}, {"p1": 0.3})
-        assert set(out) == {"p1"}
-
-    def test_returns_one_cluster_per_prompt_not_per_cell(self):
-        """So a caller cannot treat prompt x layer cells as independent."""
-        out = endpoint.paired_difference_by_cluster(
-            {f"p{i}": 0.5 for i in range(9)}, {f"p{i}": 0.1 for i in range(9)}
-        )
-        assert len(out) == 9
-
-
-class TestJaccardTopK:
-    def test_identical_rankings_score_one(self):
-        assert endpoint.jaccard_top_k([1, 2, 3], [1, 2, 3], 3) == 1.0
-
-    def test_disjoint_rankings_score_zero(self):
-        assert endpoint.jaccard_top_k([1, 2, 3], [4, 5, 6], 3) == 0.0
-
-    def test_partial_overlap(self):
-        assert endpoint.jaccard_top_k([1, 2, 3], [2, 3, 9], 3) == pytest.approx(2 / 4)
-
-    def test_only_the_top_k_are_compared(self):
-        assert endpoint.jaccard_top_k([1, 2, 99], [1, 2, 77], 2) == 1.0
-
-    def test_two_empty_readouts_raise_rather_than_returning_zero(self):
-        """0/0 is undefined; returning 0.0 would read as maximal disagreement."""
-        with pytest.raises(ValueError, match="undefined"):
-            endpoint.jaccard_top_k([], [], 3)
-
-
-class TestGateRecord:
-    @staticmethod
-    def _bca(low, high):
-        return {"method": "bca", "level": 0.99, "low": low, "high": high}
-
-    def test_finite_interval_and_passes_yields_pass(self):
-        rec = endpoint.gate_record(
-            "h1_specificity",
-            "SPEC_MIN_EFFECT",
-            0.1,
-            0.29,
-            self._bca(0.14, 0.44),
-            193,
-            crosscheck={"low": 0.15},
-            passes=True,
-        )
-        assert rec["outcome"] == "pass"
-
-    def test_finite_interval_including_zero_yields_fail(self):
-        rec = endpoint.gate_record(
-            "h1_interval",
-            "BOOTSTRAP_CI_LEVEL",
-            0.99,
-            0.02,
-            self._bca(-0.03, 0.07),
-            193,
-            crosscheck={"low": -0.02},
-            passes=False,
-        )
-        assert rec["outcome"] == "fail"
-
-    def test_nan_bound_yields_undefined_not_fail(self):
-        """An absent measurement and a measured null are different results.
-
-        BCa's acceleration term is unstable for a median under leave-one-out;
-        scipy returns NaN on a degenerate bootstrap. Reporting that as a fail
-        would let a failed computation be published as evidence of no effect.
-        """
-        rec = endpoint.gate_record(
-            "h1_interval",
-            "BOOTSTRAP_CI_LEVEL",
-            0.99,
-            0.02,
-            self._bca(float("nan"), 0.07),
-            193,
-            crosscheck={"low": 0.0},
-            passes=False,
-        )
-        assert rec["outcome"] == "undefined"
-
-    def test_infinite_bound_also_yields_undefined(self):
-        rec = endpoint.gate_record(
-            "h2_target",
-            None,
-            None,
-            0.1,
-            self._bca(float("-inf"), 0.4),
-            100,
-            crosscheck={"low": 0.0},
-            passes=True,
-        )
-        assert rec["outcome"] == "undefined"
-
-    def test_bca_without_a_crosscheck_is_refused(self):
-        """Recording only the interval that gated leaves a degenerate BCa
-        undetectable after the fact."""
-        with pytest.raises(ValueError, match="cross-check"):
-            endpoint.gate_record(
-                "h1_interval", None, None, 0.1, self._bca(0.1, 0.2), 10, passes=True
-            )
-
-    def test_finite_interval_without_a_verdict_is_refused(self):
-        with pytest.raises(ValueError, match="determination"):
-            endpoint.gate_record(
-                "g",
-                None,
-                None,
-                0.1,
-                {"method": "percentile", "low": 0.1, "high": 0.2},
-                10,
-            )
-
-    def test_exclusions_are_recorded_per_reason_not_as_a_total(self):
-        rec = endpoint.gate_record(
-            "h1_specificity",
-            None,
-            None,
-            0.3,
-            {"method": "percentile", "low": 0.1, "high": 0.5},
-            193,
-            exclusions=[{"reason": "denominator_below_min", "count": 7, "layer": 26}],
-            passes=True,
-        )
-        assert rec["exclusions"][0]["layer"] == 26
-
-
-class TestCombinePerLayer:
-    def test_all_layers_passing_passes(self):
-        assert (
-            endpoint.combine_per_layer(
-                "h1", {6: {"outcome": "pass"}, 13: {"outcome": "pass"}}
-            )
-            == "pass"
-        )
-
-    def test_one_failing_layer_fails_the_gate(self):
-        """Comparisons are within layer, so the gate is conjunctive over them."""
-        assert (
-            endpoint.combine_per_layer(
-                "h1", {6: {"outcome": "pass"}, 13: {"outcome": "fail"}}
-            )
-            == "fail"
-        )
-
-    def test_one_undefined_layer_makes_the_gate_undefined_not_failed(self):
-        """An immeasurable layer does not license a claim about the others."""
-        assert (
-            endpoint.combine_per_layer(
-                "h1", {6: {"outcome": "pass"}, 13: {"outcome": "undefined"}}
-            )
-            == "undefined"
-        )
-
-    def test_undefined_dominates_even_alongside_a_failure(self):
-        assert (
-            endpoint.combine_per_layer(
-                "h1", {6: {"outcome": "fail"}, 13: {"outcome": "undefined"}}
-            )
-            == "undefined"
-        )
-
-    def test_no_layers_raises(self):
-        with pytest.raises(ValueError, match="no per-layer"):
-            endpoint.combine_per_layer("h1", {})
+def test_unratified_policy_helpers_are_absent():
+    assert not hasattr(endpoint, "allocate_wrong_layers")
+    assert not hasattr(endpoint, "paired_difference_by_cluster")
 
 
 class TestAssembleFactorialCells:
@@ -666,90 +572,86 @@ class TestAssembleFactorialCells:
         assert out["simple_effect_of_map"] == pytest.approx(0.5)
         assert out["main_effect_of_map"] is None
 
+    def test_json_null_is_a_present_exclusion_not_a_missing_cell(self):
+        out = endpoint.assemble_factorial_cells(None, 0.3, 0.2, 0.1)
+        assert out["cells"]["correct_act_fitted_map"] is None
+        assert out["simple_effect_of_map"] is None
+        assert out["main_effect_of_map"] is None
+        assert out["excluded"] == ["correct_act_fitted_map"]
 
-class TestComposeDecision:
-    BASE: ClassVar[dict] = {
-        "reproduction": "pass",
-        "h1_specificity": "pass",
-        "h1_interval": "pass",
-        "h2_overlap": "pass",
-        "h2_target": "pass",
-        "sanity_floor": "pass",
-    }
 
-    def test_everything_passing_is_a_pass(self):
-        assert endpoint.compose_decision(self.BASE)["result"] == "pass"
+class TestCrossedFactorialRepresentation:
+    @staticmethod
+    def _factorized():
+        donors = [f"donor-{index}" for index in range(8)]
+        maps = [f"map-{index}" for index in range(8)]
+        return {
+            "correct_act_fitted_map": 0.9,
+            "correct_act_broken_map": {
+                map_id: 0.2 + index / 100 for index, map_id in enumerate(maps)
+            },
+            "wrong_act_fitted_map": {
+                donor_id: 0.4 + index / 100 for index, donor_id in enumerate(donors)
+            },
+            "wrong_act_broken_map": {
+                donor_id: {
+                    map_id: 0.1 + donor_index / 100 + map_index / 1000
+                    for map_index, map_id in enumerate(maps)
+                }
+                for donor_index, donor_id in enumerate(donors)
+            },
+        }
 
-    def test_exactly_one_hypothesis_is_ambiguity(self):
-        gates = {**self.BASE, "h2_overlap": "fail"}
-        assert endpoint.compose_decision(gates)["result"] == "ambiguity"
+    def test_materializes_all_sixty_four_logical_crossings_losslessly(self):
+        result = endpoint.materialize_crossed_factorials(self._factorized())
+        assert result["unique_readout_count"] == 81
+        assert result["logical_cell_count"] == 64
+        assert len(result["factorials"]) == 64
+        identities = {
+            (cell["donor_assignment_id"], cell["map_draw_id"])
+            for cell in result["factorials"]
+        }
+        assert len(identities) == 64
 
-    def test_neither_hypothesis_is_a_fail(self):
-        gates = {**self.BASE, "h1_specificity": "fail", "h2_overlap": "fail"}
-        assert endpoint.compose_decision(gates)["result"] == "fail"
-
-    def test_reproduction_failure_is_a_kill(self):
-        gates = {**self.BASE, "reproduction": "fail"}
-        assert endpoint.compose_decision(gates)["result"] == "kill"
-
-    def test_pinned_identity_mismatch_is_a_kill(self):
-        """Not derivable from gate records — it is a preflight outcome, which is
-        why it arrives as an explicit argument rather than being assumed."""
-        out = endpoint.compose_decision(self.BASE, pinned_identities_matched=False)
-        assert out["result"] == "kill"
-        assert "identity" in out["notes"]
-
-    def test_capacity_failure_is_a_kill(self):
-        assert (
-            endpoint.compose_decision(self.BASE, capacity_ok=False)["result"] == "kill"
+    def test_materializes_a_fully_excluded_null_tree(self):
+        factorized = self._factorized()
+        factorized["correct_act_fitted_map"] = None
+        factorized["correct_act_broken_map"] = dict.fromkeys(
+            factorized["correct_act_broken_map"]
+        )
+        factorized["wrong_act_fitted_map"] = dict.fromkeys(
+            factorized["wrong_act_fitted_map"]
+        )
+        factorized["wrong_act_broken_map"] = {
+            donor_id: dict.fromkeys(row)
+            for donor_id, row in factorized["wrong_act_broken_map"].items()
+        }
+        result = endpoint.materialize_crossed_factorials(factorized)
+        assert result["unique_readout_count"] == 81
+        assert result["logical_cell_count"] == 64
+        assert all(
+            len(cell["factorial"]["excluded"]) == 4 for cell in result["factorials"]
         )
 
-    def test_undefined_gate_never_counts_as_a_pass(self):
-        gates = {**self.BASE, "h1_interval": "undefined"}
-        out = endpoint.compose_decision(gates)
-        assert out["result"] == "ambiguity"
-        assert "h1_interval undefined" in out["notes"]
+    def test_missing_invariant_key_is_still_rejected(self):
+        factorized = self._factorized()
+        del factorized["correct_act_fitted_map"]
+        with pytest.raises(ValueError, match="invariant fitted readout"):
+            endpoint.materialize_crossed_factorials(factorized)
 
-    def test_both_hypotheses_undefined_is_a_fail_with_reasons(self):
-        gates = {**self.BASE, "h1_interval": "undefined", "h2_target": "undefined"}
-        out = endpoint.compose_decision(gates)
-        assert out["result"] == "fail"
-        assert "h1_interval undefined" in out["notes"]
-        assert "h2_target undefined" in out["notes"]
-
-    def test_sanity_floor_failure_fails_even_when_both_hypotheses_hold(self):
-        gates = {**self.BASE, "sanity_floor": "fail"}
-        out = endpoint.compose_decision(gates)
-        assert out["result"] == "fail"
-        assert "sanity floor" in out["notes"]
-
-    def test_h1_is_conjunctive_over_its_two_clauses(self):
-        gates = {**self.BASE, "h1_interval": "fail"}
-        assert endpoint.compose_decision(gates)["result"] == "ambiguity"
-
-
-class TestClusterBootstrapMedian:
-    def test_resamples_whole_clusters_and_returns_both_intervals(self):
-        pytest.importorskip("scipy")
-        values = {f"p{i:03d}": 0.5 + 0.01 * i for i in range(40)}
-        out = endpoint.cluster_bootstrap_median(
-            values, level=0.95, iterations=400, seed=1
-        )
-        assert out["n_clusters"] == 40
-        assert out["interval"]["method"] == "bca"
-        assert out["crosscheck"]["method"] == "percentile"
-        assert out["interval"]["low"] <= out["statistic"] <= out["interval"]["high"]
-
-    def test_is_deterministic_under_a_fixed_seed(self):
-        pytest.importorskip("scipy")
-        values = {f"p{i:03d}": float(i) for i in range(30)}
-        kw = {"level": 0.95, "iterations": 300, "seed": 7}
-        assert (
-            endpoint.cluster_bootstrap_median(values, **kw)["interval"]
-            == endpoint.cluster_bootstrap_median(values, **kw)["interval"]
-        )
-
-    def test_a_single_cluster_raises(self):
-        pytest.importorskip("scipy")
-        with pytest.raises(ValueError, match="at least two clusters"):
-            endpoint.cluster_bootstrap_median({"p1": 1.0}, 0.95, 100, 0)
+    @pytest.mark.parametrize(
+        ("mutation", "message"),
+        [
+            (lambda value: value["correct_act_broken_map"].pop("map-7"), "eight map"),
+            (lambda value: value["wrong_act_fitted_map"].pop("donor-7"), "eight donor"),
+            (
+                lambda value: value["wrong_act_broken_map"]["donor-0"].pop("map-7"),
+                "complete 8x8",
+            ),
+        ],
+    )
+    def test_rejects_incomplete_factorized_provenance(self, mutation, message):
+        factorized = self._factorized()
+        mutation(factorized)
+        with pytest.raises(ValueError, match=message):
+            endpoint.materialize_crossed_factorials(factorized)

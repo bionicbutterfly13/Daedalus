@@ -1,7 +1,7 @@
 ---
 name: jspace-research-operations
 description: Use when planning, operating, reviewing, reproducing, or integrating Jacobian Lens/J-space experiments in Colab, Jupyter, or GPU runtimes. Enforces exact source identity, capacity gates, immutable typed observations, sparse-retention boundaries, artifact verification, and separation of measured readouts from scientific or consciousness claims.
-version: 1.0.0
+version: 1.0.1
 author: Hermes Agent
 license: Apache-2.0
 platforms: [linux, macos, windows]
@@ -24,8 +24,8 @@ Use progressive disclosure:
 - Read `references/known-good-smoke-test.md` when reproducing or comparing against the pinned Qwen3-1.7B smoke test.
 - Read `references/stage2-discrimination-baseline.md` when preparing or reviewing the Stage 2 observational-discrimination study (design, ratified thresholds, runtime fixes, and the first executed-run result).
 - Read `references/stage2b-design-baseline.md` when working on Stage 2b: the target-relative endpoint, the 2x2 factorial controls, the cluster bootstrap idiom, and the one open conflict in the design document about what H1's statistic is.
-- Read `sakshi notes/STAGE2_DISCRIMINATION_REPORT.md` for the full scientific write-up of the first Stage 2 execution (idea, hypothesis, methods, results, conclusion, discussion; decision was ambiguity).
-- Read `sakshi notes/INGOING_BRIEF_ARCHIMEDES_EVOSCIENTIST.md` to start an EvoScientist run on this study: it carries the exact task, the full study, the operational journey and lessons, runtime/invocation facts, a source index with commit ids, and acceptance gates.
+- Read `j-space-lab/STAGE2_DISCRIMINATION_REPORT.md` for the full scientific write-up of the first Stage 2 execution (idea, hypothesis, methods, results, conclusion, discussion; decision was ambiguity).
+- Read `j-space-lab/INGOING_BRIEF_ARCHIMEDES_EVOSCIENTIST.md` to start an EvoScientist run on this study: it carries the exact task, the full study, the operational journey and lessons, runtime/invocation facts, a source index with commit ids, and acceptance gates.
 - Use `scripts/validate_observation.py` after downloading a sparse observation JSON (auto-detects the smoke-test and discrimination/v1 schemas).
 - Use `templates/evidence-report.md` when reporting a run or handoff.
 
@@ -201,6 +201,31 @@ Do not skip stages:
 5. **System integration:** only validated typed observations cross into Sakshi, Elume, or another architecture.
 
 A same-runtime smoke test completes stage 1 only partially. It does not establish cross-runtime reproducibility, predictive validity, causal validity, or integration readiness.
+
+## Colab Binary-Package Restart Boundary
+
+Treat replacement of an imported binary package in a live Colab process as a
+hard process boundary. The Stage 2b integration smoke observed a mixed NumPy
+installation after an in-process pinned install: importing Transformers failed
+because the running process combined modules from different NumPy builds.
+
+For a code-only integration smoke:
+
+1. Derive a digest from the exact install requirements.
+2. Install with `sys.executable -m pip` before importing NumPy, Torch,
+   Transformers, or the instrument.
+3. Write a sentinel containing the install-schema identity, requirements digest,
+   and a process identity that includes both PID and process start time.
+4. Stop and require `Runtime -> Restart session`.
+5. After restart, validate the sentinel and require a different process identity
+   before importing binary packages or loading model weights.
+6. Do not reinstall when the validated sentinel already represents the requested
+   environment.
+
+Local tests must prove same-process refusal, fresh-process acceptance, and
+single-install behavior. This guard prevents the observed mixed-module failure;
+it does not establish Colab compatibility until the repaired notebook completes
+an authorized runtime smoke.
 
 ## Browser and Notebook Safety
 

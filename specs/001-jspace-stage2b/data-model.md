@@ -1,272 +1,271 @@
-# Phase 1 Data Model: Stage 2b J-space discrimination
+# Data Model: Stage 2b 8×8 dual-floor measurement
 
-Entities, their fields, and the validation rules each carries. Derived from
-spec.md Key Entities and the requirements FR-001 … FR-013, with dtype and shape
-facts taken from [research.md](./research.md) R1/R5.
+Schema family: `jspace-observation-stage2b/v1`.
 
-Schema identifier for this stage: `jspace-observation-stage2b/v1`.
+This document specifies the ratified pilot measurement, estimation, uncertainty,
+and threshold-derivation data. A pilot artifact contains no scientific decision.
 
----
+## 1. Identities
 
-## 1. Stimulus manifest
+Every measurement binds:
 
-Version `jspace-stage2b-stimulus/v1`. A versioned JSON file in the repo, not a
-literal list inside the notebook — this is the one structural change from Stage 2,
-and it exists so the recorded digest has a referent that can be checked without
-reading notebook source.
+- run, prompt ID, recipient prompt SHA-256, layer, and position;
+- model ID/revision and output-logits content identity;
+- lens repository/revision/file/hash and code identity;
+- target token ID, target derivation `model_argmax`, and tie information; and
+- vocabulary size and rank convention `strict_gt_1indexed`.
 
-**Manifest document**
+The target measures the model's own eventual token trajectory, not truth or task
+correctness.
 
-| Field | Type | Rule |
-|---|---|---|
-| `manifest_version` | str | `"jspace-stage2b-stimulus/v1"` exactly |
-| `n_prompts` | int | 200 (Q1); MUST equal `len(prompts)` |
-| `categories` | list[str] | sorted; 5 entries, inherited from Stage 2 |
-| `prompts` | list[Prompt] | 40 per category (Q1), enforced |
+Each compact record carries `target_derivation` with the exact method,
+`output_logits_sha256`, dtype and shape, finite maximum logit, the complete sorted
+set of tied maximum token IDs, tie-break rule `lowest_token_id`, and
+`runtime_verifier_id`, `runtime_verified`, and `target_decision_sha256`. Before
+retention drops the full logits, the named runtime verifier independently
+recomputes their dtype, shape, content digest, finite maximum, complete tie set,
+lowest-token target, and decision digest. The offline validator then requires that
+exact verifier attestation, recomputes the decision digest, requires `target_id` to
+be the lowest tied token ID, and requires the complete derivation to remain
+identical across all selected layers for one prompt. Raw full logits remain
+unretained, so later offline validation verifies the retained runtime attestation
+rather than reproducing the model forward pass.
 
-**Prompt**
+## 2. Dual-floor endpoint
 
-| Field | Type | Rule |
-|---|---|---|
-| `id` | str | `f"s{index:03d}"` — three digits, since n=200 overflows Stage 2's two |
-| `index` | int | 0-based, contiguous, matches position in list |
-| `category` | str | member of `categories` |
-| `text` | str | the raw prompt; lives here and nowhere else (Q8) |
-| `sha256` | str | 64 hex chars, SHA-256 of `text` UTF-8 bytes |
-| `utf8_byte_count` | int | matches `len(text.encode())` |
-| `token_count` | int | ≤ `MAX_PROMPT_TOKENS` (128); recorded at build time |
+For each readout score `s_readout`, record two floor-specific results:
 
-**Manifest digest**: SHA-256 of
-`json.dumps(manifest_doc, sort_keys=True, indent=2, ensure_ascii=False) + "\n"`,
-matching Stage 2's canonicalization exactly so the two are comparable.
-
-**The digest is never stored inside the manifest.** A document cannot contain its
-own hash. It lives in exactly two places, both outside: the filename
-(`jspace-stage2b-stimulus-v1.json` is content-named at commit time only for
-humans; the authoritative copy is the artifact) and
-`aggregate.stimulus_manifest.sha256` in every observation artifact.
-`check_manifest` therefore takes the expected digest as an argument and compares it
-to the value recomputed from the document — it has no self-consistent field to
-check against, and asking it to find one is how a digest check quietly becomes a
-tautology.
-
-**Validation rules**
-
-- **Disjointness (FR-011)**: the set of per-prompt `sha256` values MUST be disjoint
-  from Stage 2's manifest. Checked at preflight against the recorded Stage 2 digest
-  list, and the assertion result recorded in the artifact. Documented-as-a-rule is
-  not sufficient; the design is explicit that this is checked.
-- **Anchor exclusion**: `STAGE1_PROMPT_SHA256` MUST NOT appear in this manifest.
-  The Stage 1 anchor is retained as the reproduction kill check and lives *outside*
-  the analysis sample; including it would contaminate held-out status.
-- **Category balance**: exactly 40 prompts per category, asserted at build time and
-  re-asserted at preflight.
-- **Immutability**: once the manifest file's digest is recorded in any artifact, the
-  file is content-addressed evidence under Principle V — excluded from formatters
-  and linters, never reformatted.
-
----
-
-## 2. Readout
-
-A token ranking in the model's vocabulary basis. Not persisted in full; only
-derived statistics reach artifacts.
-
-**Readout kinds** — seven, of which four form the factorial:
-
-| Kind | Activation | Map | Role |
-|---|---|---|---|
-| `jacobian` | correct | fitted | the instrument (2×2 cell A) |
-| `fit_broken_same_layer` | correct | Haar-rotated (FR-004) | does the fit matter? (cell B) |
-| `jacobian_wrong_activation` | wrong (FR-005) | fitted | does the activation matter? (cell C) |
-| `fit_broken_wrong_activation` | wrong | Haar-rotated | transport floor (cell D) |
-| `logit_lens` | correct | none (`use_jacobian=False`) | cheap baseline, H2 |
-| `prompt_only` | — | — | endpoint floor, maps to NTA 0 |
-| `output` | — | — | endpoint ceiling, maps to NTA 1 |
-
-Secondary comparators retained for commensurability with Stage 2, not primary:
-`random_vector` (sanity floor), `shuffled_layer`, `mismatched_probe`, the last
-balanced across preregistered layer distances (FR-008, Q7 default `|Δ| ∈ {3,7,14}`).
-
-**Tensor contract** (asserted at preflight, FR-009; sources in research.md R5)
-
-| Property | Required value | Note |
-|---|---|---|
-| residual shape | `(d_model,)` = `(2048,)` | per locus, per position |
-| residual dtype **before transport** | `float32` | `transport` does not cast; a half-precision residual is a dtype-mismatched matmul |
-| Jacobian shape | `(2048, 2048)` dense | `lens.jacobians[layer]` |
-| Jacobian dtype | `float32` | `.float()` in `JacobianLens.__init__` |
-| decoded readout device | CPU | `apply` forces `.float().cpu()`; direct `unembed` does **not** — normalize explicitly |
-| decode parity | `\|decode_residual(x) − lens.unembed(x)\|` ≤ `DECODE_PARITY_TOL` (1e-5) on a fixed probe | proves all readouts share one vocabulary basis |
-| logit softcapping | recorded, expected inactive for Qwen3-1.7B | `unembed` applies it when config sets it; would silently change every rank |
-
----
-
-## 3. Endpoint: normalized target attainment
-
-Not an entity so much as the derived quantity every gate reads. Specified here
-because its edge cases are validation rules.
-
-```
-rank1(t, r, p, l) = (logits_r > logits_r[t]).sum(-1) + 1     # 1-indexed, strict >
-s(r, p, l)        = -log(rank1(t, r, p, l)) / log(V)
-NTA(r, p, l)      = ( s(r) - s(prompt_only) ) / ( s(output) - s(prompt_only) )
-```
-
-| Rule | Requirement |
+| Name | Floor identity |
 |---|---|
-| Rank convention | 0-indexed comparison count, `+1` for the log. Strict `>` (best rank among ties), preregistered and recorded. |
-| Rank verification (FR-010) | comparison-count rank MUST equal `jlens.vis._ranks_of` on a fixed probe. Disagreement means the optimization changed the statistic. |
-| Target `t(p)` | governed by Q3, **not delegable**, unresolved. Default proposed: the model's own next-token argmax. |
-| Denominator guard | cells with `s(output) − s(prompt_only)` ≤ `NTA_MIN_DENOMINATOR` are excluded; exclusion count reported **per layer**, never silently dropped |
-| Layer stratification | all comparisons within layer. Depth-pooled NTA is descriptive only and MUST NOT gate. |
-| Anchors | `prompt_only` = 0 and `output` = 1 by construction (FR-002) — the Stage 2 omission is unrepresentable, not re-added as a gate |
+| `primary` | `input_embedding_decoded` |
+| `sensitivity` | `layer0_residual_decoded` |
 
----
-
-## 4. Gate
-
-A named decision. This is the entity FR-012 exists to make recomputable.
-
-| Field | Type | Rule |
-|---|---|---|
-| `name` | str | unique within the run |
-| `constant_name` | str \| null | MUST be present in the constant registry |
-| `declared_value` | any | the preregistered value, verbatim |
-| `statistic` | float | observed |
-| `interval` | {`method`, `level`, `low`, `high`} | `method` ∈ {`bca`, `percentile`}; both recorded (R6) |
-| `n_clusters` | int | prompts contributing, post-exclusion |
-| `exclusions` | list[{`reason`, `count`, `layer`}] | never a bare total |
-| `outcome` | enum | `pass` \| `fail` \| `undefined` |
-
-**Validation rules**
-
-- **Non-finite interval ⇒ `undefined`, not `fail` (R6).** A NaN BCa bound is an
-  absent measurement, not a measured null. Collapsing the two would let a
-  degenerate bootstrap masquerade as a result — the exact overstatement Principle V
-  forbids.
-- Every gate MUST resolve to a registry entry; no gate reads an unregistered
-  constant.
-
-**Gate inventory**
-
-The `ID` column is canonical. It is what `consumed_by` entries in the registry
-resolve against, so these strings and those strings must match exactly.
-
-| ID | Gate | Statistic | Constant | Default |
-|---|---|---|---|---|
-| `reproduction` | Reproduction (kill) | anchor top-k identity, max abs logit diff | `STAGE1_RERUN_NOISE_MAX_ABS_LOGIT_DIFF` | `0.0` |
-| `h1_specificity` | H1 specificity | cluster-bootstrap median `NTA(jac) − NTA(fit_broken)`, **per layer** | `SPEC_MIN_EFFECT` | **unset (Q5)** |
-| `h1_interval` | H1 interval | BCa lower bound of that median above zero | `BOOTSTRAP_CI_LEVEL` | `0.99` |
-| `h2_overlap` | H2 non-redundancy, overlap | median top-10 Jaccard vs logit lens | `NONREDUNDANCY_MAX_JACCARD` | `0.70` |
-| `h2_target` | H2 non-redundancy, target | interval on `NTA(jac) − NTA(logit_lens)` excludes 0 | `BOOTSTRAP_CI_LEVEL` | `0.99` |
-| `sanity_floor` | Sanity floor | `NTA(jac) − NTA(random_vector)` excludes 0 | — | must hold |
-
-**H1 is two conjunctive clauses, not one.** `h1_specificity` requires the median
-paired difference to exceed `SPEC_MIN_EFFECT`; `h1_interval` requires the interval
-on that median to exclude zero. H1 passes only if both hold. This follows
-`STAGE2B_DESIGN.md` §2 and §6 — "the median paired difference is greater than
-`SPEC_MIN_EFFECT`, with a cluster-bootstrap confidence interval excluding zero."
-
-It is **not** the single criterion "the lower bound exceeds `SPEC_MIN_EFFECT`",
-which is strictly stronger and would fail cases the two-clause rule passes. spec.md
-Acceptance Scenario 2 under US1 originally stated the stronger form; it has been
-corrected to match the design. Whichever is intended, the important thing is that
-one rule is written in one place, because a decision rule that differs between the
-spec and the data model is a rule nobody can implement.
-
-**Per-layer, then combined.** Because all comparisons are within layer (§3), the
-gate statistic is computed per layer and the gate passes only if it holds at every
-layer in `SELECTED_LAYERS`. Concatenating every layer's paired differences into one
-pooled median would let a strong late layer carry the result — the same depth-
-pooling this design forbids for absolute NTA, reintroduced one level down. Pooled
-figures remain reportable under `descriptive`.
-
-Decision composition: **pass** = reproduction ∧ H1 ∧ H2(both clauses);
-**ambiguity** = reproduction ∧ exactly one of H1/H2; **fail** = reproduction ∧
-neither, or sanity floor not cleared; **kill** = reproduction fails, any pinned
-identity mismatches, or the capacity gate fails.
-
-The 2×2 interaction is computed and reported but is **not** a gate — no pilot
-estimate exists for it, and adding a third preregistered threshold to a quantity
-with no prior would be guessing.
-
----
-
-## 5. Constant registry entry
-
-The mechanization of Principle IV. Full contract in
-[contracts/constant-registry.md](./contracts/constant-registry.md).
-
-| Field | Type | Rule |
-|---|---|---|
-| `name` | str | the declared constant or decision-relevant field |
-| `kind` | enum | `constant` \| `derived_field` |
-| `declared_value` | any | for `constant` only |
-| `consumed_by` | list[str] | ≥ 1 gate name; **empty is a preflight failure** |
-
-`derived_field` exists because of research.md R7: Stage 2's orphan was a computed
-field (`output_argmax_rank_*`), not a declared constant. A registry covering only
-constants would have missed it.
-
----
-
-## 6. Observation artifact
-
-Content-addressed JSON, per-prompt and aggregate. Canonicalization and filename
-scheme carried over unchanged from Stage 2 so artifacts remain comparable:
-`json.dumps(obj, sort_keys=True, indent=2, ensure_ascii=False) + "\n"`, SHA-256,
-`f"{prefix}_{digest[:16]}.json"`, exclusive-create with an immutability re-check
-on collision.
-
-**Per-prompt record** — Stage 2's shape, with `measurement` and `discrimination`
-replaced:
-
-- unchanged: `schema`, `artifact_type`, `run_id`, `observation_id`,
-  `created_at_utc`, `evidence_class`, `scope`, `model`, `lens`, `instrumentation`,
-  `input`, `stimulus`, `runtime`, `retention`
-- `measurement`: `selected_layers`, `positions`, `target_id`, `target_source`,
-  `rank_convention`, per-readout `rank1` and `s`, `nta` per readout per layer,
-  `denominator`, `excluded` + `exclusion_reason`
-- `factorial`: the four cells' NTA at each layer, plus the per-layer paired
-  differences that feed H1
-- `contracts`: the asserted tensor-contract values, recorded rather than merely
-  checked
-
-**Aggregate record**
-
-- unchanged: `schema`, `artifact_type`, `run_id`, `created_at_utc`,
-  `evidence_class`, `scope`, `model`, `lens`, `instrumentation`, `runtime`,
-  `stimulus_manifest`, `retention`
-- `registry`: the full constant registry as resolved at preflight, including
-  `consumed_by` for every entry — this is what makes the FR-009 check auditable
-  after the fact rather than only at run time
-- `gates`: list of Gate records (§4), one per gate
-- `disjointness`: `{checked: true, stage2_manifest_sha256, overlap_count: 0}`
-- `decision`: `{result, notes}` where `result` ∈ `pass` | `ambiguity` | `fail` | `kill`
-- `descriptive`: per-layer NTA curves, 2×2 cell means with intervals, the
-  interaction estimate, per-distance-band mismatched-layer results, per-category
-  breakdowns — explicitly separated from `gates` so that nothing descriptive can be
-  mistaken for a decision input
-
-**Validation rule (FR-012)**: every value a gate's outcome depends on MUST appear
-in the aggregate. The test is whether a reader can recompute each decision from
-the artifact alone. Stage 2's could not, which is why its audit had to read
-notebook source.
-
----
-
-## Entity relationships
+Each result contains floor score, output score, denominator, NTA or an explicit
+exclusion, and exclusion reason. The record also contains
+`sensitivity_minus_primary`, numeric only when both NTA values are available.
 
 ```text
-Stimulus manifest ─┬─> Prompt ──> (per-prompt) Observation artifact
-                   │                    │
-                   │                    └──> Readout ──> rank1 ──> s ──> NTA
-                   │                                                     │
-                   └──> manifest digest ──> disjointness check           │
-                                                                         v
-Constant registry ──> Gate <──────────────── paired difference ──> cluster bootstrap
-        │               │                                                │
-        │               └──> outcome ──> decision                        │
-        └──> preflight: every entry has ≥1 consumer, every gate reads a registered name
+NTA_floor = (s_readout - s_floor) / (s_output - s_floor)
 ```
+
+The pilot first retains all 80 primary denominators, derives the finite positive
+0.05 linear quantile, and records it as the run-wide guard with the ordered source
+vector digest. Both floor trees are then computed from retained scores without a
+second model/lens pass. A denominator that is nonfinite or not greater than the
+guard excludes the entire prompt-layer for that floor. No caller may select
+whichever floor is more favorable.
+
+## 3. Crossing identities
+
+### Donor assignment
+
+| Field | Rule |
+|---|---|
+| `donor_assignment_id` | exactly `donor-0` … `donor-7` |
+| `seed` | first 8 bytes, unsigned big-endian, of the ratified namespace digest |
+| `seed_namespace` | `jspace-stage2b/v1\|donor-assignment\|<i>` |
+| `seed_sha256` | full namespace SHA-256 |
+| `bit_generator` | `PCG64` |
+| `recipient_prompt_sha256` | 64 lowercase hex |
+| `source_prompt_sha256` | 64 lowercase hex; different from recipient and in the pinned pilot view |
+| `recipient_to_donor_sha256` | recomputable SHA-256 of `"<recipient>-><source>"` |
+| `residual_sha256` | runtime content attestation under `dtype-shape-bytes-sha256-v1` |
+
+### Broken-map draw
+
+| Field | Rule |
+|---|---|
+| `map_draw_id` | exactly `map-0` … `map-7` |
+| `seed` | first 8 bytes, unsigned big-endian, of the ratified namespace digest |
+| `seed_namespace` | `jspace-stage2b/v1\|broken-map\|<i>` |
+| `seed_sha256` | full namespace SHA-256 |
+| `bit_generator` | `PCG64` |
+| `sha256` | runtime content attestation under `dtype-shape-bytes-sha256-v1` |
+| `spectrum_check` | complete per-realization singular-spectrum evidence |
+
+The full digest, derived integer, namespace, zero-based index, and bit-generator
+identity are retained. Any collision or mismatch fails closed. Map-construction
+evidence is shared by layer/map identity and repeated in each compact
+prompt/layer record so every retained map reference remains self-contained. It
+includes the full fitted and broken singular-value-vector digests, count,
+implemented `rtol=1e-5`, `atol=1e-6`, maximum absolute and normalized error, and
+true verification. The producer decomposes the fitted map once per layer, builds
+all eight controls from that decomposition, and independently computes the
+singular values of every realized control.
+
+## 4. Factorized readouts
+
+Per prompt/layer, `factorized_scores` uses:
+
+```text
+correct_act_fitted_map: Readout                         # scalar/shared
+correct_act_broken_map[map_id]: Readout                 # 8
+wrong_act_fitted_map[donor_id]: Readout                 # 8
+wrong_act_broken_map[donor_id][map_id]: Readout         # 8 × 8
+```
+
+Each leaf is a finite normalized log-rank score. `floor_scores` records
+`input_embedding_decoded`, `layer0_residual_decoded`, and `output_decoded`.
+`factorized_nta` carries three parallel trees: the two floor-specific NTA trees
+and `sensitivity_minus_primary`. An NTA leaf may be null only when the ratified
+denominator rule excludes it. The exact key sets MUST equal the declared donor and
+map ID sets. Therefore:
+
+```text
+unique_readout_count = 1 + 8 + 8 + 64 = 81
+logical_combination_count = 8 × 8 = 64
+```
+
+## 5. Logical factorial view
+
+For each `(donor_id, map_id)`, materialization yields:
+
+```text
+A = correct_act_fitted_map
+B = correct_act_broken_map[map_id]
+C = wrong_act_fitted_map[donor_id]
+D = wrong_act_broken_map[donor_id][map_id]
+```
+
+The view also carries the donor assignment and broken-map provenance. All 64 pairs
+must materialize exactly once. The compact representation is lossless; storing 64
+flat records is optional.
+
+Per floor:
+
+```text
+correct_effect[p,l,m] = A[p,l] - B[p,l,m]
+wrong_effect[p,l,d,m] = C[p,l,d] - D[p,l,d,m]
+interaction[p,l,d,m]  = correct_effect[p,l,m] - wrong_effect[p,l,d,m]
+```
+
+Each prompt-layer retains the eight correct effects and 64 wrong/interaction
+effects plus their equal-weight arithmetic means. These are computed only after
+the complete crossing passes validation.
+
+## 6. Coverage, estimates, and intervals
+
+Each floor-layer has a fixed exclusion mask with a reason for every excluded
+prompt. It is inferentially defined only with at least 18/20 eligible prompts and
+at least 3/4 eligible prompts in every category.
+
+For each defined estimand:
+
+1. compute the mean among eligible prompts within each category;
+2. take the equal-weight mean of the five category means;
+3. generate 20,000 category-stratified prompt-resampling statistics; and
+4. generate 20,000 prompt×donor×map product-weight statistics with independent
+   mean-one `Exp(1)` weights.
+
+Both methods report linear 0.005 and 0.995 quantiles, forming a two-sided 99%
+percentile interval. All replicates must be finite. The bootstrap RNG is an
+explicit `Generator(PCG64(seed))`, where `seed` is the first eight bytes,
+unsigned big-endian, of
+`SHA256("jspace-stage2b/v1|<run_mode>|bootstrap-v1")`. The full digest, namespace,
+derived integer, NumPy version, generator, methods, and iteration count are
+retained.
+
+## 7. Threshold derivation
+
+For selected layer order `[6, 13, 20, 26]`, the pilot derives:
+
+```text
+SPEC_MIN_EFFECT[l] = 0.5 * primary-floor correct-effect mean[l]
+INTERACTION_MIN_EFFECT[l] = 0.5 * primary-floor interaction mean[l]
+```
+
+All eight source means must be defined, finite, and positive. The record retains
+the source estimates, factor, floor, layer order, artifact identity, and derivation
+code identity. Failure leaves both vectors unavailable and confirmation blocked.
+The pilot never applies these values as gates and never emits a decision.
+
+## 8. Artifact envelope
+
+### Per-prompt/layer measurement
+
+Required blocks:
+
+- `prompt_sha256`, `category`, `layer`, `target_id`,
+  `target_source: model_argmax`, and cryptographically bound
+  `target_derivation`;
+- `floor_scores` with both ratified floors and the output score;
+- `donor_assignments` and `map_draws`;
+- `factorized_scores` and `factorized_nta`.
+
+No optional secondary-control fields are currently admitted; unknown fields are
+rejected. The unratified wrong-layer proposal is absent from the executable
+producer and contract. For a given recipient and donor-assignment ID,
+`source_prompt_sha256` is invariant across all four selected layers.
+`residual_sha256` remains layer-specific.
+
+### Aggregate
+
+Required blocks:
+
+- schema and immutable content-addressing metadata;
+- manifest/disjointness and partition provenance;
+- model/lens/code/runtime identities;
+- explicit authorization and successful preflight evidence;
+- independently trusted authorization-record, canonical-notebook, and code-bundle
+  identities supplied to validation outside the artifact;
+- the exact ratified design identifiers and counts;
+- all 80 per-prompt/layer compact measurement records;
+- the resolved constant registry; and
+- denominator-guard derivation evidence and floor-specific exclusion masks;
+- validation evidence that the compact representation reconstructs all 64 logical
+  combinations;
+- per-prompt effects, category-balanced estimates, both interval methods, and
+  complete stochastic provenance; and
+- pilot threshold-derivation evidence or a fail-closed unavailable state.
+
+No `gates` or scientific `decision` is admitted in a pilot artifact.
+
+## 9. Validation invariants
+
+A valid measurement artifact proves:
+
+1. both floor identities are exact and both results plus their named difference are
+   present;
+2. donor and map collections each have exactly eight unique IDs and seeds;
+3. every recipient→donor digest is present and excludes self-donation;
+4. every broken map has a draw ID, seed, and hash;
+5. the canonical pilot view, source manifest, category, layer, and complete 20×4
+   locus coverage are exact;
+6. every selected layer is present in `lens.source_layers`;
+7. each recipient/donor assignment resolves to one source prompt across layers;
+8. factorized key sets are exact, with no missing or extra row/column;
+9. the unique-readout count is 81;
+10. materialization produces 64 unique donor×map factorials; and
+11. no donor/map dimension was averaged away before persistence;
+12. the denominator guard recomputes from exactly 80 primary denominators using
+    the linear 0.05 quantile and its source-vector digest matches;
+13. exclusion masks and 18/20 plus 3/4-per-category coverage recompute exactly;
+14. category-balanced point estimates and both 20,000-replicate interval methods
+    recompute under the retained `PCG64` identity without layer pooling; and
+15. threshold vectors recompute only from the positive defined primary-floor
+    source means and no pilot gate or decision exists.
+
+The offline validator can recompute prompt-pair linkage and score/NTA trees. It
+checks content-hash format and cross-record identity but cannot recompute residual
+or map content hashes because raw arrays are deliberately not retained. Runtime
+hash generation remains an integration-smoke obligation.
+
+## 10. Status
+
+**RATIFIED**: measurement, denominator, crossing seeds, exclusion, coverage,
+aggregation, interval, and pilot threshold-derivation rules.
+
+**IMPLEMENTED and LOCALLY VERIFIED**: dual-floor endpoint, factorized materializer,
+two-stage denominator derivation, deterministic seed identities, fixed
+floor-specific exclusions, coverage, category-balanced effects, both ratified
+20,000-replicate interval engines, threshold derivation, source-score producer,
+aggregate producer, recursive validator, synthetic 20×4 artifact, deterministic
+pilot bundle, and canonical notebook source contract.
+
+**PILOT OBSERVED**: the superseding source freeze received independent PASS/GO,
+the exact notebook/bundle/view identities received one-time authorization, and
+the 20-prompt pilot completed on 2026-07-31. The retained artifact validated in
+Colab. Primary-floor inference and threshold vectors are `undefined` because the
+arithmetic category retained only two eligible prompts per layer; sensitivity-floor
+effects are positive at all four layers. Confirmation remains unauthorized and
+blocked.

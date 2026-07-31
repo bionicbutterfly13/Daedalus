@@ -162,7 +162,7 @@ exclude = [
     "venv",
     # Preserved research evidence artifacts; canonical bytes are
     # content-addressed (SHA-256) and must not be rewritten by tooling.
-    "sakshi notes",
+    "j-space-lab",
 ]
 
 line-length = 88

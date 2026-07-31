@@ -1,6 +1,6 @@
 {
   "_purpose": "FR-011 disjointness: the Stage 2b manifest must share no prompt digest with these",
-  "_source": "cell 14 of 'sakshi notes/jspace_colab_stage2_discrimination.ipynb' (tracked)",
+  "_source": "cell 14 of 'j-space-lab/jspace_colab_stage2_discrimination.ipynb' (tracked)",
   "_verification": "digests[0] equals STAGE1_PROMPT_SHA256, which pins this extraction to the notebook's own canonicalization",
   "digests": [
     "daeaa63881dc0f58be689307a81b1fbc347674424f1cae45819f82372804f5a6",

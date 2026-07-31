@@ -2,11 +2,9 @@
 
 Contracts: ``specs/001-jspace-stage2b/data-model.md`` §3, ``contracts/artifact-schema.md``.
 
-Like :mod:`stage2b_preflight`, nothing here imports ``torch``, ``jlens``, or
-``scipy`` at module scope.  The numeric primitives operate on any sequence of
-floats, so they are testable with fixed arrays on a machine with no GPU.  Only
-:func:`cluster_bootstrap_median` needs ``scipy``, and it imports it inside the
-function body.
+Like :mod:`stage2b_preflight`, nothing here imports ``torch`` or ``jlens``. The
+numeric primitives operate on fixed CPU values without selecting an uncertainty,
+threshold, multiplicity, gate-composition, or decision rule.
 
 The endpoint replaces Stage 2's readout-difference metric, which measured how much
 two readouts *differ* and therefore had no notion of correct.  A difference metric
@@ -16,25 +14,28 @@ strongest possible conclusion was always non-identity, whatever the data said.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 from collections.abc import Mapping, Sequence
 from typing import Any
 
 __all__ = [
     "RANK_CONVENTION",
+    "SINGULAR_SPECTRUM_ATOL",
+    "SINGULAR_SPECTRUM_RTOL",
     "NTAExcluded",
-    "allocate_wrong_layers",
     "assemble_factorial_cells",
     "build_fit_broken_map",
-    "cluster_bootstrap_median",
-    "combine_per_layer",
-    "compose_decision",
-    "gate_record",
-    "jaccard_top_k",
+    "build_fit_broken_maps",
+    "dual_floor_nta",
+    "materialize_crossed_factorials",
     "nta",
-    "paired_difference_by_cluster",
     "rank_score",
     "select_wrong_activation",
+    "select_wrong_activation_source",
+    "singular_spectrum_evidence",
+    "target_decision_sha256",
     "target_rank1",
     "transport_with",
     "verify_rank_parity",
@@ -49,6 +50,24 @@ __all__ = [
 #: vocab-sized float distribution are rare but not impossible after fp16
 #: round-tripping, so the convention is preregistered rather than incidental.
 RANK_CONVENTION = "strict_gt_1indexed"
+SINGULAR_SPECTRUM_RTOL = 1e-5
+SINGULAR_SPECTRUM_ATOL = 1e-6
+
+
+def target_decision_sha256(target_id: int, target_derivation: Mapping[str, Any]) -> str:
+    """Bind a model-argmax decision to retained output-logits evidence."""
+    bound = {
+        "target_id": target_id,
+        **{
+            key: value
+            for key, value in target_derivation.items()
+            if key != "target_decision_sha256"
+        },
+    }
+    payload = json.dumps(
+        bound, sort_keys=True, separators=(",", ":"), ensure_ascii=True
+    )
+    return hashlib.sha256((payload + "\n").encode("ascii")).hexdigest()
 
 
 class NTAExcluded:
@@ -148,6 +167,34 @@ def nta(
     return (s_readout - s_prompt_only) / denominator
 
 
+def dual_floor_nta(
+    *,
+    s_readout: float,
+    s_input_embedding: float,
+    s_layer0_residual: float,
+    s_output: float,
+    min_denominator: float,
+) -> dict[str, float | NTAExcluded | None]:
+    """Compute the ratified primary and layer-0 sensitivity normalizations.
+
+    The named difference is always sensitivity minus primary.  It is absent when
+    either denominator guard excludes its floor; an excluded measurement is not a
+    numeric zero and therefore cannot participate in subtraction.
+    """
+    primary = nta(s_readout, s_input_embedding, s_output, min_denominator)
+    sensitivity = nta(s_readout, s_layer0_residual, s_output, min_denominator)
+    difference = (
+        None
+        if isinstance(primary, NTAExcluded) or isinstance(sensitivity, NTAExcluded)
+        else sensitivity - primary
+    )
+    return {
+        "input_embedding_decoded": primary,
+        "layer0_residual_decoded": sensitivity,
+        "sensitivity_minus_primary": difference,
+    }
+
+
 def verify_rank_parity(logits: Sequence[float], target_id: int) -> bool:
     """FR-010: the fast rank must equal a full-sort reference on a fixed probe.
 
@@ -156,10 +203,11 @@ def verify_rank_parity(logits: Sequence[float], target_id: int) -> bool:
     indistinguishable from a correct one until the results are wrong, and Stage 2's
     full-vocabulary ``argsort`` is the thing being replaced.
 
-    The reference here mirrors ``jlens.vis._ranks_of``'s documented convention
-    (0-indexed, rank 0 = top) with ``+1`` applied.  In Colab the same assertion
-    should be repeated against the real ``_ranks_of``; locally jlens is not
-    installed, so the naive sort stands in.
+    The reference mirrors ``jlens.vis._ranks_of`` on unique logits (0-indexed,
+    rank 0 = top) with ``+1`` applied. In Colab the notebook repeats the assertion
+    against the pinned real ``_ranks_of``. Ties are deliberately outside that
+    parity claim: Stage 2b assigns every tied token the best shared rank, while
+    jlens' stable full sort assigns token-specific positions.
     """
     order = sorted(range(len(logits)), key=lambda i: logits[i], reverse=True)
     # Apply the preregistered best-rank-among-ties convention to the reference
@@ -172,6 +220,56 @@ def verify_rank_parity(logits: Sequence[float], target_id: int) -> bool:
         next(i for i, token in enumerate(order) if logits[token] == target_logit) + 1
     )
     return target_rank1(logits, target_id) == reference
+
+
+def _fit_broken_map_from_svd(
+    u: Any,
+    singular_values: Any,
+    vt: Any,
+    *,
+    dtype: Any,
+    seed: int,
+) -> Any:
+    """Construct one control map from a shared fitted-map decomposition."""
+    import numpy as np
+
+    rng = np.random.Generator(np.random.PCG64(seed))
+    gaussian = rng.standard_normal((u.shape[0], u.shape[0])).astype(dtype)
+    q, r = np.linalg.qr(gaussian)
+    q = q * np.sign(np.diag(r))
+    return ((q @ u) * singular_values @ vt).astype(dtype)
+
+
+def build_fit_broken_maps(jacobian: Any, seeds: Sequence[int]) -> tuple[list[Any], Any]:
+    """Build several broken maps while decomposing the fitted map exactly once.
+
+    Stage 2b requires eight draws for each selected layer. Repeating the fitted
+    map's 2048x2048 SVD for every draw adds no information, so this batch surface
+    shares the decomposition and returns its singular values for the independent
+    per-realization spectrum checks.
+    """
+    import numpy as np
+
+    j = np.asarray(jacobian)
+    if j.ndim != 2 or j.shape[0] != j.shape[1]:
+        raise ValueError(f"expected a square matrix, got shape {j.shape}")
+    if not seeds:
+        raise ValueError("at least one broken-map seed is required")
+    if any(not isinstance(seed, int) or isinstance(seed, bool) for seed in seeds):
+        raise TypeError("broken-map seeds must be integers")
+
+    u, singular_values, vt = np.linalg.svd(j, full_matrices=False)
+    maps = [
+        _fit_broken_map_from_svd(
+            u,
+            singular_values,
+            vt,
+            dtype=j.dtype,
+            seed=seed,
+        )
+        for seed in seeds
+    ]
+    return maps, singular_values
 
 
 def build_fit_broken_map(jacobian: Any, seed: int) -> Any:
@@ -196,23 +294,95 @@ def build_fit_broken_map(jacobian: Any, seed: int) -> Any:
     ``numpy`` is imported here rather than at module scope so the rest of this
     module keeps loading in an environment without it.
     """
+    maps, _singular_values = build_fit_broken_maps(jacobian, [seed])
+    return maps[0]
+
+
+def _array_sha256(value: Any) -> str:
+    """Return the project-wide dtype/shape/bytes identity for a NumPy array."""
     import numpy as np
 
-    j = np.asarray(jacobian)
-    if j.ndim != 2 or j.shape[0] != j.shape[1]:
-        raise ValueError(f"expected a square matrix, got shape {j.shape}")
+    array = np.ascontiguousarray(value)
+    metadata = f"{array.dtype}:{array.shape}:".encode("ascii")
+    return hashlib.sha256(metadata + array.tobytes()).hexdigest()
 
-    u, s, vt = np.linalg.svd(j, full_matrices=False)
 
-    rng = np.random.default_rng(seed)
-    # Match the Jacobian's dtype. Defaulting to float64 would silently return a
-    # float64 control map for a float32 Jacobian, breaking the float32 contract
-    # the study asserts at preflight.
-    gaussian = rng.standard_normal((u.shape[0], u.shape[0])).astype(j.dtype)
-    q, r = np.linalg.qr(gaussian)
-    q = q * np.sign(np.diag(r))  # Mezzadri correction; without it Q is not Haar
+def singular_spectrum_evidence(
+    fitted_map: Any,
+    broken_map: Any,
+    *,
+    fitted_singular_values: Any | None = None,
+    rtol: float = SINGULAR_SPECTRUM_RTOL,
+    atol: float = SINGULAR_SPECTRUM_ATOL,
+) -> dict[str, Any]:
+    """Verify and summarize every singular value of one realized broken map.
 
-    return ((q @ u) * s @ vt).astype(j.dtype)
+    The retained evidence is sufficient for the offline validator to recompute
+    the allclose decision from the maximum normalized error. The singular-value
+    vectors themselves are deliberately not persisted.
+    """
+    import numpy as np
+
+    fitted = np.asarray(fitted_map)
+    broken = np.asarray(broken_map)
+    if (
+        fitted.ndim != 2
+        or broken.ndim != 2
+        or fitted.shape != broken.shape
+        or fitted.shape[0] != fitted.shape[1]
+    ):
+        raise ValueError(
+            "spectrum verification requires same-shaped square fitted and broken maps"
+        )
+    if (
+        not isinstance(rtol, (int, float))
+        or isinstance(rtol, bool)
+        or not math.isfinite(float(rtol))
+        or float(rtol) <= 0.0
+        or not isinstance(atol, (int, float))
+        or isinstance(atol, bool)
+        or not math.isfinite(float(atol))
+        or float(atol) <= 0.0
+    ):
+        raise ValueError("spectrum tolerances must be finite positive numbers")
+
+    fitted_values = (
+        np.linalg.svd(fitted, compute_uv=False)
+        if fitted_singular_values is None
+        else np.asarray(fitted_singular_values)
+    )
+    if (
+        fitted_values.ndim != 1
+        or fitted_values.size != fitted.shape[0]
+        or not np.all(np.isfinite(fitted_values))
+    ):
+        raise ValueError(
+            "fitted singular values must be a finite vector matching the map dimension"
+        )
+    broken_values = np.linalg.svd(broken, compute_uv=False)
+    absolute_error = np.abs(fitted_values - broken_values)
+    allowance = float(atol) + float(rtol) * np.abs(fitted_values)
+    normalized_error = absolute_error / allowance
+    max_abs_diff = float(np.max(absolute_error))
+    max_normalized_error = float(np.max(normalized_error))
+    verified = bool(
+        np.all(np.isfinite(fitted_values))
+        and np.all(np.isfinite(broken_values))
+        and np.all(np.isfinite(normalized_error))
+        and max_normalized_error <= 1.0
+    )
+    return {
+        "schema": "stage2b-map-spectrum-check/v1",
+        "method": "numpy.linalg.svd-allclose/v1",
+        "singular_value_count": int(fitted_values.size),
+        "fitted_singular_values_sha256": _array_sha256(fitted_values),
+        "broken_singular_values_sha256": _array_sha256(broken_values),
+        "rtol": float(rtol),
+        "atol": float(atol),
+        "max_abs_diff": max_abs_diff,
+        "max_normalized_error": max_normalized_error,
+        "verified": verified,
+    }
 
 
 def transport_with(residual: Any, jacobian: Any) -> Any:
@@ -228,32 +398,22 @@ def transport_with(residual: Any, jacobian: Any) -> Any:
     return np.asarray(residual) @ np.asarray(jacobian).T
 
 
-def select_wrong_activation(
-    residuals_by_prompt: Mapping[str, Any],
+def select_wrong_activation_source(
+    prompt_sha256s: Sequence[str],
     exclude_prompt_sha256: str,
     seed: int,
-) -> tuple[Any, str]:
-    """FR-005: a real residual from a different prompt, rescaled to match norm.
-
-    Returns ``(activation, source_prompt_sha256)``.  The source digest is recorded
-    in the artifact so "this was a real activation, not noise" is a checkable
-    property of the run rather than a claim in a design document.
-
-    Stage 2 already showed a norm-matched *random vector* is easy to beat (fraction
-    1.00), so it survives here only as the sanity floor.  A real activation from a
-    real prompt is the honest hard case: correct distributional structure, wrong
-    content.  Norm-matching removes magnitude as an explanation for any difference.
-    """
+) -> str:
+    """Choose the exact donor implied by a recipient digest and ratified seed."""
     import numpy as np
 
-    candidates = sorted(k for k in residuals_by_prompt if k != exclude_prompt_sha256)
+    candidates = sorted(k for k in prompt_sha256s if k != exclude_prompt_sha256)
     if not candidates:
         raise ValueError(
             "no other prompt available to draw a wrong activation from; "
             "the manifest must hold at least two prompts at this layer"
         )
 
-    # Derive a per-prompt seed. A bare default_rng(seed) reset on every call
+    # Derive a per-prompt seed. A bare generator reset on every call
     # returns the same draw each time, so calling this once per prompt with one
     # preregistered seed would concentrate every wrong activation on one or two
     # donors -- reproducible, and useless as a control.
@@ -261,11 +421,39 @@ def select_wrong_activation(
     # share leading characters, and a collision here silently returns the same
     # donor for different prompts -- the concentration this derivation exists to
     # prevent, reintroduced quietly.
-    per_prompt = np.random.default_rng([seed, int(exclude_prompt_sha256, 16)])
-    source = candidates[int(per_prompt.integers(len(candidates)))]
+    per_prompt = np.random.Generator(
+        np.random.PCG64([seed, int(exclude_prompt_sha256, 16)])
+    )
+    return candidates[int(per_prompt.integers(len(candidates)))]
 
-    donor = np.asarray(residuals_by_prompt[source], dtype=np.float64)
-    target = np.asarray(residuals_by_prompt[exclude_prompt_sha256], dtype=np.float64)
+
+def select_wrong_activation(
+    residuals_by_prompt: Mapping[str, Any],
+    exclude_prompt_sha256: str,
+    seed: int,
+) -> tuple[Any, str]:
+    """FR-005: a real residual from a different prompt, rescaled to match norm.
+
+    Returns ``(activation, source_prompt_sha256)``. The pure source-selection
+    helper is shared with the offline validator so a coordinated donor rewrite
+    cannot pass by recomputing only its self-consistent pair digest.
+    """
+    import numpy as np
+
+    source = select_wrong_activation_source(
+        tuple(residuals_by_prompt),
+        exclude_prompt_sha256,
+        seed,
+    )
+
+    target_input = np.asarray(residuals_by_prompt[exclude_prompt_sha256])
+    dtype = (
+        target_input.dtype
+        if np.issubdtype(target_input.dtype, np.floating)
+        else np.float64
+    )
+    donor = np.asarray(residuals_by_prompt[source], dtype=dtype)
+    target = np.asarray(target_input, dtype=dtype)
 
     donor_norm = float(np.linalg.norm(donor))
     if donor_norm == 0.0:
@@ -278,217 +466,7 @@ def select_wrong_activation(
             "rescaling to it would produce a zero vector with no donor direction"
         )
 
-    return donor * (target_norm / donor_norm), source
-
-
-def allocate_wrong_layers(
-    selected_layers: Sequence[int],
-    distances: Sequence[int],
-    n_prompts: int,
-    n_layers_total: int,
-    seed: int,
-) -> list[dict[str, int]]:
-    """FR-008: assign each prompt a wrong-layer distance band, near-equally.
-
-    Exact balance is not generally achievable -- 200 prompts over 3 bands is 66.67 --
-    so the rule is ``floor(n/k)`` per band with the remainder going to the
-    lowest-indexed bands, under the preregistered seed.  Realized counts are
-    recorded in the artifact rather than assumed.
-
-    Stage 2 did not balance this at all, which is why its mismatched-probe fraction
-    of 0.40 mixes near and far regimes and cannot be interpreted: a map from an
-    adjacent layer is nearly correct, one from the opposite end is trivially wrong,
-    and pooling them yields a number that describes neither.
-
-    Sign is balanced where the layer index permits.  A band whose offset would fall
-    outside ``[0, n_layers_total)`` in one direction takes the other; if neither
-    direction fits, that assignment is impossible and it raises rather than
-    silently clamping to an edge layer, which would make the realized distance
-    differ from the declared one.
-    """
-    import numpy as np
-
-    if not distances:
-        raise ValueError("distances must be non-empty")
-
-    k = len(distances)
-    base, remainder = divmod(n_prompts, k)
-    counts = [base + (1 if i < remainder else 0) for i in range(k)]
-
-    bands: list[int] = []
-    for distance, count in zip(distances, counts, strict=True):
-        bands.extend([distance] * count)
-
-    rng = np.random.default_rng(seed)
-    rng.shuffle(bands)
-
-    # Sign is balanced within each (correct_layer, distance) cell, not by
-    # positional parity. Deriving it from `index` couples direction to layer:
-    # with four loci and two options, index % 4 determines index % 2, so every
-    # eligible cell came out entirely one direction (verified: layer 6 / distance
-    # 3 gave 18 up and 0 down). That confounds direction with layer, which is the
-    # exact confound this control exists to remove.
-    cells: dict[tuple[int, int], list[int]] = {}
-    plan: list[tuple[int, int]] = []
-    for index, distance in enumerate(bands):
-        correct = selected_layers[index % len(selected_layers)]
-        plan.append((correct, distance))
-        cells.setdefault((correct, distance), []).append(index)
-
-    signs: dict[int, int] = {}
-    for (correct, distance), members in cells.items():
-        options = [
-            delta
-            for delta in (distance, -distance)
-            if 0 <= correct + delta < n_layers_total
-        ]
-        if not options:
-            raise ValueError(
-                f"distance {distance} does not fit around layer {correct} "
-                f"within [0, {n_layers_total})"
-            )
-        # Alternate through the eligible directions so each cell splits as evenly
-        # as its membership allows, then rotate the starting direction by cell so
-        # an odd remainder does not always favour the same sign.
-        offset = (correct + distance) % len(options)
-        for position, member in enumerate(members):
-            signs[member] = options[(position + offset) % len(options)]
-
-    assignments: list[dict[str, int]] = []
-    for index, (correct, distance) in enumerate(plan):
-        assignments.append(
-            {
-                "correct_layer": correct,
-                "wrong_layer": correct + signs[index],
-                "distance": distance,
-            }
-        )
-    return assignments
-
-
-def paired_difference_by_cluster(
-    instrument: Mapping[str, float | NTAExcluded],
-    control: Mapping[str, float | NTAExcluded],
-) -> dict[str, float]:
-    """One paired difference per prompt, at a single layer (FR-006).
-
-    Both mappings are prompt digest -> that prompt's NTA **at one layer**.  The
-    prompt is the cluster; layers are repeated measures and are never mixed here.
-    Callers run this once per layer.
-
-    A cell excluded on either side drops the pair: a difference against an excluded
-    denominator is not a small effect, it is an absent measurement, and averaging
-    the two together is how an absent measurement becomes a null result.
-
-    This function deliberately cannot return a depth-pooled value.  Pooling layers
-    would let a strong late layer carry the result, since a late-layer residual sits
-    close to the output and scores well for trivial reasons.
-    """
-    paired: dict[str, float] = {}
-    for prompt, value in instrument.items():
-        other = control.get(prompt)
-        if other is None:
-            continue
-        if isinstance(value, NTAExcluded) or isinstance(other, NTAExcluded):
-            continue
-        paired[prompt] = value - other
-    return paired
-
-
-# --------------------------------------------------------------------------
-# US2: non-redundancy, gate records, and decision composition.
-# --------------------------------------------------------------------------
-
-
-def jaccard_top_k(readout_a: Sequence[int], readout_b: Sequence[int], k: int) -> float:
-    """Top-k token overlap between two readouts.
-
-    Carried over from Stage 2's ``jaccard_top10`` so the H2 overlap clause stays
-    commensurable with the pilot.  Low overlap alone is a weak claim — it is
-    satisfied by a readout that is different *and useless* — which is why H2 also
-    requires a target-relative difference.  This clause only establishes that the
-    two readouts are not the same object.
-    """
-    if k < 1:
-        raise ValueError(f"k must be >= 1, got {k}")
-    top_a, top_b = set(readout_a[:k]), set(readout_b[:k])
-    union = top_a | top_b
-    if not union:
-        raise ValueError("both readouts are empty; Jaccard is undefined")
-    return len(top_a & top_b) / len(union)
-
-
-def gate_record(
-    name: str,
-    constant_name: str | None,
-    declared_value: Any,
-    statistic: float,
-    interval: Mapping[str, Any],
-    n_clusters: int,
-    exclusions: Sequence[Mapping[str, Any]] = (),
-    crosscheck: Mapping[str, Any] | None = None,
-    passes: bool | None = None,
-) -> dict[str, Any]:
-    """One gate's full record, per ``contracts/artifact-schema.md``.
-
-    ``outcome`` is ``pass`` | ``fail`` | ``undefined``.  A non-finite interval
-    bound yields **undefined, never fail**.
-
-    That distinction is the whole point.  BCa's acceleration term is estimated from
-    the skewness of leave-one-out replicates, and a median is discontinuous under
-    leave-one-out — with few clusters or many ties scipy returns NaN bounds and
-    emits ``DegenerateDataWarning``.  A NaN lower bound means *the interval could
-    not be computed*, which is a different result from *the interval included
-    zero*.  Collapsing them would let a degenerate bootstrap be reported as a
-    measured null, which is exactly the overstatement Principle V forbids.
-    """
-    low, high = interval.get("low"), interval.get("high")
-    finite = all(isinstance(v, (int, float)) and math.isfinite(v) for v in (low, high))
-
-    if not finite:
-        outcome = "undefined"
-    elif passes is None:
-        raise ValueError(
-            f"gate {name!r} has a finite interval but no pass/fail determination"
-        )
-    else:
-        outcome = "pass" if passes else "fail"
-
-    record: dict[str, Any] = {
-        "name": name,
-        "constant_name": constant_name,
-        "declared_value": declared_value,
-        "statistic": statistic,
-        "interval": dict(interval),
-        "n_clusters": n_clusters,
-        "exclusions": [dict(e) for e in exclusions],
-        "outcome": outcome,
-    }
-    if str(interval.get("method", "")).lower() == "bca":
-        if crosscheck is None:
-            raise ValueError(
-                f"gate {name!r} gates on a BCa interval but records no percentile "
-                "cross-check; a degenerate BCa would then be undetectable after "
-                "the fact"
-            )
-        record["interval_crosscheck"] = dict(crosscheck)
-    return record
-
-
-def combine_per_layer(name: str, per_layer: Mapping[int, Mapping[str, Any]]) -> str:
-    """Fold per-layer gate outcomes into one, conjunctively.
-
-    All comparisons are within layer, so a gate holds only if it holds at *every*
-    layer.  Any ``undefined`` layer makes the whole gate undefined rather than
-    failing: one immeasurable layer does not license a claim about the others, and
-    reporting it as a fail would be a measurement that was never made.
-    """
-    outcomes = [layer["outcome"] for layer in per_layer.values()]
-    if not outcomes:
-        raise ValueError(f"gate {name!r} has no per-layer results to combine")
-    if "undefined" in outcomes:
-        return "undefined"
-    return "pass" if all(o == "pass" for o in outcomes) else "fail"
+    return (donor * (target_norm / donor_norm)).astype(dtype, copy=False), source
 
 
 def assemble_factorial_cells(
@@ -497,23 +475,11 @@ def assemble_factorial_cells(
     wrong_act_fitted_map: float | NTAExcluded,
     wrong_act_broken_map: float | NTAExcluded,
 ) -> dict[str, Any]:
-    """The 2x2 at one ``(prompt, layer)``, plus effects (FR-003).
+    """Materialize one descriptive 2x2 factorial and its algebraic contrasts.
 
-    ``simple_effect_of_map`` is H1's statistic per the decision-rule table: the
-    map contrast **at the correct activation only**.
-
-    ``main_effect_of_map`` averages that contrast with the one at the wrong
-    activation.  It is computed and reported, but it does **not** gate.  The design
-    document calls it H1 in §4 while §2 and §6 name the simple effect; the two
-    coincide only if the interaction is zero, and §4 itself predicts a nonzero one.
-    Gating on the diluted quantity would penalize the instrument using cells where
-    the design expects the effect to be weakest.  See research.md R9 — this is
-    flagged for ratification, and switching would change only which value reaches
-    ``gate_record``.
-
-    ``interaction`` is reported and interpreted but deliberately ungated: no pilot
-    estimate exists for it, and a third preregistered threshold on an unmeasured
-    quantity would be a guess.
+    The contrasts preserve the ratified donor-by-map interaction measurement without
+    choosing an aggregation, uncertainty procedure, threshold, gate, or decision
+    rule. Those uses remain deferred.
 
     Any excluded cell makes every effect that depends on it ``None`` rather than
     zero.  An absent measurement is not a null effect.
@@ -525,9 +491,12 @@ def assemble_factorial_cells(
         "wrong_act_broken_map": wrong_act_broken_map,
     }
 
+    def is_excluded(value: Any) -> bool:
+        return value is None or isinstance(value, NTAExcluded)
+
     def diff(a: str, b: str) -> float | None:
         x, y = cells[a], cells[b]
-        if isinstance(x, NTAExcluded) or isinstance(y, NTAExcluded):
+        if is_excluded(x) or is_excluded(y):
             return None
         return x - y
 
@@ -537,131 +506,75 @@ def assemble_factorial_cells(
     interaction = None if simple is None or wrong_side is None else simple - wrong_side
 
     return {
-        "cells": {
-            k: (None if isinstance(v, NTAExcluded) else v) for k, v in cells.items()
-        },
-        "excluded": [k for k, v in cells.items() if isinstance(v, NTAExcluded)],
-        "simple_effect_of_map": simple,  # H1 gates on this
-        "main_effect_of_map": main,  # descriptive only (R9)
-        "interaction": interaction,  # descriptive only, no pilot estimate
+        "cells": {k: (None if is_excluded(v) else v) for k, v in cells.items()},
+        "excluded": [k for k, v in cells.items() if is_excluded(v)],
+        "simple_effect_of_map": simple,
+        "main_effect_of_map": main,
+        "interaction": interaction,
     }
 
 
-def compose_decision(
-    gates: Mapping[str, str],
-    *,
-    pinned_identities_matched: bool = True,
-    capacity_ok: bool = True,
+def materialize_crossed_factorials(
+    factorized: Mapping[str, Any],
 ) -> dict[str, Any]:
-    """Fold gate outcomes into ``pass`` | ``ambiguity`` | ``fail`` | ``kill``.
+    """Reconstruct every donor/map factorial from 81 unique readouts.
 
-    ``gates`` maps gate ID to its outcome string.  The kill conditions cannot be
-    derived from gate records alone — a pinned-identity mismatch and a capacity
-    failure are preflight outcomes with no gate of their own — so they arrive as
-    explicit keyword arguments rather than being silently assumed to hold.
-
-    An ``undefined`` gate never counts toward a pass.  H1 and H2 are each
-    conjunctive over their two clauses, so a single undefined clause is enough to
-    stop that hypothesis passing, and the reason is recorded in ``notes``.
+    The persisted form is factorized: one invariant correct/fitted readout, eight
+    map-indexed correct/broken readouts, eight donor-indexed wrong/fitted readouts,
+    and an 8x8 donor/map wrong/broken matrix.  This function proves that compact
+    form is lossless by materializing all 64 logical combinations in memory.
     """
-    notes: list[str] = []
-
-    if not pinned_identities_matched:
-        return {"result": "kill", "notes": "pinned identity mismatch"}
-    if not capacity_ok:
-        return {"result": "kill", "notes": "capacity gate failed"}
-    if gates.get("reproduction") != "pass":
-        return {
-            "result": "kill",
-            "notes": f"reproduction {gates.get('reproduction', 'missing')}",
-        }
-
-    def holds(*ids: str) -> bool:
-        for gate_id in ids:
-            outcome = gates.get(gate_id)
-            if outcome == "undefined":
-                notes.append(f"{gate_id} undefined")
-                return False
-            if outcome != "pass":
-                return False
-        return True
-
-    h1 = holds("h1_specificity", "h1_interval")
-    h2 = holds("h2_overlap", "h2_target")
-
-    if not holds("sanity_floor"):
-        return {
-            "result": "fail",
-            "notes": "; ".join([*notes, "sanity floor not cleared"]),
-        }
-
-    if h1 and h2:
-        result = "pass"
-    elif h1 or h2:
-        result = "ambiguity"
-        notes.append("H1 holds, H2 does not" if h1 else "H2 holds, H1 does not")
-    else:
-        result = "fail"
-
-    return {"result": result, "notes": "; ".join(notes)}
-
-
-def cluster_bootstrap_median(
-    cluster_values: Mapping[str, float],
-    level: float,
-    iterations: int,
-    seed: int,
-) -> dict[str, Any]:
-    """BCa interval on the median paired difference, resampling whole prompts.
-
-    ``cluster_values`` maps prompt digest -> that prompt's paired difference **at
-    one layer**.  The bootstrap runs once per layer; it never concatenates across
-    layers, which would pool depth into the gate — the same defect the design
-    forbids for absolute NTA, one level down and harder to see because each
-    individual difference is already within-layer.
-
-    scipy has no first-class cluster parameter.  Resampling an array of cluster
-    *indices* and looking each one up gives a genuine cluster bootstrap: whole
-    prompts enter or leave together, and BCa's jackknife leaves out one cluster at
-    a time rather than one observation.
-
-    Returns both the BCa interval and a percentile cross-check.  BCa's acceleration
-    term is unstable for a median under leave-one-out, so recording only the
-    interval that gated would leave a degenerate result undetectable afterwards.
-    ``scipy`` is imported here so the module still loads without it.
-    """
-    import numpy as np
-    from scipy.stats import bootstrap
-
-    if len(cluster_values) < 2:
-        raise ValueError("cluster bootstrap needs at least two clusters")
-
-    keys = sorted(cluster_values)
-    table = np.array([cluster_values[k] for k in keys], dtype=np.float64)
-    indices = np.arange(len(keys))
-
-    def statistic(idx: np.ndarray) -> float:
-        return float(np.median(table[idx.astype(int)]))
-
-    def interval_for(method: str) -> dict[str, Any]:
-        result = bootstrap(
-            (indices,),
-            statistic,
-            n_resamples=iterations,
-            confidence_level=level,
-            method=method,
-            rng=np.random.default_rng(seed),
+    if "correct_act_fitted_map" not in factorized:
+        raise ValueError(
+            "factorized representation requires the invariant fitted readout"
         )
-        return {
-            "method": method,
-            "level": level,
-            "low": float(result.confidence_interval.low),
-            "high": float(result.confidence_interval.high),
-        }
+    correct_fitted = factorized["correct_act_fitted_map"]
+    correct_broken = factorized.get("correct_act_broken_map")
+    wrong_fitted = factorized.get("wrong_act_fitted_map")
+    wrong_broken = factorized.get("wrong_act_broken_map")
+    if not isinstance(correct_broken, Mapping) or len(correct_broken) != 8:
+        raise ValueError("factorized representation requires exactly eight map draws")
+    if not isinstance(wrong_fitted, Mapping) or len(wrong_fitted) != 8:
+        raise ValueError(
+            "factorized representation requires exactly eight donor assignments"
+        )
+    if not isinstance(wrong_broken, Mapping):
+        raise ValueError("factorized representation requires a complete 8x8 crossing")
 
+    if not all(isinstance(value, str) for value in correct_broken):
+        raise ValueError("map draw identifiers must be strings")
+    if not all(isinstance(value, str) for value in wrong_fitted):
+        raise ValueError("donor assignment identifiers must be strings")
+    map_ids = sorted(correct_broken)
+    donor_ids = sorted(wrong_fitted)
+    if set(wrong_broken) != set(wrong_fitted):
+        raise ValueError("factorized representation requires a complete 8x8 crossing")
+    for donor_id in donor_ids:
+        row = wrong_broken.get(donor_id)
+        if not isinstance(row, Mapping) or set(row) != set(correct_broken):
+            raise ValueError(
+                "factorized representation requires a complete 8x8 crossing"
+            )
+
+    factorials = []
+    for donor_id in donor_ids:
+        for map_id in map_ids:
+            factorials.append(
+                {
+                    "donor_assignment_id": donor_id,
+                    "map_draw_id": map_id,
+                    "factorial": assemble_factorial_cells(
+                        correct_fitted,
+                        correct_broken[map_id],
+                        wrong_fitted[donor_id],
+                        wrong_broken[donor_id][map_id],
+                    ),
+                }
+            )
     return {
-        "statistic": float(np.median(table)),
-        "n_clusters": len(keys),
-        "interval": interval_for("bca"),
-        "crosscheck": interval_for("percentile"),
+        "donor_assignment_ids": donor_ids,
+        "map_draw_ids": map_ids,
+        "unique_readout_count": 1 + len(map_ids) + len(donor_ids) + len(factorials),
+        "logical_cell_count": len(factorials),
+        "factorials": factorials,
     }

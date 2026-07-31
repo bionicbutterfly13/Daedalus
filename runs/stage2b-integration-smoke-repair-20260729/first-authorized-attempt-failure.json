@@ -1,0 +1,39 @@
+{
+  "attempt": {
+    "authorization_record_sha256": "2722dde756917893e56b5b2b1ea59f2c14b563dea2556675d2bc431a64f4aba8",
+    "authorized_notebook_sha256": "cae3997f93e71a746fa8271d83ad4afd35629b6c8c76ce0b4969cd5bfcc0d798",
+    "canonical_notebook_sha256": "d9bceddd56ab191d018bff8e00999f8cede87a446095a510c37e382afb5f3e58",
+    "code_bundle_sha256": "6473ed46db8dcf652521402cd4af612313aa25e9e055c0578ff0948f94e8ec0c",
+    "date": "2026-07-29",
+    "scope": "excluded-input Stage 2b Colab integration smoke"
+  },
+  "boundaries": {
+    "artifact_transfer_occurred": false,
+    "confirmatory_inputs_accessed": false,
+    "pilot_inputs_accessed": false,
+    "runtime_report_generated": false,
+    "scientific_result_generated": false
+  },
+  "completed_runtime_checks": {
+    "code_bundle_sha256_matched": true,
+    "excluded_input_count": 9,
+    "gpu_count": 1,
+    "gpu_name": "Tesla T4",
+    "gpu_total_vram_mib": 15360,
+    "installed_jacobian_lens_commit_matched": true,
+    "lens_revision_matched": true,
+    "model_revision_matched": true,
+    "pinned_runtime_versions_matched": true
+  },
+  "failure": {
+    "cell": 9,
+    "error_type": "ImportError",
+    "message": "cannot import name '_center' from 'numpy._core.umath' (/usr/local/lib/python3.12/dist-packages/numpy/_core/umath.py)",
+    "operation": "transformers.AutoTokenizer.from_pretrained",
+    "stop_policy_followed": true
+  },
+  "interpretation": "The pinned binary package replacement completed in a Colab Python process that had already loaded NumPy components. Model loading then observed a mixed live-module state. This is an integration-launch defect, not scientific evidence.",
+  "recorded_at": "2026-07-29T22:50:05-0400",
+  "schema": "stage2b-integration-smoke-failure/v1",
+  "source": "direct Colab UI execution counters and output observed by Codex"
+}

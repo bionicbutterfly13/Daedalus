@@ -24,10 +24,10 @@ repository documents that are the study materials.
 > full, then produce your own scientific treatment of the study and record
 > observations to memory:
 >
-> - `sakshi notes/STAGE2_DISCRIMINATION_REPORT.md` (the full report)
-> - `sakshi notes/STAGE2_DISCRIMINATION_PROPOSAL.md` (the preregistered design)
-> - `sakshi notes/STAGE2_PROVISIONAL_DEFAULTS.md` (the ratified parameter answers)
-> - `sakshi notes/CLAUDE_CODE_SESSION_HISTORY.md` (the operational journey and the
+> - `j-space-lab/STAGE2_DISCRIMINATION_REPORT.md` (the full report)
+> - `j-space-lab/STAGE2_DISCRIMINATION_PROPOSAL.md` (the preregistered design)
+> - `j-space-lab/STAGE2_PROVISIONAL_DEFAULTS.md` (the ratified parameter answers)
+> - `j-space-lab/CLAUDE_CODE_SESSION_HISTORY.md` (the operational journey and the
 >   two runtime bugs)
 > - `EvoScientist/skills/jspace-research-operations/references/stage2-discrimination-baseline.md`
 >   (design, thresholds, runtime fixes, executed-run result, artifact hashes)
@@ -152,13 +152,13 @@ Fork `bionicbutterfly13/EvoScientist`, branch `docs/jspace-research-operations`
 
 | Document | Path | Role |
 |---|---|---|
-| Scientific report | `sakshi notes/STAGE2_DISCRIMINATION_REPORT.md` | idea to discussion |
-| Session history | `sakshi notes/CLAUDE_CODE_SESSION_HISTORY.md` | operational journey |
-| Proposal | `sakshi notes/STAGE2_DISCRIMINATION_PROPOSAL.md` | preregistered design |
-| Ratified defaults | `sakshi notes/STAGE2_PROVISIONAL_DEFAULTS.md` | the eight answers |
+| Scientific report | `j-space-lab/STAGE2_DISCRIMINATION_REPORT.md` | idea to discussion |
+| Session history | `j-space-lab/CLAUDE_CODE_SESSION_HISTORY.md` | operational journey |
+| Proposal | `j-space-lab/STAGE2_DISCRIMINATION_PROPOSAL.md` | preregistered design |
+| Ratified defaults | `j-space-lab/STAGE2_PROVISIONAL_DEFAULTS.md` | the eight answers |
 | Baseline reference | `EvoScientist/skills/jspace-research-operations/references/stage2-discrimination-baseline.md` | thresholds, fixes, result, hashes |
 | Skill | `EvoScientist/skills/jspace-research-operations/SKILL.md` | bounded protocol, stage gates |
-| Notebook | `sakshi notes/jspace_colab_stage2_discrimination.ipynb` | executed design (immutable) |
+| Notebook | `j-space-lab/jspace_colab_stage2_discrimination.ipynb` | executed design (immutable) |
 | Validator | `EvoScientist/skills/jspace-research-operations/scripts/validate_observation.py` | artifact validation |
 
 Commit trail: `d0a7596` ratify, `eb69193` float32 fix, `b7a69ba` cpu fix,
