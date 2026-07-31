@@ -1,0 +1,176 @@
+{
+  "categories": [
+    "antonym_negation",
+    "arithmetic_completion",
+    "category_membership",
+    "factual_completion",
+    "multi_token_entity"
+  ],
+  "manifest_version": "jspace-stage2b-pilot-view/v1",
+  "n_prompts": 20,
+  "pilot_subset_sha256": "8ed0a0092ec3989f6bd8005ae4360de86174764a946af75b35ea30932ca719b5",
+  "prompts": [
+    {
+      "category": "antonym_negation",
+      "id": "s000",
+      "index": 0,
+      "sha256": "db8fa0aa20481673f9466304d18fd4af8a1c20dc99347ae6238d3d2ac1c47a59",
+      "text": "The opposite of big is",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s001",
+      "index": 1,
+      "sha256": "72ce16bd9bea30b283946fd1d20df2960691002d279728721ef084a68151d710",
+      "text": "The opposite of wet is",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s002",
+      "index": 2,
+      "sha256": "7b68deaf080dbfd00266e69e778668030eb5e369fd437651310257ac1903a5e4",
+      "text": "The opposite of loud is",
+      "utf8_byte_count": 23
+    },
+    {
+      "category": "antonym_negation",
+      "id": "s003",
+      "index": 3,
+      "sha256": "f2a5dff4f40a27dff7ca17713f8f535f328d2cb62e8a50c3a956764459c7f707",
+      "text": "The opposite of heavy is",
+      "utf8_byte_count": 24
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s040",
+      "index": 40,
+      "sha256": "a9ac98293ae796d89ae9a78940c4730869c8ca662a71d223079420686c5e65d0",
+      "text": "Compute: 4 + 4 =",
+      "utf8_byte_count": 16
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s041",
+      "index": 41,
+      "sha256": "91f94984d54b7331ec3fc6964e991a43910213c2b02572e9bcaf37dce45d3c84",
+      "text": "Compute: 6 + 3 =",
+      "utf8_byte_count": 16
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s042",
+      "index": 42,
+      "sha256": "2ae64be89089e9ce1c1cf5a21ff6a2a8500d7db45a11ac9f2e1a795abb52ed22",
+      "text": "Compute: 8 + 2 =",
+      "utf8_byte_count": 16
+    },
+    {
+      "category": "arithmetic_completion",
+      "id": "s043",
+      "index": 43,
+      "sha256": "d037664ab497a20b2db5d3adbb7a996ad5a230af8f0dc77184490b4d1b82e261",
+      "text": "Compute: 9 + 4 =",
+      "utf8_byte_count": 16
+    },
+    {
+      "category": "category_membership",
+      "id": "s080",
+      "index": 80,
+      "sha256": "c512740adf38d6fde8958de29c5558889fc14549f2eb18c27479e82d46d0465f",
+      "text": "A sparrow is a kind of",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "category_membership",
+      "id": "s081",
+      "index": 81,
+      "sha256": "8a834e64f3e6fe9ef2b6a87089909e2bf9606e8313340f55342db7675bd51933",
+      "text": "A wrench is a kind of",
+      "utf8_byte_count": 21
+    },
+    {
+      "category": "category_membership",
+      "id": "s082",
+      "index": 82,
+      "sha256": "c38138bdd7dc368143c2abc240573b2e752638da604e0c93bcae961053f7dfe5",
+      "text": "A tulip is a kind of",
+      "utf8_byte_count": 20
+    },
+    {
+      "category": "category_membership",
+      "id": "s083",
+      "index": 83,
+      "sha256": "1f49b38299f078576b30deae8211f7c8dab38699becf32af75ad76db3dc9ba59",
+      "text": "A haddock is a kind of",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "factual_completion",
+      "id": "s120",
+      "index": 120,
+      "sha256": "4906f6a5183d3cc817b21414f462c2976116838689e5572524c9736604e43180",
+      "text": "Fact: The capital city of Japan is",
+      "utf8_byte_count": 34
+    },
+    {
+      "category": "factual_completion",
+      "id": "s121",
+      "index": 121,
+      "sha256": "0ba62e4093191004f33cb4554dfcafc287b16aee68ea73673e47cf7dfaaac4de",
+      "text": "Fact: The chemical symbol for silver is",
+      "utf8_byte_count": 39
+    },
+    {
+      "category": "factual_completion",
+      "id": "s122",
+      "index": 122,
+      "sha256": "8941e7a08a604c44e1fe6313d44694f5a8e54140b5e60ab78b080cf073d00c4c",
+      "text": "Fact: The largest planet in the solar system is",
+      "utf8_byte_count": 47
+    },
+    {
+      "category": "factual_completion",
+      "id": "s123",
+      "index": 123,
+      "sha256": "37c0a03fa81790af49891ebf4b9f72db3198444ec114ab84b2d46e2213de9ab3",
+      "text": "Fact: The number of days in a leap year is",
+      "utf8_byte_count": 42
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s160",
+      "index": 160,
+      "sha256": "cc63e5bd4d182ba9e8baec0760c3b21343bd019c03f276b46ff35e6e9bc78b5a",
+      "text": "The physicist Isaac",
+      "utf8_byte_count": 19
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s161",
+      "index": 161,
+      "sha256": "b2f3364ddca38e3fc4c4801122042a336810b13ebecc9a1d674370bd604c916b",
+      "text": "The composer Johann Sebastian",
+      "utf8_byte_count": 29
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s162",
+      "index": 162,
+      "sha256": "96002f3931cff2036c2626225846b96811928a453ebd0d39d1302ae51b691122",
+      "text": "The playwright William",
+      "utf8_byte_count": 22
+    },
+    {
+      "category": "multi_token_entity",
+      "id": "s163",
+      "index": 163,
+      "sha256": "58b3410f19b0f074b944818e53a0932187b4543f6f749946d638a0cebfd9281c",
+      "text": "The river running through Cairo is the",
+      "utf8_byte_count": 38
+    }
+  ],
+  "source_manifest_sha256": "ba29c629c7b9601980b6c0bb9cd9730242d7cd6b7eacb1166c307837416d4bbf",
+  "source_n_prompts": 200
+}

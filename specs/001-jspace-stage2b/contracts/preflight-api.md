@@ -3,172 +3,231 @@
 Public surface of
 `EvoScientist/skills/jspace-research-operations/scripts/stage2b_preflight.py`.
 
-**Hard constraint**: this module MUST import cleanly with neither `torch`, `jlens`,
-nor `scipy` installed. It is the only part of Stage 2b exercised by the repo's
-pytest suite, and the machine running that suite has no GPU and no interpretability
-stack. Every check therefore takes already-extracted metadata — shape tuples, dtype
-*strings*, device *strings*, digests, floats — never a live tensor.
-
-That constraint is what makes US3 testable at all: "the preflight can be exercised
-against a deliberately broken configuration with no GPU and no measurement."
-
----
+The module imports without `torch`, `jlens`, or a GPU. It accepts extracted metadata
+and fails before measurement.
 
 ## Failure model
 
-One exception type. Preflight fails closed and names the offending item.
-
 ```python
 class PreflightError(Exception):
-    """Raised when a preflight assertion fails. Carries a machine-readable code."""
-    code: str      # stable slug, e.g. "orphaned_constant", "dtype_mismatch"
-    detail: dict   # the offending values, for the artifact
+    code: str
+    detail: dict
 ```
 
-Rules:
+Codes are stable and tests assert on `code`. The first failure raises; no warning
+may substitute for an enforceable check.
 
-- **Never warn where a check could fail.** A warning is a check that does not run.
-- **Never aggregate.** The first failure raises, naming exactly one cause. A
-  preflight that reports "3 problems" invites triage; one that names the first
-  invites a fix.
-- Every `code` is stable and testable. Tests assert on `code`, not on message text.
+## `check_tensor_contracts(observed) -> None`
 
----
+Checks residual/Jacobian shape and dtype, readout device, decode parity, rank parity,
+and unexpected softcapping from plain metadata. It also requires the two floor
+identities to be exactly:
 
-## `check_tensor_contracts(observed: dict) -> None`
-
-Asserts the R5 contract table. `observed` is a plain dict of strings and tuples
-extracted at the call site in the notebook.
-
-| Key | Type | Assertion |
-|---|---|---|
-| `residual_shape` | tuple[int, ...] | `== (d_model,)` |
-| `residual_dtype` | str | `== "torch.float32"` — `transport` does not cast; a half-precision residual is a silently wrong matmul |
-| `jacobian_shape` | tuple[int, int] | `== (d_model, d_model)` |
-| `jacobian_dtype` | str | `== "torch.float32"` |
-| `readout_device` | str | `== "cpu"` |
-| `decode_parity_max_abs` | float | `<= DECODE_PARITY_TOL` |
-| `logit_softcapping` | float \| None | recorded; `PreflightError` if not None, since it would change every rank statistic |
-
-Codes: `shape_mismatch`, `dtype_mismatch`, `device_mismatch`, `decode_parity`,
-`unexpected_softcapping`.
-
-**Why dtype is a string**: comparing `torch.float32` requires importing torch.
-`str(tensor.dtype)` is extracted at the call site, which has torch, and compared
-here, which does not.
-
----
-
-## `check_constant_registry(registry, gates, preflight_checks, endpoint_fns) -> None`
-
-The Principle IV mechanization. See
-[constant-registry.md](./constant-registry.md) for the full rules.
-
-Three checks, all required:
-
-1. Every registry entry has ≥ 1 name in `consumed_by` → else
-   `PreflightError("orphaned_constant")`.
-2. Every constant name any gate reads appears in the registry → else
-   `PreflightError("unregistered_constant")`.
-3. Every name in any `consumed_by` resolves to a declared consumer in its
-   namespace — a bare gate ID from the inventory, a `preflight:` check declared in
-   this file, or an `endpoint:` function → else
-   `PreflightError("phantom_consumer")`.
-
-Check 1 alone would have caught Stage 2's `INFERENCE_SEEDS` but not a gate quietly
-reading a value nobody declared. Neither 1 nor 2 catches an entry that names a
-consumer which was never built — and that case is worse than both, because it
-passes and then writes a `registry` block asserting the constant is consumed.
-
-`check_constant_registry` therefore takes all three declared namespaces alongside
-`gates`, so every prefix is resolvable rather than assumed:
-
-```python
-def check_constant_registry(registry, gates, preflight_checks, endpoint_fns) -> None: ...
+```text
+primary     = input_embedding_decoded
+sensitivity = layer0_residual_decoded
 ```
 
-Names are matched **exactly**. No case folding, no whitespace normalization, no
-fuzzy match — a check that accepts `H1 specificity` for `h1_specificity` cannot
-tell a real linkage from a typo, which is the whole thing it is for.
+Representative codes: `shape_mismatch`, `dtype_mismatch`, `device_mismatch`,
+`decode_parity`, `rank_parity`, `unexpected_softcapping`, `floor_identity`.
 
----
+## `check_constant_registry(...) -> None`
 
-## `check_manifest(manifest, stage2_digests, expected_digest) -> None`
+Enforces forward, reverse, and referential registry checks from
+[constant-registry.md](./constant-registry.md). Consumer names match exactly.
+Implemented presence never promotes an unratified value.
 
-`expected_digest` is passed in, not read from `manifest`. The digest is of the
-manifest, so it cannot live inside it — see [../data-model.md](../data-model.md) §1.
+Codes: `orphaned_constant`, `unregistered_constant`, `phantom_consumer`.
 
-| Assertion | Code |
+## `check_crossing_registry(donor_assignments, map_draws) -> None`
+
+Requires:
+
+- exactly 8 donor-assignment entries;
+- exactly 8 broken-map-draw entries;
+- non-empty unique string IDs in each collection; and
+- unique integer seeds in each collection.
+
+Codes:
+
+| Failure | Code |
 |---|---|
-| `manifest_version == "jspace-stage2b-stimulus/v1"` | `manifest_version` |
-| `n_prompts == len(prompts) == 200` | `manifest_size` |
-| exactly 40 prompts per category, 5 categories | `category_imbalance` |
-| every `sha256` is 64 lowercase hex | `malformed_digest` |
-| per-prompt digests are internally unique | `duplicate_prompt` |
-| digest set ∩ `stage2_digests` is empty (FR-011) | `stage2_overlap` |
-| `STAGE1_PROMPT_SHA256` absent | `anchor_contamination` |
-| every `token_count <= MAX_PROMPT_TOKENS` | `prompt_too_long` |
-| digest recomputed from the document equals `expected_digest` | `manifest_digest` |
+| count is not exactly 8 and 8 | `crossing_registry_size` |
+| missing/empty/non-string ID | `crossing_registry_identity` |
+| missing or non-integer seed | `crossing_registry_seed` |
+| duplicate ID or seed | `crossing_registry_duplicate` |
 
-`stage2_overlap` and `anchor_contamination` are separate codes on purpose. Both are
-contamination, but the anchor case is expected-and-deliberate elsewhere in the
-protocol (it is the reproduction kill check) and must not be diagnosed as an
-ordinary overlap bug.
+This check validates a ratified structure; it does not choose IDs or seeds. The
+shipped vectors are deterministically derived from the ratified namespaces and
+must equal `donor-0` through `donor-7` and `map-0` through `map-7`. The check
+recomputes every namespace digest and unsigned big-endian seed before accepting
+the vectors.
 
----
+## External pilot authorization record
 
-## `check_ratification(thresholds: dict) -> None`
+`load_pilot_authorization_record(path, approved_record_sha256=...,
+expected_pilot_view_sha256=..., observed_code_bundle_sha256=...)` accepts exactly
+the file named by an independently supplied approved SHA-256:
+`stage2b-pilot-authorization-<64-lowercase-hex>.json`. The approved digest must
+equal both the filename digest and the exact file bytes. The record's authority
+must be exactly `Dr. Mani`. Duplicate JSON keys, unknown fields, a different pilot
+view, confirmation access, and artifact transfer all fail closed. A self-consistent
+hash-named record that was not independently approved is insufficient.
 
+The record has five exact top-level fields:
+
+```jsonc
+{
+  "schema": "jspace-stage2b-pilot-authorization/v1",
+  "run_mode": "pilot",
+  "decision": {
+    "authority": "Dr. Mani",
+    "authorized_at_utc": "<second-resolution UTC RFC 3339>",
+    "instruction": "<exact approval text>",
+    "instruction_sha256": "<sha256 of instruction plus newline>"
+  },
+  "scope": {
+    "pilot_view_sha256": "<canonical 20-prompt view digest>",
+    "confirmation_access_authorized": false,
+    "artifact_transfer_authorized": false
+  },
+  "source": {
+    "notebook_sha256": "<independently approved canonical notebook SHA-256>",
+    "code_bundle_sha256": "<independently approved code bundle SHA-256>"
+  },
+  "registry_updates": {
+    "PILOT_PROTOCOL_RATIFIED": {
+      "declared_value": true,
+      "status": "ratified"
+    },
+    "PILOT_AUTHORIZED": {
+      "declared_value": true,
+      "status": "ratified"
+    }
+  }
+}
 ```
-if not thresholds.get("THRESHOLDS_RATIFIED"):
-    raise PreflightError(code="not_ratified", ...)
-```
 
-FR-013 and Q10. Runs **last**, so that authoring-time validation of everything else
-is exercisable on an unratified configuration — which is the state the notebook
-ships in and the state every test runs against.
+`materialize_pilot_authorization(record, registry)` first verifies that every
+pilot protocol rule and deterministic crossing vector in the shipped registry is
+already ratified and exact. The external record may update only
+`PILOT_PROTOCOL_RATIFIED` and `PILOT_AUTHORIZED`; it must not supply the
+data-derived denominator guard, either effect-threshold vector, or
+`THRESHOLDS_RATIFIED`. It copies rather than mutates the shipped registry and
+returns the configuration consumed by `check_ratification`. The canonical
+notebook contains no authorization record and remains blocked. Launch requires
+adding one separately approved record and supplying its approved digest through
+the notebook prompt. The loader verifies the authorization-record bytes, pilot
+view, and observed code-bundle bytes. It does not accept a notebook hash typed by
+the operator as evidence of the running notebook.
 
-Additional assertion: if `THRESHOLDS_RATIFIED` is true, every constant whose
-declared value is `None` (currently `SPEC_MIN_EFFECT` and `NTA_MIN_DENOMINATOR`,
-both deferred to the Q6 pilot) raises `PreflightError("unset_constant")`.
-Ratification cannot be signed while a threshold the decision depends on is still
-unset — that is the Stage 2 failure mode restated, and it should be impossible
-rather than discouraged.
+## Trusted pilot launch preparation
 
----
+`prepare_stage2b_pilot_launch.py` is the external trusted source-binding surface.
+It takes the canonical notebook, deterministic code bundle, exact pilot view, and
+already approved authorization record. Before creating anything it:
 
-## `check_environment(env: dict) -> None`
+1. hashes the exact notebook, bundle, pilot-view, and authorization-record bytes;
+2. proves the notebook is valid unexecuted JSON with all shipped authorization
+   and transfer flags false;
+3. runs the authorization loader against the observed bundle and pilot view;
+4. independently compares the record's notebook identity with the exact notebook
+   bytes; and
+5. refuses any output directory that already exists.
 
-| Assertion | Code | Note |
-|---|---|---|
-| `python_version >= (3, 11)` | `python_version` | Stage 2 recorded but never asserted this |
-| `jlens_commit == JLENS_COMMIT` | `jlens_commit` | **read back from the installed package**, not from the install line — research.md R2 |
-| `cuda_available` is true | `no_cuda` | |
-| `vram_gib >= MIN_VRAM_GIB` | `insufficient_vram` | |
-| `model_revision`, `lens_revision`, `lens_sha256` match pins | `identity_mismatch` | |
+On success it copies only those four exact inputs plus a launch manifest into a
+new exclusive directory and verifies every copied byte. The notebook extracts the
+authorized bundle into a fresh `mkdtemp` directory, rejects unsafe or undeclared
+archive members, verifies the exact extracted file set and hashes, and only then
+adds its scripts directory to `sys.path`.
 
-`jlens_commit` is the one worth stating plainly: `%pip` does interpolate the pin
-(R2, verified from IPython source), but that was established by reading upstream
-source on a machine with no IPython installed. Asserting the *installed* commit
-converts an inference into a measurement for one line of code.
+Artifact validation receives the three trusted source identities separately from
+the artifact through `expected_source`. An artifact cannot authenticate itself by
+coordinately rewriting its own provenance fields.
 
----
+Representative codes: `authorization_record_approval`,
+`authorization_record_authority`, `authorization_record_name`,
+`authorization_record_unreadable`, `authorization_record_digest`,
+`authorization_record_json`, `authorization_record_schema`,
+`authorization_record_scope`, `authorization_record_decision`,
+`authorization_record_pilot_view`, `authorization_record_boundary`,
+`authorization_record_incomplete`, `authorization_record_registry`, and
+`authorization_record_unratified`.
 
-## `emit_registry_record(registry, gates) -> dict`
+## Factorized measurement validation obligation
 
-Returns the `registry` block for the aggregate artifact: every entry with its
-`consumed_by` list as resolved at preflight. Pure; no I/O.
+The preflight/validator boundary MUST establish:
 
-This is what makes FR-009 auditable *after* the run rather than only during it. The
-check passing leaves no trace by itself; the emitted record is the trace.
+- donor and map key sets exactly equal their registries;
+- 1 shared + 8 map-indexed + 8 donor-indexed + 64 donor×map readouts;
+- `unique_readout_count == 81`;
+- lossless materialization of 64 unique `(donor_id, map_id)` factorials;
+- recipient→donor digest on every donor assignment; and
+- map hash on every broken-map draw.
 
----
+This may be implemented in the primary validator rather than the import-light
+preflight module, but the obligation cannot be omitted.
+
+## `check_ratification(configuration, registry, mode) -> None`
+
+Runs after structural checks and before measurement. `registry` is mandatory for
+both modes; omission raises `registry_required` rather than falling back to an empty
+or built-in registry. It fails if:
+
+- the mode lacks explicit authorization;
+- any required protocol section remains unratified;
+- any execution-critical protocol rule remains unset;
+- either crossing vector is empty or malformed;
+- authorization vectors differ from their explicitly ratified registry entries; or
+- the external authorization record is incomplete or out of scope.
+
+In pilot mode, `NTA_MIN_DENOMINATOR`, `SPEC_MIN_EFFECT`, and
+`INTERACTION_MIN_EFFECT` are valid only as unset derived values before measurement.
+The denominator becomes numeric after the raw-score stage; the two effect vectors
+become numeric only after valid pilot estimation. In confirmatory mode all three
+must already be content-addressed and locked.
+
+Both pilot and confirmatory modes pass the authorization/configuration's
+`WRONG_ACTIVATION_ASSIGNMENTS` and `BROKEN_MAP_DRAWS` through
+`check_crossing_registry`. Confirmatory authorization therefore cannot bypass the
+8×8 vector check. Valid values in tests are real eight-entry vectors, never scalar
+stand-ins.
+
+The current canonical source remains intentionally blocked because authorization
+flags are false and no external record ships with it. No GPU/model/lens/pilot or
+confirmation path is authorized by the deterministic protocol registry.
+
+Codes include `registry_required`, `pilot_not_authorized`,
+`pilot_protocol_not_ratified`, `not_ratified`, `unset_constant`,
+`unratified_constant`, `registry_value_mismatch`, and `invalid_constant`. Code names
+do not imply that any particular inference method is approved.
+
+## Manifest and environment checks
+
+Manifest checks retain held-out digest disjointness, Stage 1 anchor exclusion,
+manifest identity, prompt limits, and partition identity. Environment checks retain
+pinned model/lens/code identities, installed lens provenance, Python/CUDA/device
+requirements, and fail closed before measurement.
+
+These checks are implementation safeguards, not execution authorization.
 
 ## Test obligations
 
-The suite MUST include, for each check, at least one test that makes it **fail**.
-Per Principle III, a preflight suite that only proves valid configurations pass has
-not tested the preflight. Concretely, `tests/jspace/test_stage2b_preflight.py`
-asserts each `code` above is raised by a configuration constructed to trigger it —
-including `orphaned_constant`, which is a direct regression test for the Stage 2
-audit finding, and `stage2_overlap`, which is one for FR-011.
+CPU-only tests must make every failure code fire. Dedicated tests additionally
+cover:
+
+- pure dual-floor endpoint behavior;
+- deterministic donor/map/bootstrap seed derivation;
+- two-stage denominator derivation without a second model/lens pass;
+- malformed 8×8 registries;
+- incomplete factorized matrices;
+- 81 unique readouts and 64 logical combinations;
+- coverage, category-balanced estimation, both interval engines, and pilot
+  threshold derivation;
+- the synthetic harness;
+- notebook source integration; and
+- primary validator reconstruction.
+
+Notebook and primary validator verification may be claimed only after their
+respective tests have been freshly run and observed. No inference or execution
+claim follows from these structural tests.

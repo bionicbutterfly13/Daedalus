@@ -2,7 +2,7 @@
 
 Date prepared: 2026-07-17
 Workspace: `/Volumes/Asylum/archimedes`
-Artifact: `sakshi notes/jspace_colab_smoke_test.ipynb`
+Artifact: `j-space-lab/jspace_colab_smoke_test.ipynb`
 
 ## Source accessed directly in this session
 

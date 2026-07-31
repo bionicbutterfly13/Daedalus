@@ -1,161 +1,185 @@
-# Quickstart: validating Stage 2b without running it
+# Quickstart: validate the recovered Stage 2b contract without running it
 
-Every scenario here runs on a laptop with no GPU, no `torch`, no `jlens`, and no
-`scipy`. That is deliberate: Stage 2b's authoring deliverables are validated by
-tests, and the measurement is not run at all until Dr. Mani ratifies the ten open
-parameters (FR-013, Q10).
+All executable scenarios are CPU-only. The validator checks the ratified pilot-view
+file as identity/provenance input but does not run those prompts or access the
+180-prompt holdout. Nothing here authorizes or accesses a model, lens, GPU, pilot
+execution, or confirmation.
 
-If a scenario below requires a GPU, it is in the wrong document.
-
----
-
-## Prerequisites
+## Working tree
 
 ```bash
-cd /Volumes/Asylum/archimedes
-uv sync --extra dev
+cd /Volumes/Asylum/archimedes-recovery-jspace-stage2b
 ```
 
-Baseline, so a regression is attributable: `uv run pytest` on `main` is
-**3036 passed, 12 skipped**.
+Do not substitute `/Volumes/Asylum/archimedes`; the recovery changes are in the
+worktree above.
 
----
-
-## Scenario 1 — The preflight catches every failure it claims to
-
-The primary validation. Per Principle III, a preflight suite that only proves valid
-configurations pass has not tested the preflight, so each test below constructs a
-configuration built to fail.
-
-```bash
-uv run pytest tests/jspace/test_stage2b_preflight.py -v
-```
-
-Expected: one passing test per failure code in
-[contracts/preflight-api.md](./contracts/preflight-api.md) —
-
-| Test asserts | Code |
-|---|---|
-| a declared constant with no consuming gate is rejected | `orphaned_constant` |
-| a gate reading an unregistered constant is rejected | `unregistered_constant` |
-| a residual in the wrong dtype is rejected | `dtype_mismatch` |
-| a readout on the wrong device is rejected | `device_mismatch` |
-| decode parity beyond tolerance is rejected | `decode_parity` |
-| a manifest overlapping Stage 2 is rejected | `stage2_overlap` |
-| a manifest containing the Stage 1 anchor is rejected | `anchor_contamination` |
-| ratification with an unset threshold is rejected | `unset_constant` |
-| an unratified configuration refuses to run | `not_ratified` |
-
-`orphaned_constant` is the regression test for the audit finding, and
-`stage2_overlap` is the one for FR-011. Both should be readable as such by someone
-who has not read the audit.
-
-**This scenario satisfies US3's independent test**: exercised against a
-deliberately broken configuration, with no GPU and no measurement.
-
----
-
-## Scenario 2 — The endpoint behaves at its edges
+## 1. Endpoint and lossless 8×8 materialization
 
 ```bash
 uv run pytest tests/jspace/test_stage2b_endpoint.py -v
 ```
 
-| Property | Expected |
-|---|---|
-| `NTA(prompt_only) == 0.0` and `NTA(output) == 1.0` | exactly, by construction (FR-002) |
-| rank convention | 1-indexed, strict `>`; the top token ranks 1, never 0 |
-| rank parity (FR-010) | comparison-count rank equals the `_ranks_of` reference on a fixed probe |
-| denominator at or below `NTA_MIN_DENOMINATOR` | cell excluded, reason recorded, **not** divided |
-| exclusion accounting | counted per layer, never pooled to a bare total |
+The test surface must establish:
 
-The rank-parity test is the one that matters most. FR-010 exists because an
-optimization that silently changes a statistic is indistinguishable from a correct
-one until the results are wrong, and `jlens.vis._ranks_of` is a reference
-implementation the library itself ships tests for (research.md R4).
+- primary `input_embedding_decoded` NTA;
+- sensitivity `layer0_residual_decoded` NTA;
+- named `sensitivity_minus_primary` difference;
+- floor-specific exclusion behavior;
+- 8 donor IDs × 8 map IDs;
+- exactly 81 unique readouts (`1 + 8 + 8 + 64`); and
+- lossless reconstruction of 64 logical four-cell factorials.
 
-Note the parity test needs a logits array, not a model — build it with a fixed
-seed. If `_ranks_of` cannot be imported (no torch locally), the test compares
-against an inline naive `argsort` reference with the same documented convention and
-is marked so the Colab run repeats it against the real function.
+A flat 64-record representation is not required.
 
----
-
-## Scenario 3 — The manifest is held out, and provably so
+## 2. Deterministic statistics and seeds
 
 ```bash
-uv run pytest tests/jspace/test_stage2b_manifest.py -v
+uv run pytest tests/jspace/test_stage2b_statistics.py -v
 ```
 
-| Property | Expected |
-|---|---|
-| 200 prompts, 5 categories, 40 each | asserted, not assumed |
-| every `sha256` is 64 lowercase hex and internally unique | — |
-| digest set is disjoint from Stage 2's | `overlap_count == 0` |
-| Stage 1 anchor absent | `anchor_present == false` |
-| recomputed manifest digest matches the recorded one | canonicalization is byte-identical to Stage 2's |
-| every `token_count <= 128` | `MAX_PROMPT_TOKENS` |
+The pure statistical surface must establish:
 
----
+- exact SHA-256 donor, map, and pilot-bootstrap seed identities;
+- explicit `Generator(PCG64(seed))`, never implicit `default_rng`;
+- one 0.05 linear guard from exactly 80 primary-floor denominators;
+- no second model/lens pass after raw score retention;
+- equal-weight per-prompt effects and category-balanced layer means;
+- fixed exclusion masks, 18/20 layer coverage, and 3/4 per category;
+- 20,000 finite primary and product-weight replicates with linear 99% bounds; and
+- half-mean threshold vectors only from eight positive defined primary-floor
+  source estimates.
 
-## Scenario 4 — The shipped notebook cannot run
-
-The boundary check. Whatever else is true, the committed notebook must refuse.
+## 3. Preflight fails closed without external authorization
 
 ```bash
-grep -n "THRESHOLDS_RATIFIED" "sakshi notes/jspace_colab_stage2b_discrimination.ipynb"
+uv run pytest tests/jspace/test_stage2b_preflight.py -v
 ```
 
-Expected: `THRESHOLDS_RATIFIED = False` in the constants cell, and a guard that
-raises before the measurement loop.
+Required failures include wrong crossing size, mismatched SHA-derived identities,
+duplicate IDs/seeds, incomplete or tampered external authorization records,
+unset protocol, and absent execution authorization.
+The shipped vectors are deterministic:
+
+```text
+donor-0..donor-7 = first8(SHA256("jspace-stage2b/v1|donor-assignment|<i>"))
+map-0..map-7     = first8(SHA256("jspace-stage2b/v1|broken-map|<i>"))
+```
+
+The canonical notebook never changes these values in source. A future authorized
+launch must add the exact
+`stage2b-pilot-authorization-<approved-sha256>.json` file named by a digest that
+Dr. Mani approved independently of the file. The digest must match the filename
+and exact bytes, the authority must be `Dr. Mani`, the pilot-view identity must be
+exact, its notebook/bundle hashes must match, and the scope must keep confirmation
+access and artifact transfer false. The notebook prompts for that approved digest
+and opens only the corresponding path. The repository ships no such record.
+
+Pilot preflight requires the ratified denominator derivation rule, not a numeric
+guard. It rejects an authorization record that attempts to inject
+`NTA_MIN_DENOMINATOR`, either effect-threshold vector, or
+`THRESHOLDS_RATIFIED`.
+
+Before any authorized upload, the trusted local launch preparer must hash the
+canonical notebook itself and create a new exclusive launch directory:
 
 ```bash
-uv run pytest tests/jspace/test_stage2b_preflight.py -k not_ratified -v
+uv run pytest tests/jspace/test_stage2b_pilot_launch.py -v
 ```
 
-Expected: passes — an unratified configuration raises `PreflightError` with code
-`not_ratified` before any measurement path is entered.
+The test proves that a coordinated notebook-hash forgery is rejected, stale output
+directories are refused, and only the exact notebook, bundle, pilot view,
+authorization record, and generated launch manifest are copied. The runtime
+notebook performs a second exclusive extraction and exact member/hash check before
+importing any bundled code.
 
-This is the one scenario worth re-running after **any** edit to the notebook. FR-013
-is the boundary between authoring, which this feature covers, and execution, which
-it does not.
-
----
-
-## Scenario 5 — An artifact is recomputable from itself
-
-Once an aggregate artifact exists (post-ratification, not part of this feature):
+## 4. Dedicated synthetic harness
 
 ```bash
-uv run python EvoScientist/skills/jspace-research-operations/scripts/validate_observation.py \
-    <artifact.json> --expected-sha256 <digest>
+uv run pytest tests/jspace/test_stage2b_pilot_harness.py -v
 ```
 
-The schema is auto-detected from the artifact's own `schema` field
-(`validate_observation.py:412-414`); there is no `--schema` flag. T041's Stage 2b
-branch is selected the same way.
+The harness must use dedicated synthetic prompt digests disjoint from the real
+manifest, exercise the same pure dual-floor and factorized crossing helpers, and
+emit no scientific gate or decision.
 
-Expected: every gate's `outcome` is derivable from the fields in the same artifact —
-`statistic`, `interval`, `declared_value`, `exclusions`, `n_clusters` — with no
-appeal to the notebook. That is SC-003, and it is the property Stage 2's artifacts
-lacked, which is why its audit had to read notebook source to establish what the
-gates did.
+## 5. Notebook source contract
 
-Also verify the file's own digest still matches its filename prefix. These are
-immutable evidence; a mismatch means something reformatted them.
+```bash
+uv run pytest tests/jspace/test_stage2b_notebook.py -v
+```
 
----
+This is a notebook CI/source-contract test. It must verify imports and calls to the
+pure helpers, exact 81/64 guards, two-stage score retention, statistical
+derivations, runtime provenance fields, deterministic crossing vectors, disabled
+source authorization, and the external content-addressed record transition. Do not
+claim notebook verification before observing this command's result.
 
-## What is deliberately not here
+## 6. Primary artifact validator
 
-- **Any GPU scenario.** Execution is unauthorized until Q1–Q9 are ratified and Q10
-  is signed.
-- **A bootstrap correctness test.** `scipy` is a Colab-side dependency and is not in
-  this repo's lockfile (research.md R6). The statistic is where the correctness risk
-  lives and it is tested in Scenario 2; the interval is where a well-tested library
-  is doing standard work. Testing it here would require a hand-rolled resampler that
-  would itself need an equivalence check against scipy.
-- **An end-to-end notebook run.** The notebook is a shell over the tested modules by
-  design (see plan.md Structure Decision). Stage 2 put everything in one cell, and
-  no test could reach any of it — which is why four declared-but-unconsumed
-  quantities survived to an audit.
+```bash
+uv run pytest tests/jspace/test_stage2b_validator.py -v
+```
+
+The validator test must cover compact dual-floor records, exact key coverage,
+81-readout counting, 64-combination reconstruction, exact 20×4 pilot-view coverage,
+authorization/preflight/design envelopes, recomputed donor-pair digests, runtime
+donor selection from the pinned population and ratified seeds, per-realized-map
+spectrum evidence, independently supplied source identities, runtime content-hash
+syntax/consistency, denominator derivation, exclusion/coverage,
+category-balanced estimates, both deterministic interval procedures, threshold
+derivation, and malformed variants. Raw residual/map bytes are not retained, so
+their hash parity is a runtime attestation. Do not claim validator verification
+before observing this command's result.
+
+## 7. Documentation consistency
+
+Search the specification directory for legacy count/condition claims, then confirm
+that `81 unique`, `64 logical`, `input_embedding_decoded`, and
+`layer0_residual_decoded` occur throughout the revised contract. Legacy claims
+should be absent; the ratified terms should be present.
+
+## 8. Excluded-input integration-smoke evidence
+
+```bash
+uv run pytest \
+  tests/jspace/test_stage2b_integration_smoke.py \
+  tests/jspace/test_stage2b_smoke_bundle.py \
+  tests/jspace/test_stage2b_integration_smoke_notebook.py -v
+```
+
+These tests verify the fixed inputs are disjoint from scientific manifests, the
+runtime-only report rejects scientific fields, the code bundle is deterministic,
+and the canonical notebook is unexecuted, unauthorized, hash-bound, and unable to
+transfer its report. They also execute the install-sentinel logic with a fake
+installer, reject continuation in the installing process, and accept a distinct
+post-restart process identity. They also require the install specification to
+bind removal of optional Torchvision, execute that removal before the pinned
+install, reject a post-restart runtime where Torchvision remains discoverable,
+and retain `torchvision_state: "absent"` in the runtime-only report. Passing
+these tests does not authorize opening Colab or allocating a GPU. The exact
+authorization request is in
+`contracts/integration-smoke-launch-packet.md`. The bounded smoke subsequently
+completed on one Tesla T4: 81 readouts in 1.141 seconds and 4.074 GiB peak allocated
+VRAM. Its 91.252-second full-pilot estimate is a projection. The report remains in
+Colab, the transfer cell was not executed, and no pilot or confirmation input was
+accessed.
+
+## 9. Completed pilot evidence
+
+The independently reviewed, exact-hash-authorized 20-prompt pilot completed on
+2026-07-31. Its public summary is under
+`runs/stage2b-pilot-public-record-20260731/`; the retained 5.43 MiB artifact stays
+in Colab and is identified only by SHA-256
+`d138846e7a189ad42955a5990e6d1a5c00553ba768cd838c5b6bf0334095daef`.
+The primary floor was undefined for insufficient arithmetic-category coverage,
+while the sensitivity floor showed positive effects at all layers. No threshold
+vectors or pilot decision were produced.
+
+## What remains deliberately unavailable
+
+No quickstart command authorizes a repeat pilot, transfers the retained artifact,
+accesses confirmation inputs, or emits a scientific decision. The completed
+pilot's one-time authorization is spent. Confirmation remains blocked because
+the primary-floor threshold sources were undefined and the confirmation
+per-category coverage minimum remains unratified.

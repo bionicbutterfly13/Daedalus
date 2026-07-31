@@ -192,22 +192,31 @@ off, since it would silently change every rank statistic.
 
 ---
 
-## R6 — Cluster bootstrap with BCa intervals (design §5)
+## R6 — Cluster bootstrap with BCa intervals (superseded historical proposal)
 
-**Decision: `scipy.stats.bootstrap` with the index-array idiom. Cross-check with
-percentile intervals. Do not treat a BCa interval as trustworthy without checking
-it is finite.**
+**Historical proposal, not current implementation authority:** use
+`scipy.stats.bootstrap` with the index-array idiom, cross-check percentile
+intervals, and reject non-finite BCa output. Dr. Mani superseded this proposal on
+2026-07-30 by ratifying category-stratified prompt percentile intervals as primary
+and prompt×donor×map product-weight percentile intervals as sensitivity, both
+using 20,000 explicit `Generator(PCG64(seed))` replicates and linear 99% bounds.
 
 `scipy.stats.bootstrap` accepts `method='BCa'` (the default; validated case-
 insensitively against `{'percentile', 'basic', 'bca'}`). There is no first-class
 cluster parameter, but cluster resampling is expressible: pass `data=(cluster_ids,)`
 — one entry per prompt, not per observation — and supply a non-vectorized
 `statistic(idx)` that looks each resampled cluster id up in a closure-captured
-table of that prompt's per-layer paired differences, concatenates with multiplicity,
-and returns the median. Because scipy resamples the id array itself with
-replacement, whole prompts enter or leave together with all their layer
-observations. BCa's jackknife acceleration then leaves out one *cluster* at a time,
+table and returns the median of the values it collects, with multiplicity. Because
+scipy resamples the id array itself with replacement, whole prompts enter or leave
+together. BCa's jackknife acceleration then leaves out one *cluster* at a time,
 which is the correct cluster-level jackknife rather than an observation-level one.
+
+**The table holds one value per prompt, at one layer.** The bootstrap runs once per
+layer in `SELECTED_LAYERS`; the table for a given run maps prompt → that prompt's
+paired difference *at that layer*. It does not map prompt → a vector across layers,
+and the statistic never concatenates across layers. Doing so would pool depth into
+the gate — the same defect the design forbids for absolute NTA, one level down and
+harder to see, because each individual difference is already within-layer.
 
 **Known weakness, must be handled not ignored**: BCa's acceleration term is
 estimated from the skewness of leave-one-out replicates, and the median is
@@ -217,11 +226,10 @@ this destabilizes the acceleration estimate, and scipy's own degenerate-data che
 emits `DegenerateDataWarning` and returns NaN bounds when the bootstrap
 distribution collapses.
 
-Therefore: **the gate must fail closed on a non-finite interval.** A NaN lower
-bound must never be read as "does not exclude zero" and quietly become a fail — it
-is an undefined measurement and a different outcome from a measured null. Report
-the percentile interval alongside BCa as a cross-check, and record both in the
-artifact.
+The historical proposal therefore required a non-finite interval to remain
+undefined rather than collapse into a measured null. That principle survives:
+the current interval implementation requires all 20,000 replicate statistics to
+be finite or reports the layer-floor estimand as undefined.
 
 **Statistic is per layer, not pooled.** The lookup table holds one prompt's paired
 differences *at a single layer*, and the bootstrap runs once per layer in
@@ -232,19 +240,14 @@ difference is already within-layer. An earlier draft of this section described
 exactly that concatenation; it was wrong.
 
 **Environment note**: scipy is not a dependency of this repo (`uv.lock` has no
-scipy entry) and is not installed in `.venv`. It is a Colab-side dependency only.
-Consequence for the plan: **the endpoint module must not import scipy at module
-scope** — import it inside `cluster_bootstrap_median` so the module still loads in
-a scipy-free environment.
+scipy entry). The ratified interval engines are implemented with NumPy and do not
+depend on scipy or BCa.
 
-Its tests are written but guarded with `pytest.importorskip("scipy")` (T050), so
-they run wherever scipy exists and skip cleanly here. That is the resolution of an
-earlier contradiction in this document, which said to defer bootstrap tests
-entirely while tasks.md specified them: deferring the *implementation* was never
-the intent, and FR-006 has no other home. What is genuinely deferred is a
-hand-rolled numpy resampler, which would need its own equivalence check against
-scipy and buys nothing — the statistic is where the correctness risk lives, and the
-interval is where a well-tested library does standard work.
+Earlier drafts claimed scipy-backed tests and implementation resolved this item.
+That claim remains superseded. The current implementation and tests live in
+`stage2b_statistics.py` and `tests/jspace/test_stage2b_statistics.py`; the exact
+methods, units, iteration count, seed, confidence rule, and later global
+intersection-union claim are now ratified in `spec.md`.
 
 ---
 
@@ -318,7 +321,7 @@ Verified against Stage 2's notebook source, cell indices cited.
 | R3 | Transport primitive for arbitrary vectors | **Resolved** — `transport(residual, layer)`; reimplement for broken map | no |
 | R4 | Direct target rank | **Resolved — must be written**; verify against `_ranks_of` | no |
 | R5 | dtype/device contracts | **Resolved** — table above; `unembed` ≠ `apply` in return convention | no |
-| R6 | BCa cluster bootstrap | **Resolved** — scipy idiom; fail closed on non-finite interval; scipy is Colab-only | no |
+| R6 | BCa cluster bootstrap | **Superseded proposal** — no method or implementation ratified | blocks inference, not measurement authoring |
 | R7 | Fourth unconsumed quantity in Stage 2 | **Finding — open item for Dr. Mani**; widens the registry contract | no |
 | R8 | Constructs not to carry forward | **Resolved** — table above | no |
 
@@ -331,3 +334,358 @@ that failed the initial gate were verified against the pinned commit rather than
 deferred, and the one inference that could not be confirmed locally (R2, IPython
 not installed) was converted into a runtime assertion instead of being carried as
 an assumption.
+
+---
+
+## R9 — What H1's statistic actually is *(design-document conflict, resolved for implementation, flagged for ratification)*
+
+`STAGE2B_DESIGN.md` defines H1 two incompatible ways, and the difference is not
+cosmetic — it changes the number the gate reads.
+
+| Section | H1's statistic |
+|---|---|
+| §2, hypotheses | "the prompt-clustered median paired difference `NTA(jacobian) − NTA(fit_broken_same_layer)`" |
+| §6, decision rule table | "cluster-bootstrap median of `NTA(jac) − NTA(fit_broken)`" |
+| §4, factorial | "**Main effect of map** — averaging over activation correctness, does the fitted map beat the broken one? **This is H1.**" |
+
+§2 and §6 describe the **simple effect at the correct activation**: one paired
+difference per prompt between the top-left and top-right cells of the 2×2.
+
+§4 describes the **main effect of map**: the average of both map-broken contrasts,
+the one at the correct activation *and* the one at the wrong activation.
+
+### These coincide only when the interaction is zero
+
+```
+simple effect  = NTA(correct, fitted) − NTA(correct, broken)
+main effect    = ½[NTA(correct, fitted) − NTA(correct, broken)]
+               + ½[NTA(wrong,   fitted) − NTA(wrong,   broken)]
+```
+
+The design does not merely permit an interaction, it **predicts one**. §4: "the
+signature of a real instrument is that breaking the map costs more when the
+activation is correct." If that holds, the second bracket is smaller than the
+first, and the main effect is systematically *below* the simple effect.
+
+So gating H1 on the main effect would dilute the very quantity the study is trying
+to detect, using cells where the design expects the effect to be weakest. A real
+instrument would be measured against a threshold partly determined by how it
+behaves on activations it was never given. That is a worse test, and it would fail
+for a reason unrelated to the instrument's quality.
+
+### Decision for implementation
+
+**Gate on the §2/§6 form** — the simple paired difference at the correct
+activation. Reasons, in order:
+
+1. Two of three sections say it, and one of those is the decision-rule table,
+   which is the operative specification. §4's claim appears in a paragraph
+   explaining what the factorial *yields*, not in a gate definition.
+2. It is the form already carried into `spec.md`, `data-model.md` §4, and
+   `contracts/constant-registry.md`.
+3. The dilution argument above: under the design's own stated expectation, the
+   main effect is the weaker and less interpretable of the two.
+
+**Compute the main effect anyway and report it under `descriptive`**, alongside
+the interaction estimate. It is genuinely informative — a large main effect with
+no interaction would say something different about the instrument than a large
+simple effect with a strong interaction — and computing it costs nothing once the
+2×2 cells exist. It just does not gate.
+
+### Not resolved here
+
+Which definition Dr. Mani *intended* is his call, and it is a scientific question
+about what H1 means rather than an implementation detail. If §4 is the intended
+reading, `SPEC_MIN_EFFECT` will need to be ratified against a different quantity
+than the one the decision table names, and the pilot in Q6 would have to estimate
+the main effect's scale rather than the simple effect's.
+
+Recorded as an open scientific item. **Superseded implementation note:** recovery
+retains both descriptive quantities but ships no `gate_record` or decision rule.
+
+---
+
+## R10 — The design can pass while its own signature of a real instrument is absent
+
+**Historical finding from T051, the pre-implementation adversarial design
+cross-check.** It blocks scientific gate/decision authoring, not the recovered
+measurement-only notebook.
+
+`STAGE2B_DESIGN.md` §4 states the criterion plainly:
+
+> the signature of a real instrument is that breaking the map costs more when
+> the activation is correct. If breaking the map costs the same regardless of
+> whether the input is the right one, the map is not doing input-specific work.
+
+That quantity is the **interaction**. And the design then declines to gate it —
+§4 says it is "reported and interpreted but **not** a gate in this stage",
+because no pilot estimate exists and a third preregistered threshold on an
+unmeasured quantity would be guessing. **Superseded implementation note:** controlled
+recovery ships the descriptive interaction but no `compose_decision` function.
+
+**Historical consequence under the draft rule**: Stage 2b could return `pass` — reproduction holds, H1's simple
+effect clears `SPEC_MIN_EFFECT` with an interval excluding zero, H2 holds — while
+the interaction is null, negative, or unresolved. Under the design's own words,
+that is a result in which *the map is not doing input-specific work*. The study
+would report a pass whose headline claim is the one thing it did not establish.
+
+This is Stage 2's defect in a new form, and specifically it is a **Principle IV
+violation at the design level**: a quantity the preregistration describes as
+decision-relevant — "the signature of a real instrument" — that no gate reads.
+The constant registry was built to make that impossible for constants and
+computed fields. It cannot catch it here, because the omission is in the decision
+rule itself. Controlled recovery removes that implementation hazard by shipping no
+scientific gate composition or pass/fail/ambiguity rule; the scientific choice
+remains open.
+
+### Why deferring the threshold does not resolve it
+
+The reason for not gating the interaction is sound in isolation: Stage 2 set a
+margin without a pilot and then could not say whether its controls were
+inseparable or merely under-resolved at that value. Repeating that in a new unit
+would be the same mistake.
+
+But the fix for "no pilot estimate" is the Q6 pilot, which the design already
+proposes for `SPEC_MIN_EFFECT` and `NTA_MIN_DENOMINATOR`. There is no reason the
+interaction cannot join them. Leaving it ungated is not the conservative choice —
+it is the choice that lets a weaker result be reported under a stronger claim.
+
+### Three options, none of which I should pick
+
+1. **Gate the interaction**, with its threshold derived from the Q6 pilot
+   alongside the other two. Makes the pass mean what §4 says it means. Costs a
+   third preregistered constant and a stricter bar.
+2. **Narrow the pass claim.** Keep the interaction descriptive, and state in the
+   preregistration that a pass establishes the fitted map beats a spectrum-matched
+   broken map *at the correct activation* and asserts nothing about input-specific
+   work. Cheapest, and honest, but concedes the headline.
+3. **Make H1 conjunctive over the simple effect and a nonzero interaction**,
+   without a magnitude threshold on the latter — only that its interval excludes
+   zero. A middle path that needs no pilot estimate for the interaction.
+
+This is a decision about what H1 *means*, so it sits with Q3 and Q5 rather than
+with implementation. Recorded as open item 7.
+
+## R11 — Three smaller design gaps from the same review
+
+**Historical gap, now superseded: `prompt_only` was operationally undefined.** It is the endpoint's floor and one
+of the two anchors that make FR-002's omission unrepresentable, but nothing in
+the spec tree says how the prompt-only logits are constructed. `nta()` simply
+accepts `s_prompt_only` from its caller. Stage 2's notebook had an
+`input_embedding_residual` helper; whether Stage 2b uses that, a zero-transport
+readout, or something else was unspecified. The ratified recovery contract now uses
+`input_embedding_decoded` as the primary floor and
+`layer0_residual_decoded` as the sensitivity floor.
+
+**The fit-broken map is narrower than the claim it supports.** `(QU)ΣVᵀ`
+preserves the fitted *input* basis `V` and Haar-rotates the *output* basis
+against a fixed unembedding. Beating it shows the fitted output orientation
+matters relative to a random one; it does not show that the full specific fit
+beats any layer-sized transport. A pass would not rule out generic
+residual-stream/LM-head coordinate alignment, nor another model-structured but
+unfitted operator. The design's secondary spectrum-matched Gaussian control
+(§4.1) destroys both bases and would speak to this — worth promoting from
+"reported alongside" to a named comparison.
+
+**The wrong activation controls magnitude but not content.**
+`select_wrong_activation` excludes the recipient and draws uniformly among the
+rest, matching norm only. A donor sharing the recipient's target or category can
+score well against the recipient's target, which inflates the wrong-activation
+fitted cell and attenuates the interaction. Since the wrong-activation cells do
+not gate, this contamination could survive an overall pass unnoticed — and it
+attacks precisely the quantity R10 is about. A cheap mitigation is to exclude
+donors whose own target token equals the recipient's, which is checkable at
+preflight from data the run already has.
+
+## R12 — Content hashes are runtime attestations, not offline recomputations
+
+The retention contract forbids persisting raw activations and full broken-map
+arrays. An offline validator that receives only `residual_sha256` or map `sha256`
+cannot recompute those digests from absent bytes. Treating a 64-character string as
+proof of tensor content would overstate what was validated.
+
+The recovered boundary is explicit:
+
+- the runtime producer hashes contiguous arrays with
+  `dtype-shape-bytes-sha256-v1` before artifact construction;
+- the offline validator recomputes recipient→donor hashes and all dual-floor
+  score/NTA trees;
+- it validates residual/map hash syntax, donor/map identity, run-wide seed
+  consistency, and same-layer map-hash consistency across prompts; and
+- the separately authorized real-runtime integration smoke must exercise live
+  content-hash generation before pilot authorization.
+
+Persisting raw tensors solely to make offline hash recomputation possible would
+violate the stronger retention constraint. The correct evidence is runtime parity
+plus an immutable sparse artifact, not fabricated offline certainty.
+
+## R13 — Colab binary-package replacement requires a fresh Python process
+
+The first authorized excluded-input smoke installed the exact pinned package set
+successfully, then failed before model download at
+`transformers.AutoTokenizer.from_pretrained`:
+
+```text
+ImportError: cannot import name '_center' from 'numpy._core.umath'
+```
+
+The live Colab process had already imported components from its preinstalled NumPy
+before `%pip` replaced NumPy with `2.5.1`. The filesystem package identity was
+correct, but the process module graph was mixed. Package-version checks alone
+therefore cannot establish a coherent binary runtime.
+
+The repaired contract uses a canonical install-specification digest and records
+the installing process as `pid:/proc/self/stat-starttime`. Before any NumPy,
+Torch, Transformers, or Jacobian Lens import, the notebook requires the current
+process identity to differ. Re-running cells in the same process cannot satisfy
+that check. The launch procedure uses Colab's explicit
+**Runtime → Restart session** action and records
+`fresh_process_after_install: true` in the runtime-only report.
+
+This does not change package pins, scientific inputs, seeds, estimands, gates, or
+retention. It closes a runtime-coherence gap exposed before any scientific
+measurement.
+
+## R14 — A text-only runtime must remove incompatible optional Torchvision
+
+The second exact-hash-authorized smoke passed the fresh-process and immutable
+identity gates, then stopped during `AutoModelForCausalLM` class resolution:
+
+```text
+RuntimeError: operator torchvision::nms does not exist
+ModuleNotFoundError: Could not import module 'Qwen3ForCausalLM'.
+```
+
+The failure occurred before model-weight load. Colab retained Torchvision 0.26
+while the smoke installed Torch 2.13. PyTorch's official compatibility matrix
+pairs Torch 2.13 with Torchvision 0.28 and Torch 2.11 with Torchvision 0.26:
+<https://github.com/pytorch/vision/blob/main/README.md#installation>.
+
+The pinned Jacobian Lens commit declares dependencies on Torch, Hugging Face Hub,
+Transformers, and NumPy, but not Torchvision:
+<https://github.com/anthropics/jacobian-lens/blob/581d398613e5602a5af361e1c34d3a92ea82ba8e/pyproject.toml>.
+Transformers scopes Torchvision to vision-specific import paths; the Stage 2b
+smoke loads the text-only `Qwen/Qwen3-1.7B` causal language model.
+
+**Decision, 2026-07-30:** Dr. Mani approved removing Torchvision rather than
+adding the compatible 0.28 vision wheel or changing the pinned Torch version.
+The install specification must bind the removal list, uninstall Torchvision
+before installing the pinned stack, require a fresh process, and then fail unless
+both distribution metadata and import resolution prove Torchvision absent before
+Transformers is imported. The retained runtime report must record
+`torchvision_state: "absent"`.
+
+This is an engineering compatibility decision only. It does not change model,
+lens, scientific inputs, seeds, estimands, thresholds, gates, retention, or pilot
+authorization.
+
+## R15 — Two-stage denominator calibration
+
+**Decision:** derive one `NTA_MIN_DENOMINATOR` during the authorized pilot from the
+0.05 linear quantile of the 80 primary-floor denominators, then compute both-floor
+NTA from retained scores without another model/lens pass.
+
+**Rationale:** Stage 2b needs a numeric guard against unstable normalization, but
+choosing it without pilot scale information repeats Stage 2's arbitrary-margin
+problem. The raw score tuple already contains everything needed after the guard is
+derived. Separating measurement from normalization prevents the pilot from
+silently selecting readable loci during collection and avoids a second stochastic
+or hardware-dependent forward path.
+
+**Alternatives considered:** a fixed author-chosen epsilon was rejected as
+unscaled; a sensitivity-floor-derived guard was rejected because it would make the
+two floors govern different inclusion populations; a second model pass was
+rejected because retained scores are sufficient and should reproduce exactly.
+
+## R16 — Crossed uncertainty without layer pooling
+
+**Decision:** use category-stratified prompt resampling as the primary uncertainty
+procedure and a prompt×donor×map product-weight bootstrap as required sensitivity,
+independently for each layer.
+
+**Rationale:** prompts are the scientific sampling unit, while donor assignments
+and broken maps are repeated-control dimensions. Primary prompt resampling keeps
+the claim anchored to prompt variation and preserves the five preregistered
+categories. Product weights retain the crossed structure and expose conclusions
+that depend on a small collection of donors or maps. This applies multiway and
+crossed-array bootstrap ideas; it does not imply that eight draws make variance
+components asymptotically well estimated.
+
+**Alternatives considered:** treating all 64 cells as independent was rejected
+because it creates pseudoreplication; pairing donors and maps was rejected because
+it confounds their effects; pooling four layers was rejected because layer is a
+required claim dimension; a single hierarchical interval was rejected because it
+would hide disagreement between prompt-primary and crossed-sensitivity views.
+
+References:
+
+- Cameron, A. C., Gelbach, J. B., & Miller, D. L. (2011). Robust inference with
+  multiway clustering. *Journal of Business & Economic Statistics, 29*(2),
+  238–249. https://doi.org/10.1198/jbes.2010.07136
+- Owen, A. B. (2007). The pigeonhole bootstrap. *The Annals of Applied
+  Statistics, 1*(2), 386–411. https://doi.org/10.1214/07-AOAS122
+- Owen, A. B., & Eckles, D. (2012). Bootstrapping data arrays of arbitrary order.
+  *The Annals of Applied Statistics, 6*(3), 895–927.
+  https://doi.org/10.1214/12-AOAS547
+
+## R17 — Coverage and category-balanced estimands
+
+**Decision:** exclude a whole prompt-layer for the affected floor, never impute,
+fix the exclusion mask across replicates, require at least 18/20 eligible prompts
+per layer and 3/4 in each category, and compute an equal mean of the five category
+means.
+
+**Rationale:** one denominator governs every readout within a
+prompt-layer-floor. Selectively retaining cells would make the factorial
+comparison depend on which condition happened to be numerically stable.
+Category-balanced means preserve the original stratification when exclusions make
+raw eligible counts unequal.
+
+**Alternatives considered:** cellwise exclusion was rejected because it destroys
+paired factorial structure; zero imputation was rejected because zero is a
+scientific value; renormalizing across all eligible prompts was rejected because a
+category with fewer retained prompts would lose influence after the design had
+given categories equal weight.
+
+## R18 — Reproducible interval engine and seeds
+
+**Decision:** use 20,000 replicates, two-sided 99% percentile intervals with
+linear quantiles, explicit NumPy `Generator(PCG64(seed))`, and SHA-256-derived
+unsigned big-endian seeds for bootstrap, donors, and maps.
+
+**Rationale:** the generator family must be explicit because `default_rng` selects
+a library default rather than naming the protocol's bit generator. The namespace,
+full digest, first-eight-byte integer, NumPy version, replicate count, and quantile
+method together make the stochastic procedure inspectable and repeatable.
+Requiring every replicate to be finite prevents a percentile interval from
+silently dropping failed calculations.
+
+**Alternatives considered:** integer literals were rejected as unaudited choices;
+implicit `default_rng` was rejected because its selection is not the stated
+contract; BCa was rejected for this pilot because the crossed product-weight
+procedure already adds a separate sensitivity engine and the small
+category-stratified sample makes further correction machinery harder to audit than
+the fixed percentile rule.
+
+## R19 — Pilot-derived thresholds and the later global claim
+
+**Decision:** derive four-layer correct-effect and interaction threshold vectors
+as one half of their positive primary-floor pilot means. The pilot reports and
+locks these vectors but emits no scientific decision. A later confirmation claim
+is one intersection-union conjunction across every layer, both floors, both
+uncertainty methods, and both required effects.
+
+**Rationale:** requiring the correct effect and interaction resolves the earlier
+gap in which fitted-over-broken improvement could pass without input specificity.
+Per-layer vectors avoid hiding a weak layer in a pooled average. Applying one
+primary-floor-derived vector unchanged to both floors prevents post-observation
+floor tuning. For one all-components-required claim, component tests at the
+nominal level form a conservative intersection-union decision; an additional
+familywise correction would answer a different union-of-successes question.
+
+**Alternatives considered:** zero thresholds were rejected because statistical
+nonzero alone does not establish a meaningful pilot-scaled effect; one pooled
+threshold was rejected because layer scale may differ; floor-specific thresholds
+were rejected because they make the easier floor easier to pass; allowing any
+subset of components to pass was rejected because it contradicts the stated
+robust global claim.

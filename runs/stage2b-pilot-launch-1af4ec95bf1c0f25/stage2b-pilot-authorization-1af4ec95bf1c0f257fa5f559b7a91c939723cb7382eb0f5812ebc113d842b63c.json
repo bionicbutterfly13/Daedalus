@@ -1,0 +1,29 @@
+{
+  "decision": {
+    "authority": "Dr. Mani",
+    "authorized_at_utc": "2026-07-30T17:34:47Z",
+    "instruction": "Authorize the isolated 20-prompt Stage 2b Google Colab pilot using canonical notebook SHA-256 9564236a1f49d7ffe2bea44f8b04be5a584c0ff9740b11dd1e563c93b8dba2fe and code-bundle SHA-256 aeec8a76a426fa82f3fb96dc6700289a689fcb92fd9952da681fe03fe12dbef4, bound to pilot-view SHA-256 5bef8316f72682a628fc1240bf6068a91aa7c8a330377206cbd9145434b797e4, including upload of those three exact sources plus the resulting content-addressed authorization record and allocation of one Google Colab GPU with at least 14 GiB VRAM. Run only the ratified dual-floor fully crossed 8×8 pilot. Keep confirmation access and artifact transfer false; retain the pilot artifact in Colab and do not download, publish, commit, push, merge, or access the 180-prompt confirmation set.\n\nApproval of this statement authorizes only the exact pilot scope and source\nidentities above. It does not authorize confirmation, artifact transfer,\npublication, repository operations, or later source identities.",
+    "instruction_sha256": "f2dafa7e69b97db28640379b68ac1344f00110b04985a47a9da884ad4c5f4f4c"
+  },
+  "registry_updates": {
+    "PILOT_AUTHORIZED": {
+      "declared_value": true,
+      "status": "ratified"
+    },
+    "PILOT_PROTOCOL_RATIFIED": {
+      "declared_value": true,
+      "status": "ratified"
+    }
+  },
+  "run_mode": "pilot",
+  "schema": "jspace-stage2b-pilot-authorization/v1",
+  "scope": {
+    "artifact_transfer_authorized": false,
+    "confirmation_access_authorized": false,
+    "pilot_view_sha256": "5bef8316f72682a628fc1240bf6068a91aa7c8a330377206cbd9145434b797e4"
+  },
+  "source": {
+    "code_bundle_sha256": "aeec8a76a426fa82f3fb96dc6700289a689fcb92fd9952da681fe03fe12dbef4",
+    "notebook_sha256": "9564236a1f49d7ffe2bea44f8b04be5a584c0ff9740b11dd1e563c93b8dba2fe"
+  }
+}

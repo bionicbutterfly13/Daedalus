@@ -39,11 +39,12 @@ tree was split into two branches off `main` (424e01d):
 A real hazard surfaced during the first commit: the pre-commit ruff hook
 auto-reformatted the canonical Stage 1 notebook, which would have silently broken
 its recorded SHA-256 (the executed, publication-authorized bytes). The canonical
-bytes were restored and `"sakshi notes"` was added to the ruff exclude list so
-tooling can never rewrite content-addressed evidence again. The committed notebook
-hash was verified equal to the recorded provenance value. This became a durable
-lesson: content-addressed artifacts must be excluded from formatters and linters,
-and re-verified after commit.
+bytes were restored and the notebook directory was added to the ruff exclude list
+so tooling can never rewrite content-addressed evidence again. That directory was
+renamed `j-space-lab` on 2026-07-30. The committed notebook hash was verified
+equal to the recorded provenance value. This became a durable lesson:
+content-addressed artifacts must be excluded from formatters and linters, and
+re-verified after commit.
 
 ## 3. Delegated review and the routing regression
 
@@ -130,7 +131,7 @@ mode is read-only), so awareness was routed through the repo and memory files.
 The user asked to push and open PRs. Investigation showed all three branches were
 wrong for the public upstreams: the fork has diverged far from
 `EvoScientist/EvoScientist` (routing diff 157 files; the WebUI fix vs upstream is
-a 9.8k-line monster), the docs branch carries the personal `sakshi notes/`
+a 9.8k-line monster), the docs branch carries the project-specific `j-space-lab/`
 directory and internal architecture, and upstream CONTRIBUTING routes niche skills
 to a separate repository. So three fork-internal PRs were opened, each pinned to
 `--repo <fork> --base main` so `gh` could not default them to upstream. Nothing

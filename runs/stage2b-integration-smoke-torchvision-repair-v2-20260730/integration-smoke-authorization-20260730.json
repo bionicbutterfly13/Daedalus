@@ -1,0 +1,21 @@
+{
+  "authorization": {
+    "artifact_transfer_authorized": false,
+    "authorized_by": "Dr. Mani",
+    "authorized_at": "2026-07-30T03:31:09-0400",
+    "code_bundle_sha256": "4f18c96303d1451941ca050e3159e12b31b5d8d8dba4d8981a1a03e118f4cbfb",
+    "google_colab_gpu_count": 1,
+    "minimum_gpu_vram_gib": 14,
+    "notebook_sha256": "e3e0cdcfa73732138dcfaf374f9946a7993f1647cb424f8acbed91cf3ae9b5fc",
+    "pilot_inputs_authorized": false,
+    "confirmatory_inputs_authorized": false,
+    "runtime_report_disposition": "retain_in_colab",
+    "scope": "excluded-input Stage 2b Colab integration smoke",
+    "upload_authorized_sources": [
+      "canonical notebook identified by notebook_sha256",
+      "code-only bundle identified by code_bundle_sha256"
+    ]
+  },
+  "authorization_text": "Authorize the excluded-input Stage 2b Colab integration smoke using canonical notebook SHA-256 e3e0cdcfa73732138dcfaf374f9946a7993f1647cb424f8acbed91cf3ae9b5fc and code-bundle SHA-256 4f18c96303d1451941ca050e3159e12b31b5d8d8dba4d8981a1a03e118f4cbfb, including upload of those two code-only sources and allocation of one Google Colab GPU with at least 14 GiB VRAM. Retain the runtime report in Colab; do not access pilot/confirmatory inputs or transfer any artifact.",
+  "schema": "stage2b-integration-smoke-authorization/v1"
+}

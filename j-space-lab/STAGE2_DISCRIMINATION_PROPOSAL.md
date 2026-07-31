@@ -9,7 +9,7 @@
 - Prerequisite state: Stage 1 (measurement reproduction) partially completed by
   a pinned Qwen3-1.7B smoke test on one Tesla T4 (single synthetic prompt,
   same-runtime repeats only). See
-  `sakshi notes/JSPACE_COLAB_SMOKE_TEST_PROVENANCE.md`.
+  `j-space-lab/JSPACE_COLAB_SMOKE_TEST_PROVENANCE.md`.
 - Evidence class of everything below: intended class 1 (direct runtime
   measurement) only. No readout is promoted to a functional or consciousness
   claim.
@@ -58,7 +58,7 @@ construct (Stage 4+).
 
 ## 2. Exact pinned identities to reuse
 
-Copied verbatim from `sakshi notes/JSPACE_COLAB_SMOKE_TEST_PROVENANCE.md` and
+Copied verbatim from `j-space-lab/JSPACE_COLAB_SMOKE_TEST_PROVENANCE.md` and
 `references/known-good-smoke-test.md`. Stage 2 reuses these exactly; it resolves
 and asserts them again at execution time and introduces no new model or lens.
 

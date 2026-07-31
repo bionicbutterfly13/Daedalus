@@ -385,8 +385,8 @@ recorded alongside this report and in the skill's reference doc.
 
 - Design and thresholds: `EvoScientist/skills/jspace-research-operations/`
   (SKILL.md, `references/stage2-discrimination-baseline.md`).
-- Proposal and ratified defaults: `sakshi notes/STAGE2_DISCRIMINATION_PROPOSAL.md`,
-  `sakshi notes/STAGE2_PROVISIONAL_DEFAULTS.md`.
+- Proposal and ratified defaults: `j-space-lab/STAGE2_DISCRIMINATION_PROPOSAL.md`,
+  `j-space-lab/STAGE2_PROVISIONAL_DEFAULTS.md`.
 - Executed notebook identity: `353479b0f0e959f2e207446b1383ebf632c05bf8c9a9656508cc91d98d4f28f5`.
 - Fork PR (fork-internal, not upstream): `bionicbutterfly13/EvoScientist#2`,
   branch `docs/jspace-research-operations`. Ratification `d0a7596`, fixes

@@ -1,9 +1,13 @@
 # Stage 2b open parameters (the 10 questions)
 
-Open questions arising from `STAGE2B_DESIGN.md`. Each carries a proposed default.
-**None is locked.** Stage 2b execution is not authorized until Dr. Mani ratifies
-these, following the Stage 2 pattern: the canonical notebook keeps
-`THRESHOLDS_RATIFIED = False` as the human go/no-go signature.
+Questions arising from `STAGE2B_DESIGN.md`; each began with a proposed default.
+The target, pilot identity, two floors, full 8×8 crossing, deterministic seeds,
+two-stage denominator, exclusion/coverage rules, estimators, intervals, pilot
+threshold derivation, and later global confirmation claim were ratified by
+Dr. Mani across 2026-07-28 and 2026-07-30. The exact-hash-authorized Stage 2b
+pilot completed on 2026-07-31. The canonical notebook keeps
+`THRESHOLDS_RATIFIED = False` because the primary-floor category-coverage failure
+made the numeric threshold vectors unavailable; confirmation remains blocked.
 
 Two questions differ in kind from the rest and should not be delegated on the
 "set reasonable settings" basis that covered Stage 2's Q1–Q7:
@@ -50,7 +54,7 @@ would confound "new endpoint" with "new loci" in any comparison to Stage 2.
 
 ---
 
-## Q3: What counts as the target — DECIDE DELIBERATELY
+## Q3: What counts as the target — DECIDED 2026-07-28
 
 This defines what the study means by "information", and it is the question Stage 2
 deferred (its Q3 chose the model's own output and explicitly added no held-out
@@ -79,10 +83,20 @@ beat it, putting NTA above 1.
 scientifically strongest choice. Costs a second full measurement pass and a
 corpus decision, and doubles the reporting surface.
 
-**Recommendation:** A for this iteration, with the weakness stated in the report's
-conclusion as a named limit, and C flagged as the natural Stage 2c. Take B or C
-only if you want the external-truth claim now — it is a real upgrade, not
-scope creep, but it changes the study's cost and its stimulus story.
+**Ratified decision:** Option A for Stage 2b, selected explicitly by Dr. Mani on
+2026-07-28. The report must state the weakness as a named limit: this measures
+progress toward the model's own eventual token, not truth or task correctness.
+Option C remains the natural Stage 2c extension.
+
+### Prompt-floor rule — DECIDED 2026-07-28
+
+**Ratified decision:** use the decoded input embedding as the primary floor and
+repeat the endpoint with the decoded layer-0 residual as a preregistered
+sensitivity analysis. Report both; do not select the more favorable floor after
+observation. If any required gate reverses, report prompt-floor dependence rather
+than a robust result. The completed pilot followed this rule: the sensitivity
+floor was positive while the primary floor was undefined, so the result is
+prompt-floor dependent and not robust.
 
 ---
 
@@ -102,11 +116,29 @@ comparators so results stay commensurable with the pilot, but they are no longer
 primary — each moves more than one factor at a time, which is what made Stage 2's
 specificity failure uninterpretable.
 
+### Repeated-control structure — DECIDED 2026-07-28
+
+**Ratified decision:** fully cross eight wrong-activation donor assignments with
+eight broken-map draws at every selected layer. Retain all 64 donor/map
+combinations per prompt/layer, including donor-assignment ID, recipient→donor
+digest, broken-map draw ID, seed, and map hash, until dependence-aware inference
+is computed.
+
+On 2026-07-30 Dr. Mani additionally ratified equal-weight donor/map effects within
+prompt-layer, category-stratified prompt resampling as primary, and independent
+prompt×donor×map product-weight resampling as sensitivity. Both methods remain
+separate by layer and floor. This protocol decision does not authorize GPU
+execution.
+
 ---
 
-## Q5: Specificity threshold — RECOMMEND NOT SETTING THIS NOW
+## Q5: Specificity threshold — DERIVATION RULE DECIDED 2026-07-30
 
-**Proposed: leave `SPEC_MIN_EFFECT` unset and adopt the two-step in Q6.**
+`SPEC_MIN_EFFECT` and `INTERACTION_MIN_EFFECT` remain numerically unset before the
+pilot. Their derivation rule is ratified: for each selected layer, take one half
+of the corresponding positive, defined primary-floor category-balanced pilot
+mean. If any of the eight source means is nonpositive or undefined, neither
+threshold vector is available and confirmation remains blocked.
 
 Stage 2 set `SPECIFICITY_D_MARGIN = 0.10` with no pilot estimate, and its own
 report then could not say whether the controls were "genuinely inseparable or
@@ -114,29 +146,33 @@ merely under-resolved at 0.10". Choosing a number now, on a brand-new endpoint i
 a brand-new unit, would reproduce that exact failure with less excuse — at least
 D was a familiar quantity by then.
 
-The other constants can be locked now:
+The ratified pilot constants are:
 
-| Constant | Proposed | Note |
-|---|---|---|
-| `NONREDUNDANCY_MAX_JACCARD` | 0.70 | unchanged from Stage 2, for comparability |
-| `BOOTSTRAP_CI_LEVEL` | 0.99 | matches Stage 2's alpha 0.01 |
-| `BOOTSTRAP_ITERATIONS` | 10,000 | cluster bootstrap over prompts |
-| `NTA_MIN_DENOMINATOR` | ratify with Q6 | needs the same pilot |
-| `DECODE_PARITY_TOL` | 1e-5 | float32 decode parity |
-| `STAGE1_RERUN_NOISE_MAX_ABS_LOGIT_DIFF` | 0.0 | unchanged kill anchor |
+| Constant | Ratified rule/value |
+|---|---|
+| `BOOTSTRAP_CI_LEVEL` | `0.99` |
+| `BOOTSTRAP_ITERATIONS` | `20,000` |
+| `BOOTSTRAP_QUANTILE_METHOD` | `linear` |
+| `BOOTSTRAP_BIT_GENERATOR` | explicit `PCG64` |
+| `NTA_MIN_DENOMINATOR` | 0.05 linear quantile of the 80 primary denominators |
+| `SPEC_MIN_EFFECT[l]` | 0.5 × positive primary correct-effect mean at layer `l` |
+| `INTERACTION_MIN_EFFECT[l]` | 0.5 × positive primary interaction mean at layer `l` |
 
 ---
 
-## Q6: Two-step pilot, or single confirmatory run?
+## Q6: Two-step pilot, or single confirmatory run? — DECIDED 2026-07-30
 
 **Proposed (two-step):**
 
-1. **Pilot.** Run the first 20 prompts of the manifest, preregistered as pilot and
-   marked as such in the artifacts. Report the NTA difference's location and
-   spread, the within-prompt correlation across layers, and the rate of
-   denominator-guard exclusions.
-2. **Lock.** Set `SPEC_MIN_EFFECT` and `NTA_MIN_DENOMINATOR` from the pilot, in
-   writing, with the reasoning recorded and ratified.
+1. **Pilot.** Use the ratified stratified 20-ID view: `s000`–`s003`,
+   `s040`–`s043`, `s080`–`s083`, `s120`–`s123`, and `s160`–`s163`, with ordered
+   subset digest `8ed0a0092ec3989f6bd8005ae4360de86174764a946af75b35ea30932ca719b5`.
+   Report the NTA difference's location and spread, the within-prompt correlation
+   across layers, and the rate of denominator-guard exclusions.
+2. **Derive and lock.** Derive the one run-wide denominator guard from all 80
+   retained primary denominators, then derive the two four-layer effect vectors
+   from valid primary-floor pilot means. Preserve all derivation inputs, methods,
+   code identities, and artifact identity.
 3. **Confirm.** Run the remaining 180 prompts as the confirmatory sample. The
    decision is computed on the confirmatory sample only.
 
@@ -147,14 +183,38 @@ would mean the threshold was tuned on data that then helped decide the gate.
 once. Cheaper and simpler, and it is what Stage 2 did. It also has no defense
 against an ambiguous result being unreadable for exactly the reason Stage 2's was.
 
-**Recommendation:** two-step. The extra cost is one short run; the alternative
-risks spending the whole run to land in ambiguity again.
+**Decision status:** the balanced pilot subset, two-stage denominator,
+category-balanced mean, both uncertainty engines, coverage rules, and threshold
+derivations are ratified. The separately authorized pilot completed; that
+authorization is consumed and does not authorize a repeat or confirmation.
+
+## Post-pilot outcome — OBSERVED 2026-07-31
+
+- Derived denominator guard: `0.3388633415411974`.
+- Primary decoded-input-embedding floor: 18 eligible prompts per layer, but only
+  two arithmetic-completion prompts. All primary inference is `undefined` under
+  the ratified three-per-category minimum.
+- Layer-0 sensitivity floor: 19 eligible prompts per layer with category counts
+  `4, 4, 4, 4, 3`; correct effects and interactions were positive at all four
+  layers under both 99% interval methods.
+- Threshold vectors: unavailable because all required primary-floor source means
+  were not defined.
+- Pilot decision: none, by design. Confirmation: blocked and unauthorized.
+
+The result is operational success plus evidence of prompt-floor dependence. It
+does not validate the primary instrument, authorize confirmation, or establish a
+functional, cognitive, or consciousness claim.
 
 ---
 
 ## Q7: Layer-distance balancing for the mismatched-layer control
 
-**Proposed:** sample wrong layers at balanced distances `|Δ| ∈ {3, 7, 14}`, sign
+**Status: DEFERRED SECONDARY CONTROL.** No distance vector or seed is authorized.
+Wrong-layer policy and fields are absent from the executable pilot contract, so
+this proposal does not block the ratified primary pilot. Reintroducing it would
+require a separate protocol and contract decision.
+
+**Proposed only:** sample wrong layers at balanced distances `|Δ| ∈ {3, 7, 14}`, sign
 balanced where the layer index permits, allocated equally across prompts, and
 reported per distance band.
 
@@ -200,15 +260,15 @@ the statistic.
 
 ## Q10: Execution authorization
 
-**Proposed:** authoring the Stage 2b notebook and manifest is permitted. GPU
-execution remains **unauthorized** until Q1–Q9 are ratified. The notebook's
-measurement cell refuses to run while `THRESHOLDS_RATIFIED` is False, and the
-stage-gate cell states execution is not authorized.
+Authoring and local verification are permitted. GPU execution remains
+**unauthorized** until Dr. Mani approves one exact canonical notebook SHA-256,
+one exact code-bundle SHA-256, the pinned pilot-view digest, and the no-confirmation
+and no-transfer boundaries in an external authorization record.
 
-Under the Q6 two-step, ratification is naturally two signatures: one authorizing
-the 20-prompt pilot, and a second — after the thresholds are set from the pilot
-and recorded — authorizing the 180-prompt confirmatory run. The second signature
-is what locks the preregistration.
+The pilot authorization record may transition only `PILOT_PROTOCOL_RATIFIED` and
+`PILOT_AUTHORIZED`. It must not supply the derived denominator or threshold
+vectors, and `THRESHOLDS_RATIFIED` remains false throughout the pilot. A later,
+separate authorization is required for the 180-prompt confirmation.
 
 ---
 
@@ -216,13 +276,13 @@ is what locks the preregistration.
 
 | Q | Needs | Delegable? |
 |---|---|---|
-| Q1 | 200 prompts, new disjoint manifest | yes |
-| Q2 | loci unchanged | yes |
-| **Q3** | **what counts as the target** | **no — defines the claim** |
-| Q4 | orthogonal-rotation fit-broken map | yes |
-| **Q5** | **specificity threshold** | **no — recommend deferring to pilot** |
-| Q6 | two-step pilot vs single run | prefer your call |
-| Q7 | distance bands {3, 7, 14} | yes |
-| Q8 | retention unchanged | yes, unless Q3 changes |
-| Q9 | T4 only; rank-computation fix as precondition | yes |
-| **Q10** | **execution authorization** | **no — yours by definition** |
+| Q1 | 200-prompt manifest; exact stratified 20-prompt pilot view | **ratified** |
+| Q2 | loci 6, 13, 20, 26 at position -2 | **ratified** |
+| **Q3** | **DECIDED: model's next-token argmax; narrow claim required** | **ratified 2026-07-28** |
+| Q4 | eight deterministic donor assignments × eight deterministic broken maps | **ratified** |
+| **Q5** | half-positive-primary-means threshold derivation | **ratified 2026-07-30** |
+| Q6 | two-stage pilot, fixed coverage, two interval engines | **ratified 2026-07-30** |
+| Q7 | wrong-layer secondary proposal | **deferred; absent from pilot** |
+| Q8 | digest-only retained artifact; no raw activation/map/logit persistence | **ratified** |
+| Q9 | pinned T4 runtime and direct-rank implementation | **runtime smoke verified** |
+| **Q10** | **exact-hash pilot execution authorization** | **pending Dr. Mani** |

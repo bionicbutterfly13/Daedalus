@@ -1,0 +1,36 @@
+{
+  "authorization_record_sha256": "1af4ec95bf1c0f257fa5f559b7a91c939723cb7382eb0f5812ebc113d842b63c",
+  "boundaries": {
+    "artifact_transfer_authorized": false,
+    "confirmation_access_authorized": false,
+    "run_mode": "pilot"
+  },
+  "members": [
+    {
+      "name": "jspace_colab_stage2b_discrimination.ipynb",
+      "sha256": "9564236a1f49d7ffe2bea44f8b04be5a584c0ff9740b11dd1e563c93b8dba2fe",
+      "size_bytes": 45520
+    },
+    {
+      "name": "stage2b-pilot-code-bundle.zip",
+      "sha256": "aeec8a76a426fa82f3fb96dc6700289a689fcb92fd9952da681fe03fe12dbef4",
+      "size_bytes": 56430
+    },
+    {
+      "name": "jspace-stage2b-pilot-v1.json",
+      "sha256": "5bef8316f72682a628fc1240bf6068a91aa7c8a330377206cbd9145434b797e4",
+      "size_bytes": 5427
+    },
+    {
+      "name": "stage2b-pilot-authorization-1af4ec95bf1c0f257fa5f559b7a91c939723cb7382eb0f5812ebc113d842b63c.json",
+      "sha256": "1af4ec95bf1c0f257fa5f559b7a91c939723cb7382eb0f5812ebc113d842b63c",
+      "size_bytes": 1882
+    }
+  ],
+  "schema": "stage2b-pilot-launch-package/v1",
+  "source": {
+    "code_bundle_sha256": "aeec8a76a426fa82f3fb96dc6700289a689fcb92fd9952da681fe03fe12dbef4",
+    "notebook_sha256": "9564236a1f49d7ffe2bea44f8b04be5a584c0ff9740b11dd1e563c93b8dba2fe",
+    "pilot_view_sha256": "5bef8316f72682a628fc1240bf6068a91aa7c8a330377206cbd9145434b797e4"
+  }
+}

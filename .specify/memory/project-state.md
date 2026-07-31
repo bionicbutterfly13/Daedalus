@@ -3,14 +3,11 @@
 Durable grounding for any agent or human picking this up. Companion to
 `constitution.md` (which holds the rules; this holds the situation).
 
-Last updated: 2026-07-26.
+Last updated: 2026-07-31.
 
-> This file is the **tracked** copy — but only as of 2026-07-26. `.gitignore:50`
-> ignores all of `.specify/memory/*` with a single exception for
-> `constitution.md`, added by the Spec Kit init before this file existed, so this
-> file was invisible to git when written. A matching `!` exception was added; verify
-> with `git ls-files .specify/memory/` rather than trusting `git status`, which
-> shows nothing either way for an ignored file.
+> This file is the **tracked** durable copy. `.gitignore:50` ignores
+> `.specify/memory/*` except the explicit entries retained for project governance;
+> verify with `git ls-files .specify/memory/` rather than trusting ignore behavior.
 >
 > Root `AGENTS.md` and `CLAUDE.md` are gitignored (`.gitignore:57-58`) local
 > mirrors that summarize this file and load automatically into agent sessions.
@@ -45,106 +42,204 @@ goes upstream.
   preregistered output and prompt-only clause; declared inference seed `[1]` was
   never executed; specificity used one random-vector seed of the three computed.
   Decision remains ambiguity.
+- **2026-07-31 Stage 2b pilot** completed on an authorized Colab T4 with the
+  ratified dual-floor fully crossed 8×8 design. The sensitivity-floor correct
+  effect and interaction were positive at all four layers under both 99%
+  interval methods. The primary floor retained only two eligible arithmetic
+  prompts per layer, below the preregistered minimum of three, so every required
+  primary-floor inference and threshold derivation is undefined. **Result:
+  operational success, scientifically informative prompt-floor dependence, no
+  robust Stage 2b pass, and no confirmation readiness.**
 
-**Current standing: nothing is promoted beyond evidence class 1. No Stage 3,
-publication, artifact transfer, or Sakshi/Elume integration is authorized.**
+**Current standing: the pilot is direct runtime evidence, but nothing is promoted
+to a functional, cognitive, or phenomenal claim. No Stage 3, confirmation,
+artifact transfer, or downstream integration is authorized. Public documentation
+may report the bounded pilot result and its limitations.**
 
-The open question, sharpened: the readout is not identical to a cheap baseline
-and is not noise, but nothing yet separates it from what *any* layer-sized
-Jacobian transport would produce.
+The open question is now narrower: the fitted map showed input-specific advantage
+under the layer-0 sensitivity floor, but the primary decoded-embedding floor could
+not support the preregistered analysis. The next design must explain or resolve
+that floor dependence before confirmation.
 
 ## The plan
 
-`specs/001-jspace-stage2b/` — **Stage 2b, designed and planned, not authorized to
-run.** The spec is joined by `plan.md`, `research.md`, `data-model.md`,
-`contracts/`, `quickstart.md`, and a 56-task `tasks.md`. All 56 tasks produce
-files; none runs a measurement.
+`specs/001-jspace-stage2b/` defines the recovered Stage 2b measurement contract.
+The repaired integration-smoke hashes were authorized once and completed on
+2026-07-30. That authorization is spent and does not authorize a pilot, a repeat
+smoke, artifact transfer, or any later source identity.
 
-It fixes two structural defects that made Stage 2 unanswerable:
+Ratified structure:
 
-1. Stage 2's endpoint measured how much two readouts *differ*, with no notion of
-   correct — so the strongest possible conclusion was always non-identity,
-   whatever the sample size. Replaced with a target-relative endpoint normalized
-   between the prompt-only floor and the output ceiling.
-2. Stage 2's controls each moved two factors at once, so when they failed, the
-   cause was unrecoverable. Replaced with a 2×2 factorial crossing
-   correct/wrong activation against correct/fit-broken map.
+1. Target: the model's own argmax token.
+2. Floors: `input_embedding_decoded` primary and
+   `layer0_residual_decoded` sensitivity, with `sensitivity_minus_primary`.
+3. Full 8 donor-assignment by 8 broken-map crossing per prompt/layer.
+4. Compact storage of 81 unique readouts with lossless reconstruction of 64
+   logical factorial combinations and complete donor/map provenance.
+5. SHA-256-derived donor, map, and bootstrap identities using explicit `PCG64`.
+6. One 0.05 linear denominator guard derived from all 80 primary denominators,
+   followed by both-floor NTA without another model/lens pass.
+7. Fixed floor-layer exclusions, 18/20 and 3/4-per-category pilot coverage, and
+   category-balanced means.
+8. A 20,000-replicate category-stratified prompt interval as primary and a
+   prompt×donor×map product-weight interval as sensitivity, both two-sided 99%
+   linear percentile intervals.
+9. Half-positive-primary-means pilot threshold derivation and a later
+   all-components-required confirmation claim.
 
-Ten open parameters need ratification before execution. Three are flagged not
-delegable: **Q3** (what counts as the target — it defines what the study means by
-"information"), **Q5** (the specificity threshold — the recommendation is
-deliberately *not* to set it now, but to derive it from a pilot), and **Q10**
-(execution authorization).
+The denominator guard was derived during the pilot as `0.3388633415411974`.
+Effect-threshold vectors remain unset because the primary-floor source means were
+undefined. The pilot authorization is consumed; confirmation execution remains
+unauthorized. Wrong-layer policy is deferred and absent from the executable
+pilot. The confirmation sample's per-category coverage minimum remains unratified.
 
 ## Repo state
 
-Four open fork-internal PRs, all green, none merged:
+Controlled recovery is isolated in:
 
-| PR | Branch | Contents | Suite, standing alone |
-|---|---|---|---|
-| #5 | `fix/ccproxy-codex-streaming` | per-call streaming middleware + 16 tests | 3052 passed, 12 skipped |
-| #6 | `fix/oauth-startup-robustness` | dotenv precedence + langgraph health budget | 3042 passed, 12 skipped |
-| #2 | `docs/jspace-research-operations` | provenance amendment + Stage 2b design | docs only |
+- branch: `recover/jspace-stage2b-contract`
+- worktree: `/Volumes/Asylum/archimedes-recovery-jspace-stage2b`
+- historical base: `fa7980b56a091d9bbd6e32d4136ddcfccbc6d867`
 
-Suite sizes: main alone 3036; #5 adds 16; #6 adds 6; all together 3058. Each
-branch was verified green *standing alone*, not only in combination — the counts
-above are the standing-alone figures, which is what a reviewer sees.
+The historical commit is provenance, not implementation authority. The original
+worktree `/Volumes/Asylum/archimedes` remains dirty and preserved; it was used only
+as a file-by-file salvage source. No commit, push, or PR operation occurred during
+recovery.
 
-| #7 | `chore/speckit-claude-integration` | Spec Kit setup + the full Stage 2b plan | 3036 passed, 12 skipped |
+Current recovered implementation includes the compact dual-floor endpoint,
+two-stage score/NTA producer, fail-closed preflight and external authorization
+record, deterministic crossing and bootstrap identities, both ratified interval
+engines, threshold derivation, canonical static notebook producer, deterministic
+pilot code bundle, synthetic 20×4×81 statistical harness, and recursively
+recomputing aggregate validator. Pilot artifacts cannot carry gates or a decision.
+Wrong-layer policy remains absent rather than dormant.
 
-PR #7 branches from `main` and is docs/config only, so its suite result is the
-`main` baseline unchanged — expected for a branch that touches no source.
+Fresh CPU/static verification on 2026-07-30 after the statistical implementation:
 
-**One commit exists locally and is deliberately not pushed.** `66d03ab` on
-`docs/jspace-research-operations`, in the worktree at
-`/Volumes/Asylum/archimedes-wt-jspace`, reduces `HANDOFF_2026-07-26.md` to
-lab-specific detail plus a pointer at this file, and corrects its Bug B suite
-figure from 3058 to the standing-alone 3052. It was left unpushed because pushing
-would amend PR #2 while it is under review. Push it whenever that is convenient:
+- focused statistics/preflight/notebook/harness/bundle/validator suite:
+  317 passed in 175.11 seconds;
+- complete J-space suite: 464 passed in 81.72 seconds on the final
+  post-reconciliation rerun;
+- complete repository suite: 3,522 passed, 12 skipped, with two unrelated
+  deprecation warnings, in 162.35 seconds on the final rerun;
+- repository-wide Ruff: all checks passed, 417 files formatted;
+- all four retained notebooks: 31 ordinary code cells parsed;
+- deterministic bundle tests and `git diff --check`: passed.
 
-```sh
-git -C /Volumes/Asylum/archimedes-wt-jspace push origin docs/jspace-research-operations
-```
+On 2026-07-29 the first exact-hash-authorized excluded-input integration smoke
+uploaded only its notebook and code bundle, allocated one Tesla T4 with 15,360 MiB,
+and passed bundle, package, commit, model-revision, lens-revision, CUDA, and
+excluded-input checks. It stopped before model download with a mixed live NumPy
+module `ImportError`. No pilot/confirmation input was accessed, no runtime report
+was generated, and no artifact was transferred. The repaired notebook now requires
+a fresh Python process after the pinned install.
 
-**The main tree is deliberately left checked out on `fix/ccproxy-codex-streaming`.**
-The runtime is an editable install from it, so returning to `main` and restarting
-the stack would silently reintroduce the empty-answer bug. Merge #5 first.
+On 2026-07-30 Dr. Mani authorized the repaired notebook
+`9c31cfa540c5feccfb664e1c21cc0bcdf07d09628c4655caaf10ff08da95e07a`
+and bundle
+`226152be91708c438a7a96b3bf46d8ddd80760a1c920013db71c16743a05d3e6`.
+The disposable launch copy and bundle were uploaded to a new Colab execution,
+and the exact bundle/capacity gate passed on one Tesla T4 with 15,360 MiB. The
+pinned install completed, the same session restarted, the fresh-process sentinel
+passed, and package/source/commit/revision/excluded-input checks passed. Cell 9
+then stopped before model-weight load: Transformers class resolution triggered
+`RuntimeError: operator torchvision::nms does not exist`, followed by
+`ModuleNotFoundError: Could not import module 'Qwen3ForCausalLM'`. No lens,
+pilot input, confirmation input, runtime report, or artifact transfer ran. The
+control interruption and final failure boundaries are recorded in
+`runs/stage2b-integration-smoke-repair-20260729/second-authorized-attempt-control-interruption.json`
+and
+`runs/stage2b-integration-smoke-repair-20260729/second-authorized-attempt-failure.json`.
+Real model/lens integration, pilot readiness, confirmatory readiness, and
+scientific readiness remain unverified.
 
-Docs-branch worktree: `/Volumes/Asylum/archimedes-wt-jspace`.
+Dr. Mani approved the smallest dependency repair: remove optional Torchvision
+instead of adding a vision wheel or changing the pinned Torch version. The
+canonical notebook binds that removal into install schema
+`stage2b-colab-runtime-install/v2`, requires Torchvision to be absent before
+Transformers import, and records the result under runtime-report schema
+`jspace-stage2b-integration-smoke/v3`. Authorized identities were:
+
+- notebook:
+  `e3e0cdcfa73732138dcfaf374f9946a7993f1647cb424f8acbed91cf3ae9b5fc`;
+- code bundle:
+  `4f18c96303d1451941ca050e3159e12b31b5d8d8dba4d8981a1a03e118f4cbfb`.
+
+The exact-hash-authorized third attempt completed on one Tesla T4 with 15,360 MiB
+VRAM. It verified the pinned package, model, Jacobian Lens, and fitted-lens
+identities; captured nine excluded inputs; probed all four selected layers; and
+completed one 81-readout/64-logical-crossing measurement at layer 13 in
+1.14064654 seconds. Peak CUDA allocation was 4.074223 GiB and peak reservation
+was 4.095703 GiB. Model load took 166.485052 seconds, lens load 4.259576
+seconds, nine-input capture 4.914328 seconds, and selected-layer parity probes
+0.041844 seconds.
+
+The runtime-only report remains in Colab at
+`/content/jspace_stage2b_integration_smoke/stage2b_integration_smoke_71b58ce846d319c6.json`;
+its SHA-256 is
+`71b58ce846d319c6c26562a7765c67ab3a3468609f67306d8a767ea8f73a477c`
+and its recorded size is 5,172 bytes. The transfer cell remained unexecuted, so
+the report was not downloaded or copied into this repository. No pilot or
+confirmation input was accessed. The report's 91.251723-second extrapolation to
+6,480 readouts is labelled an engineering projection, not measured pilot
+runtime.
+
+This success establishes bounded runtime compatibility only. The subsequent
+adversarial findings in target derivation, excluded-floor propagation, recursive
+schema closure, authorization transition, tensor contracts, and dormant
+unratified policy were repaired and covered by focused corruption tests. The
+ratified statistical amendment has now been implemented and locally verified.
+
+The first statistical freeze
+`5ff349974f704dc6d4f92da511987353fab4ae318d3ab256e73bbbf24213be8a`
+received an independent NO-GO. Its four findings were exact source identity
+asserted by operator input, donor realization not recomputed from its seed,
+missing per-realized-map spectrum evidence, and bundle extraction into a reusable
+directory. The recovery now uses an external exact-byte launch preparer, requires
+trusted source identities outside the artifact, recomputes deterministic donor
+selection, retains and validates full spectrum evidence for every map, and
+extracts into a verified exclusive directory. Control construction reuses one
+fitted-map decomposition per layer and independently checks all eight realized
+map spectra under implemented `rtol=1e-5`, `atol=1e-6`.
+
+Fresh final-source validation after the repairs returned `409 passed` focused,
+`487 passed` J-space, and `3545 passed, 12 skipped` repository-wide with two
+unrelated deprecation warnings. Seven deterministic bundle/launch tests passed;
+Ruff was clean; all 419 files were formatted; 54 ordinary code cells parsed
+across seven notebooks; and `git diff --check` passed. The superseding freeze then
+received independent PASS/GO, the exact source identities received one-time pilot
+authorization, and the 2026-07-31 pilot completed as recorded above.
 
 ## Open items
 
-1. Review and merge PRs #5, #6, #2, #7. Merge #5 before returning the main tree to
-   `main` and restarting the stack. Push `66d03ab` on the docs branch when
-   convenient (see Repo state) — it is the only work not on GitHub.
-2. Ratify or revise `sakshi notes/STAGE2B_OPEN_PARAMETERS.md` (ten questions).
-   Q3, Q5, and Q10 are flagged not delegable.
-3. File the upstream ccproxy issue if wanted — drafted at
-   `sakshi notes/CCPROXY_UPSTREAM_ISSUE_DRAFT.md`, deliberately not filed.
-4. Optionally disconnect the Colab T4 if still attached.
-5. **Decide whether the Stage 2 record needs a second amendment.** The
-   2026-07-26 audit recorded three preregistration/implementation divergences.
-   Reading the notebook against its own ratification checklist while planning
-   Stage 2b surfaced a fourth of the same class:
-   `output_argmax_rank_in_jacobian` / `output_argmax_rank_in_other` are computed
-   per-locus and written into every per-prompt artifact, but no gate reads them —
-   while the notebook's ratification checklist lists "downstream criterion: the
-   model's own next-token output" as ratified. So a downstream criterion was
-   declared, computed, stored, and never allowed to touch a decision.
-
-   Detail and evidence: `specs/001-jspace-stage2b/research.md` R7. Amending a
-   content-addressed scientific record is a ratification-class action, so this is
-   flagged, not actioned. It does not change the recorded decision — ambiguity
-   stands either way — but the provenance still slightly overstates what was
-   tested.
+1. Publish and independently verify the scoped recovery code, Spec Kit record,
+   post-pilot journal, and public wiki without transferring the retained artifact.
+2. Investigate why the decoded-input-embedding floor excluded two arithmetic
+   prompts per layer and decide whether that is a terminal instrument ambiguity
+   or motivates a newly preregistered pilot design.
+3. Keep the 180-prompt confirmation runtime-sealed. Do not derive or ratify
+   confirmation thresholds unless a future primary-floor pilot analysis is
+   defined.
+4. Repair the EvoScientist headless direct-authorship path separately: the
+   2026-07-31 publication attempt was stopped because workspace identity could
+   not be proven, and `notebooklm-mcp` failed while loading tools. No Evo-authored
+   journal entry was accepted from that attempt.
 
 ## Runtime facts
 
+- **Verifying a branch in a git worktree against the shared editable install is
+  unreliable in two distinct ways, and both produce false failures.** First, run
+  it with the venv on `PATH` — tests that shell out to `python` (not `python3`)
+  otherwise fail with `command not found`. Second, set
+  `PYTHONPATH=<worktree>` — tests that spawn a subprocess with a different `cwd`
+  resolve `EvoScientist` through the editable install, which points at the *main
+  tree*, so they silently test the wrong branch. Both bit during the #5/#6
+  verification and both looked like real defects in the branch under test.
 - Stack: ccproxy `:8000`, langgraph `:6174`, WebUI `:4716`.
 - Model `gpt-5.6-sol`, provider openai, reasoning effort high, via ccproxy Codex.
-- Start: `cd "<workdir>" && EvoSci --ui webui --workdir "<workdir>"` where
-  `<workdir>` is `/Volumes/Asylum/archimedes-wt-jspace/sakshi notes` — a
-  subdirectory *without* an `EvoScientist/` package. Cold start 70–120s.
+- Start: `cd "<workdir>" && EvoSci --ui webui --workdir "<workdir>"`, using
+  the `j-space-lab` subdirectory in the selected worktree. It contains no
+  `EvoScientist/` package. Cold start was previously measured at 70–120s.
 - `dangerous_mode: true` and `auto_approve: true` in
   `~/.config/evoscientist/config.yaml`, left on deliberately so long autonomous
   runs work. The upstream push path is hard-disabled instead, which is what
@@ -203,11 +298,11 @@ still resolve this repo's feature layout. Not both, and not neither.
 |---|---|
 | `.specify/memory/constitution.md` | governing rules |
 | `specs/001-jspace-stage2b/spec.md` | current feature spec |
-| `sakshi notes/HANDOFF_2026-07-26.md` | full lab state *(docs branch)* |
-| `sakshi notes/STAGE2B_DESIGN.md` | Stage 2b design in full *(docs branch)* |
-| `sakshi notes/STAGE2B_OPEN_PARAMETERS.md` | the ten questions *(docs branch)* |
-| `sakshi notes/STAGE2_DISCRIMINATION_REPORT.md` | the study, as amended *(docs branch)* |
-| `sakshi notes/CCPROXY_UPSTREAM_ISSUE_DRAFT.md` | drafted, unfiled *(docs branch)* |
+| `j-space-lab/HANDOFF_2026-07-26.md` | full lab state *(docs branch)* |
+| `j-space-lab/STAGE2B_DESIGN.md` | Stage 2b design in full *(docs branch)* |
+| `j-space-lab/STAGE2B_OPEN_PARAMETERS.md` | the ten questions *(docs branch)* |
+| `j-space-lab/STAGE2_DISCRIMINATION_REPORT.md` | the study, as amended *(docs branch)* |
+| `j-space-lab/CCPROXY_UPSTREAM_ISSUE_DRAFT.md` | drafted, unfiled *(docs branch)* |
 
 *(docs branch)* = `docs/jspace-research-operations`, checked out at
 `/Volumes/Asylum/archimedes-wt-jspace`.

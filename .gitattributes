@@ -1,0 +1,8 @@
+# J-space source and evidence identities are SHA-256 bound. Git must not rewrite
+# their line endings on Windows checkouts.
+j-space-lab/*.ipynb -text
+j-space-lab/*.json -text
+runs/**/*.json -text
+runs/**/*.zip -text
+EvoScientist/skills/jspace-research-operations/scripts/*.py -text
+tests/jspace/fixtures/*.json -text

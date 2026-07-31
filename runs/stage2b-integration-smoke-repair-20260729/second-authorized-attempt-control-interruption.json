@@ -1,0 +1,37 @@
+{
+  "attempt": {
+    "authorization_record_sha256": "12369206a9f7cd01a8f09081eb71996404b20ea63660a06b74097d6d03c9dcef",
+    "authorized_launch_notebook_sha256": "1dc43fe664242784bb343d545e8ebc26c47ee5bcdbdb95e4a5808c13cf2d8bf3",
+    "canonical_notebook_sha256": "9c31cfa540c5feccfb664e1c21cc0bcdf07d09628c4655caaf10ff08da95e07a",
+    "code_bundle_sha256": "226152be91708c438a7a96b3bf46d8ddd80760a1c920013db71c16743a05d3e6",
+    "started_at": "2026-07-30T01:29:31-0400",
+    "status_recorded_at": "2026-07-30T01:57:37-0400"
+  },
+  "completed_checks": {
+    "artifact_transfer_authorized": false,
+    "bundle_uploaded_to_colab_runtime": true,
+    "bundle_sha256_gate_passed": true,
+    "confirmatory_inputs_accessed": false,
+    "gpu_count": 1,
+    "gpu_name": "Tesla T4",
+    "gpu_total_vram_mib": 15360,
+    "minimum_vram_gate_passed": true,
+    "pilot_inputs_accessed": false,
+    "pinned_install_cell_started": true
+  },
+  "control_interruption": {
+    "chrome_extension_enabled": true,
+    "chrome_extension_installed": true,
+    "chrome_native_host_manifest_valid": true,
+    "description": "The authenticated Chrome control channel stopped responding while the pinned install cell continued in Colab.",
+    "required_next_observation": "Reattach to the existing Colab tab and inspect the install cell before restarting or executing another cell."
+  },
+  "unverified": {
+    "fresh_process_after_install": false,
+    "install_completed": null,
+    "lens_loaded": false,
+    "model_loaded": false,
+    "runtime_report_created": false
+  },
+  "schema": "stage2b-integration-smoke-control-interruption/v1"
+}
