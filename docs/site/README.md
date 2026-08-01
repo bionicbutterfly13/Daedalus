@@ -18,6 +18,9 @@ The generated directory is disposable and must not be committed. GitHub Actions
 builds the same artifact from `main` and deploys it through the `github-pages`
 environment.
 
+The renderer requirement is pinned to both the release version and the published
+wheel/source SHA-256 values; the workflow installs it with `--require-hashes`.
+
 The builder refuses to replace a nonempty output directory. This makes an
 incorrect destination fail closed instead of deleting existing files.
 
