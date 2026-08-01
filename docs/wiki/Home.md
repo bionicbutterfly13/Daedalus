@@ -82,8 +82,16 @@ preserving the information the experiment claims to measure.
 - [[Primary Floor Decision]]
 - [[Evidence Ledger]]
 - [[Runtime Failure Lab Notes]]
+- [[EvoScientist Authorship Incident]]
 - [[Reproducibility and Gates]]
 - [[Wiki Maintenance]]
+
+## Search and machine-readable access
+
+The same curated record is published as a search-friendly site at
+<https://bionicbutterfly13.github.io/EvoScientist/>. That site supplies canonical
+page metadata, a sitemap, structured data, and `llms.txt`. These files improve
+discovery but do not guarantee indexing, retrieval, citation, or model training.
 
 ## Repository anchors
 
