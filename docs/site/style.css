@@ -1,0 +1,262 @@
+:root {
+  color-scheme: light dark;
+  --background: #f7f8fb;
+  --surface: #ffffff;
+  --text: #172033;
+  --muted: #5c667a;
+  --border: #d9deea;
+  --accent: #3157c8;
+  --accent-soft: #e9efff;
+  --code: #f0f3f8;
+  --max-width: 76rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #10131b;
+    --surface: #171c27;
+    --text: #ecf0f8;
+    --muted: #adb7ca;
+    --border: #30394a;
+    --accent: #9bb4ff;
+    --accent-soft: #202c4e;
+    --code: #202634;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--text);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.65;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 0.15em;
+}
+
+a:hover {
+  text-decoration-thickness: 0.12em;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+}
+
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+  z-index: 10;
+  padding: 0.65rem 0.85rem;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+}
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.site-header__inner,
+.site-grid,
+.site-footer__inner {
+  width: min(calc(100% - 2rem), var(--max-width));
+  margin: 0 auto;
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 4rem;
+}
+
+.brand {
+  color: var(--text);
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.header-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.92rem;
+}
+
+.site-grid {
+  display: grid;
+  grid-template-columns: minmax(13rem, 18rem) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: start;
+  padding: 2rem 0 4rem;
+}
+
+.site-nav {
+  position: sticky;
+  top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+}
+
+.site-nav h2 {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.site-nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-nav li + li {
+  margin-top: 0.35rem;
+}
+
+.site-nav a {
+  display: block;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.4rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.site-nav a:hover,
+.site-nav a[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.content {
+  min-width: 0;
+  padding: clamp(1.25rem, 3vw, 3rem);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+}
+
+.content h1 {
+  margin-top: 0;
+  line-height: 1.15;
+  font-size: clamp(2rem, 5vw, 3.4rem);
+}
+
+.content h2,
+.content h3 {
+  margin-top: 2.2em;
+  line-height: 1.25;
+}
+
+.content img,
+.content video {
+  max-width: 100%;
+}
+
+.content table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.content th,
+.content td {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.content blockquote {
+  margin-left: 0;
+  padding-left: 1rem;
+  border-left: 0.25rem solid var(--accent);
+  color: var(--muted);
+}
+
+pre,
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+code {
+  padding: 0.12em 0.3em;
+  border-radius: 0.25rem;
+  background: var(--code);
+}
+
+pre {
+  overflow-x: auto;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  background: var(--code);
+}
+
+pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  background: var(--surface);
+}
+
+.site-footer__inner {
+  padding: 1.5rem 0;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 800px) {
+  .site-header__inner {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 0.9rem 0;
+  }
+
+  .site-grid {
+    grid-template-columns: 1fr;
+    padding-top: 1rem;
+  }
+
+  .site-nav {
+    position: static;
+  }
+}
+
+@media print {
+  .site-header,
+  .site-nav,
+  .site-footer {
+    display: none;
+  }
+
+  .site-grid,
+  .content {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+  }
+}

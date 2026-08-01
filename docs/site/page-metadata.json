@@ -1,0 +1,54 @@
+{
+  "Concepts-and-Relationships.md": {
+    "description": "A map of the J-space project’s instruments, theories, custom components, evidence classes, and the claims that connect them.",
+    "title": "Concepts and Relationships"
+  },
+  "Evidence-Ledger.md": {
+    "description": "The public ledger separating observed J-space results from inference, unknowns, and authorized actions.",
+    "title": "Evidence Ledger"
+  },
+  "EvoScientist-Authorship-Incident.md": {
+    "description": "A provenance incident report explaining why accurate prose was insufficient when EvoScientist consulted undeclared memory, and the controls required to prevent recurrence.",
+    "title": "EvoScientist Authorship Incident"
+  },
+  "Global-Workspace-and-J-space.md": {
+    "description": "How global-workspace ideas motivate falsifiable J-space measurements without turning simulations or engineering results into consciousness claims.",
+    "title": "Global Workspace and J-space"
+  },
+  "Home.md": {
+    "description": "Public research record for the J-space Global Workspace Project, including the Jacobian Lens instrument audit, Stage 2b evidence, and open decisions.",
+    "title": "J-space Global Workspace Project"
+  },
+  "Primary-Floor-Decision.md": {
+    "description": "The unresolved primary-floor mechanism question, competing hypotheses, decision options, and scientific stop conditions after Stage 2b.",
+    "title": "Primary-Floor Decision"
+  },
+  "Reproducibility-and-Gates.md": {
+    "description": "Source identities, authorization boundaries, validation requirements, and reproducibility gates for the J-space research program.",
+    "title": "Reproducibility and Gates"
+  },
+  "Runtime-Failure-Lab-Notes.md": {
+    "description": "Exact J-space runtime failures, repairs, retained evidence, and the scientific boundaries learned from stopped attempts.",
+    "title": "Runtime Failure Lab Notes"
+  },
+  "Stage-2b-Experiment.md": {
+    "description": "The Stage 2b estimand, dual-floor design, correct-versus-wrong factorial controls, and fully crossed donor-by-map structure.",
+    "title": "Stage 2b Experiment"
+  },
+  "Stage-2b-Pilot-Result.md": {
+    "description": "The observed Stage 2b pilot result: positive sensitivity-floor signals, undefined primary-floor inference, and no confirmation readiness.",
+    "title": "Stage 2b Pilot Result"
+  },
+  "Thoughtseeds-IWMT-and-the-J-space-Research-Horizon.md": {
+    "description": "A source-cited speculative research horizon connecting Thoughtseeds, IWMT, J-space, active inference, topology, memory, and future hypothesis tests.",
+    "title": "Thoughtseeds, IWMT, and the J-space Research Horizon"
+  },
+  "Why-IWMT-Matters.md": {
+    "description": "Ten falsifiable bridges between Integrated World Modeling Theory and J-space measurement, with explicit evidence and consciousness boundaries.",
+    "title": "Why IWMT Matters"
+  },
+  "Wiki-Maintenance.md": {
+    "description": "The source-of-truth, update, evidence-labeling, and scientific-integrity rules used to maintain the public J-space documentation.",
+    "title": "Wiki Maintenance"
+  }
+}

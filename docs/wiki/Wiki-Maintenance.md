@@ -8,6 +8,11 @@ Versioned Wiki source lives under `docs/wiki/` in the main repository. GitHub's
 separate Wiki repository mirrors those pages for navigation. Governing protocol,
 contracts, tasks, and current state remain under `.specify/` and `specs/`.
 
+The same curated pages are rendered at
+`https://bionicbutterfly13.github.io/EvoScientist/` for search discovery. The
+Pages build adds canonical metadata, a sitemap, and machine-readable navigation;
+it does not become a new protocol authority.
+
 ## Update rule
 
 Every material update should include:
@@ -61,6 +66,8 @@ Before publishing a Wiki update:
 - `Primary-Floor-Decision.md`: live mechanism alternatives and decision gate.
 - `Evidence-Ledger.md`: observations, inferences, and unknowns.
 - `Runtime-Failure-Lab-Notes.md`: exact obstacles and repairs.
+- `EvoScientist-Authorship-Incident.md`: source-isolation failure, impact, and
+  restricted-authorship prevention standard.
 - `Reproducibility-and-Gates.md`: source hashes, commands, and authorization chain.
 - `Wiki-Maintenance.md`: this policy.
 

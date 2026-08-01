@@ -10,5 +10,6 @@
 - [[Primary Floor Decision]]
 - [[Evidence Ledger]]
 - [[Runtime Failure Lab Notes]]
+- [[EvoScientist Authorship Incident]]
 - [[Reproducibility and Gates]]
 - [[Wiki Maintenance]]
