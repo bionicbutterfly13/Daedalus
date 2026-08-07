@@ -1,0 +1,338 @@
+# Instincts generated from https://github.com/bionicbutterfly13/EvoScientist
+# Generated: 2026-07-23T13:30:18.949Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: EvoScientist-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/bionicbutterfly13/EvoScientist
+---
+
+# EvoScientist Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: style, docs, feat
+
+## Evidence
+
+- 4 commits analyzed
+- Detected conventional commit pattern
+- Examples: docs: add J-space research operations skill, smoke-test provenance, and cognitive lab architecture, style: replace em dashes with colons in J-space skill and provenance docs
+
+---
+id: EvoScientist-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/bionicbutterfly13/EvoScientist
+---
+
+# EvoScientist Commit Length
+
+## Action
+
+Write moderate-length commit messages (~82 characters)
+
+## Evidence
+
+- Average commit message length: 82 chars
+- Based on 4 commits
+
+---
+id: EvoScientist-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/bionicbutterfly13/EvoScientist
+---
+
+# EvoScientist Naming Files
+
+## Action
+
+Use snake_case naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: snake_case
+
+---
+id: EvoScientist-import-relative
+trigger: "when importing modules"
+confidence: 0.75
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/bionicbutterfly13/EvoScientist
+---
+
+# EvoScientist Import Relative
+
+## Action
+
+Use relative imports for project files
+
+## Evidence
+
+- Import analysis shows relative import pattern
+- Example: import { x } from '../lib/x'
+
+---
+id: EvoScientist-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/bionicbutterfly13/EvoScientist
+---
+
+# EvoScientist Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: EvoScientist-test-separate
+trigger: "when writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/bionicbutterfly13/EvoScientist
+---
+
+# EvoScientist Test Separate
+
+## Action
+
+Place tests in the tests/ or __tests__/ directory, mirroring src structure
+
+## Evidence
+
+- Separate test directory pattern detected
+- Tests live in dedicated test folders
+
+---
+id: EvoScientist-workflow-add-or-update-jspace-research-artifact
+trigger: "when doing add or update jspace research artifact"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/bionicbutterfly13/EvoScientist
+---
+
+# EvoScientist Workflow Add Or Update Jspace Research Artifact
+
+## Action
+
+Follow the add-or-update-jspace-research-artifact workflow:
+1. Create or update SKILL.md in EvoScientist/skills/jspace-research-operations/
+2. Add or update reference documentation in EvoScientist/skills/jspace-research-operations/references/
+3. Add or update validation scripts in EvoScientist/skills/jspace-research-operations/scripts/
+4. Add or update evidence report templates in EvoScientist/skills/jspace-research-operations/templates/
+5. Add or update Colab notebooks and provenance records in sakshi notes/
+6. Update docs/README.md and related architecture docs if relevant
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: EvoScientist/skills/jspace-research-operations/SKILL.md, EvoScientist/skills/jspace-research-operations/references/*.md, EvoScientist/skills/jspace-research-operations/scripts/*.py
+
+---
+id: EvoScientist-workflow-style-standardization-on-jspace-artifacts
+trigger: "when doing style standardization on jspace artifacts"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/bionicbutterfly13/EvoScientist
+---
+
+# EvoScientist Workflow Style Standardization On Jspace Artifacts
+
+## Action
+
+Follow the style-standardization-on-jspace-artifacts workflow:
+1. Identify style inconsistencies (e.g., em dashes, colons) in SKILL.md, provenance, or experiment docs
+2. Edit affected files to standardize style
+3. Commit changes with a 'style:' prefix
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: EvoScientist/skills/jspace-research-operations/SKILL.md, EvoScientist/skills/jspace-research-operations/references/*.md, sakshi notes/*.md
+
+---
+id: evoscientist-instinct-naming-conventions
+trigger: "When creating or renaming files, functions, classes, or constants in Python code"
+confidence: 0.85
+domain: code-style
+source: repo-analysis
+source_repo: bionicbutterfly13/EvoScientist
+---
+
+# Evoscientist Instinct Naming Conventions
+
+## Action
+
+Use snake_case for files, camelCase for functions, PascalCase for classes, and SCREAMING_SNAKE_CASE for constants
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions
+- Consistent naming in EvoScientist/skills/jspace-research-operations/scripts/*.py
+
+---
+id: evoscientist-instinct-import-style
+trigger: "When importing modules within the package"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: bionicbutterfly13/EvoScientist
+---
+
+# Evoscientist Instinct Import Style
+
+## Action
+
+Use relative imports in Python files
+
+## Evidence
+
+- Pattern in codeStyle.importStyle
+- Observed in scripts under EvoScientist/skills/jspace-research-operations/scripts/
+
+---
+id: evoscientist-instinct-export-style
+trigger: "When exporting functions or classes from a module"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: bionicbutterfly13/EvoScientist
+---
+
+# Evoscientist Instinct Export Style
+
+## Action
+
+Use named exports (explicitly list exports)
+
+## Evidence
+
+- Pattern in codeStyle.exportStyle
+- Consistent with Python module export patterns
+
+---
+id: evoscientist-instinct-test-location
+trigger: "When adding or updating tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: bionicbutterfly13/EvoScientist
+---
+
+# Evoscientist Instinct Test Location
+
+## Action
+
+Place test files in a separate location from source code
+
+## Evidence
+
+- Pattern in architecture.folderStructure.testLocation
+- No test files found within srcLayout
+
+---
+id: evoscientist-instinct-git-commit-format
+trigger: "When making a commit"
+confidence: 0.9
+domain: git
+source: repo-analysis
+source_repo: bionicbutterfly13/EvoScientist
+---
+
+# Evoscientist Instinct Git Commit Format
+
+## Action
+
+Use conventional commit prefixes: 'feat', 'docs', or 'style', followed by a colon and a concise description
+
+## Evidence
+
+- Pattern in commits.prefixes
+- Examples: 'docs: add J-space research operations skill...'
+
+---
+id: evoscientist-instinct-git-commit-length
+trigger: "When writing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: bionicbutterfly13/EvoScientist
+---
+
+# Evoscientist Instinct Git Commit Length
+
+## Action
+
+Keep the commit message around 80 characters on average
+
+## Evidence
+
+- Pattern in commits.averageLength
+- Examples of commit messages in analysis
+
+---
+id: evoscientist-instinct-workflow-add-or-update-jspace-artifact
+trigger: "When introducing or updating a J-space research operation, experiment stage, or related documentation/validation"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: bionicbutterfly13/EvoScientist
+---
+
+# Evoscientist Instinct Workflow Add Or Update Jspace Artifact
+
+## Action
+
+Follow the sequence: update SKILL.md, references, scripts, templates, Colab notebooks, provenance records, and update docs/README.md and architecture docs if relevant
+
+## Evidence
+
+- Workflow: add-or-update-jspace-research-artifact
+- Commit sequence and files involved in workflow example
+
+---
+id: evoscientist-instinct-workflow-style-standardization
+trigger: "When enforcing consistent style or formatting in J-space documentation and notebooks"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: bionicbutterfly13/EvoScientist
+---
+
+# Evoscientist Instinct Workflow Style Standardization
+
+## Action
+
+Identify style inconsistencies (e.g., em dashes, colons), edit affected files to standardize, and commit with a 'style:' prefix
+
+## Evidence
+
+- Workflow: style-standardization-on-jspace-artifacts
+- Example commits: 'style: replace em dashes with colons...'
+
