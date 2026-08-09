@@ -3,6 +3,7 @@ from __future__ import annotations
 from . import (
     autoskills,
     channel,
+    experts,
     general,
     initiative,
     mcp,
@@ -17,6 +18,7 @@ from . import (
 __all__ = [
     "autoskills",
     "channel",
+    "experts",
     "general",
     "initiative",
     "mcp",
