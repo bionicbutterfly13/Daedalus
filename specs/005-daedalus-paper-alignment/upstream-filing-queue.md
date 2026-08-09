@@ -18,7 +18,7 @@ Result: one of the five is already reported (U3). The rest are novel.
 - Repo: `EvoScientist/EvoScientist` · Type: bug issue · Finding: F3 · Task: T001
 - Draft: `contributions/engine-issue-memory-path.md`
 - Duplicate check: none found (searched "memory", "memories persist")
-- Status: **DRAFTED**, pending Codex verification
+- Status: **NEEDS REWRITE.** Codex refuted the central framing (see below).
 - Fix available from us: **no, by design.** The skills' `/memory/` is unmounted;
   the mounted `/memories/` refuses raw writes. Repairing it requires an engine
   decision (route `/memory/` somewhere writable, relax the write guard for named
@@ -88,6 +88,18 @@ Result: one of the five is already reported (U3). The rest are novel.
   the paper.
 
 ---
+
+## Codex verdicts (2026-08-09)
+
+| Item | Verdict | What must change |
+|---|---|---|
+| U1 | NEEDS-EDIT | "No writable persistent path" is false — upstream has editable profile files and global observations. Reframe as integration mismatch. "Every run restarts" is false (daemon mode reuses cwd). Repro snippet has undefined variables and won't run. |
+| U2 | NEEDS-EDIT | Core mismatch verified. Drop "inert"/"silently dropped"; behavior is model-dependent. Drop the --no-auto-mode resume suggestion — the CLI says it is not resumable. Add a deterministic repro. |
+| U3 | duplicate | Comment on #33 rather than filing. Title also exceeds 70 chars if filed. |
+| U4 | NEEDS-EDIT | "per-run" should be "per-workdir". Title is 71 chars. |
+| U5 | **DO-NOT-FILE** | The installed paper prompt asks for "the final high-performance code" / "the winning implementation", which is consistent with a success precondition. The paper-side premise is unverified. |
+
+Full verdict: `scratchpad/codex-drafts-verdict.md` (session-local).
 
 ## Working order
 
