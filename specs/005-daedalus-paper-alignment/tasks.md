@@ -55,8 +55,12 @@ divergence; P2 = hygiene.
 - [ ] T015 (D2) Mark the acceptance-gate section of docs/cognitive-lab-architecture.md as
       design-not-yet-implemented until T002/T003/T005 land.
 
-## Upstream tracking (drafts only - filing needs explicit approval)
+## Upstream tracking (drafts written - filing needs explicit approval)
 
-- [ ] T016 Draft upstream issues for F3 (/memory/ vs /memories/), F5 (3-candidate
-      tournament), F6 (docs say "auto-handled", code removes ask_user), F8 (success-gated
-      ESE) against EvoScientist/EvoScientist and EvoScientist/EvoSkills. Present for review.
+- [x] T016 Draft upstream contributions - see contributions/ (5 drafts + filing order):
+      engine bug issue (F3 memory path, strengthened by upstream CONTRIBUTING.md's own
+      diagram documenting /memory/ as persistent), engine docs issue (F6), EvoSkills PRs
+      for memory path (T001), ESE trigger (T008), ideation tree width (T009).
+- [ ] T017 On approval: file per contributions/README.md order; then implement the two
+      EvoSkills PR branches on a clean EvoSkills fork following their Conventional
+      Commits + skill-anatomy rules; link engine issue number into the memory-path PR.

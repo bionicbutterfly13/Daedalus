@@ -36,6 +36,19 @@ failure mode the lab constitution treats as a bug.
    surfaced to Hermes as events - never silently dropped (kills F6's silent mode).
 4. Fork defects F10, F11 fixed.
 
+## Contribution lane
+
+Implementation follows two standing rules:
+
+1. **Update-proof by construction**: remediation lives in layers upstream does not own
+   (Hermes acceptance gates, our supervising/accepting skills, launch records, env-var
+   config). Only T009/T011 touch upstream-owned files; both are small and covered by the
+   fork-merge protection pattern (inverted tests + divergence markers).
+2. **Contribute while implementing**: fixes that are upstream-shaped are drafted under
+   [contributions/](contributions/) in upstream's own protocol format (engine: issue-first,
+   PR template, ruff+pytest; EvoSkills: Conventional Commits, skill anatomy). Drafts only;
+   filing requires explicit approval.
+
 ## Out of scope
 
 - Reimplementing the paper's method (embedding retrieval, EMA agent, N_I=21 tree) inside the
