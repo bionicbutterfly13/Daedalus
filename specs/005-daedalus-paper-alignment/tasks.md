@@ -63,10 +63,31 @@ divergence; P2 = hygiene.
 
 ## P2 — hygiene (fix directly)
 
-- [ ] T013 (F10) pyproject.toml description -> paper title "Multi-Agent Evolving".
-- [ ] T014 (F11) Fix docs/cognitive-lab-architecture.md links to guides/stream-json.md.
-- [ ] T015 (D2) Mark the acceptance-gate section of docs/cognitive-lab-architecture.md as
-      design-not-yet-implemented until T002/T003/T005 land.
+- [x] T013 (F10) NO ACTION, with reasoning. "Towards Self-Evolving AI Scientists" is upstream's
+      consistent branding (pyproject description AND the README typing banner), not a
+      mis-citation of the paper. Our own docs cite the paper title correctly
+      (docs/daedalus-paper-alignment-review.md:6). Editing an upstream-owned file would buy
+      permanent merge friction for a cosmetic difference that is not a defect in this fork.
+      F10 is downgraded to an upstream style observation.
+- [x] T014 (F11) DONE: both links in docs/cognitive-lab-architecture.md (:122, :374) now point at
+      guides/stream-json.md. A full relative-link sweep of that file also found two
+      references that never existed in the working tree or anywhere in git history
+      (runs/cognitive-hypothesis-lab/context-intake-2026-07-16.md and
+      journals/archimedes/2026-07-16.md, the cited evidence for the July 16 episode).
+      Per constitution V they are marked UNRESOLVED in place rather than silently dropped;
+      the claim they support is flagged as an unsourced recollection. See T018.
+- [x] T015 (D2) DONE, inverted from the original intent: the acceptance-gate section is no longer
+      aspirational, so instead of marking it unimplemented it now carries per-check
+      implementation status. The four checks backed by parity_gates.py are marked
+      **[implemented]** with their gate names; the rest are explicitly design-only, with the
+      instruction to treat an unmarked check as unperformed rather than assumed.
+## Found during implementation
+
+- [ ] T018 (new) Re-source or remove the July 16, 2026 episodic-memory account in
+      docs/cognitive-lab-architecture.md. Both artifacts it cites as evidence are absent
+      from the working tree and from all of git history; the passage is currently marked
+      UNRESOLVED in place. Only Dr. Mani can say whether the episode happened and where
+      its record went. The architectural point it illustrates does not depend on it.
 
 ## Upstream tracking (drafts written - filing needs explicit approval)
 
