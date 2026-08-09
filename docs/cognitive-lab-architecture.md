@@ -278,6 +278,20 @@ A candidate observation record includes:
 | `artifact_refs` | Content-addressed raw and derived evidence |
 | `created_at` | Observation time |
 
+### Evolution-memory files are unprotected artifacts
+
+Ideation and Experimentation Memory (`M_I`, `M_E`) are *not* held in the engine's
+guarded memory store. The evolution skills write them under the agent's
+`/memory/` path, which matches no backend route and therefore resolves into the
+run's ordinary workspace. They receive none of `MemoryFilesystemBackend`'s
+protections: no create guard, no edit restriction, no delete guard. Anything
+with workspace write access can alter them silently.
+
+Treat them as ordinary run artifacts rather than as memory: hash them into the
+evidence manifest, record their pre-run digests in the launch record, and check
+them at the acceptance gate. `parity_gates.gate_memory_persistence` does the
+last of these; the first two belong to whatever writes the manifest.
+
 Raw activations should remain outside ordinary agent memories and reports.
 Sparse summaries, transformation receipts, and content-addressed references can
 enter the evidence system while preserving the numerical artifacts required for

@@ -45,22 +45,40 @@ divergence; P2 = hygiene.
       dir (`skill_digest.digest_skill_tree`); `parity_gates.gate_skill_pins` rejects a run
       whose skills changed or vanished since launch, and rejects a launch record with no
       pins at all. Digest covers relative path plus bytes, so a rename is a different digest.
-- [ ] T008 (F2/F8) Evolution enforcement: Hermes post-run step that runs IDE/IVE/ESE
-      classification when Daedalus did not - including ESE on partial trajectories (paper
-      imposes no success precondition; the success gate contradicts the paper's own +10.17pp
-      mechanism).
-- [ ] T009 (F5) Ideation width: prompt/packet instructs the documented 15-21 leaf tree
-      (references/tree-search-protocol.md) so the Elo tournament selects from >3 candidates;
-      verify via tournament table artifact (ties into T003).
+- [x] T008 (F2/F8) DONE: `evolution_enforcement.py` derives which mechanisms the run owed from
+      the paper's rules and compares them against the evolution reports actually written.
+      IDE is owed once a tournament produced direction-summary.md; IVE on either paper
+      condition (a stage exhausting its budget without meeting its gate, or stage 3 failing
+      to beat the tuned baseline); ESE on ANY completed pipeline, success or not. That last
+      is the F8 correction: the installed skill gates ESE on all four stages passing, which
+      the paper does not, and which on the paper's own ~21% stage-3 rate would keep the
+      mechanism that produced its +10.17pp from ever firing. Pinned by two tests that fail
+      if the success gate is reintroduced.
+- [x] T009 (F5) DONE as a prompt addendum, not a skill edit: templates/ideation-width-addendum.md
+      directs the run to build the 15-21 leaf tree that research-ideation's own
+      references/tree-search-protocol.md already specifies, and to record every entrant in
+      direction-summary.md. Enforced by `gate_pipeline_artifacts`, which rejects a
+      tournament field of 3 or fewer. Kept out of the installed skills so it carries no
+      upstream merge surface; the upstream fix is drafted separately in
+      contributions/evoskills-pr-ideation-tree.md.
 - [x] T010 (F4) DONE: `injected_memory_entries` records which M_I/M_E entries retrieval
       selected (k_I=2 / k_E=1), making an LLM-judged choice auditable even though the
       engine has no embedding backend. Retrieval remains non-deterministic upstream; this
       records the outcome rather than fixing the mechanism.
-- [ ] T011 (F9) Model routing: set per-agent `model:` in subagent YAMLs if/when role-split is
-      wanted (sync agents only; async containers hardcode main model - track upstream).
-- [ ] T012 (F13) Note in lab docs: /memory/ files carry no MemoryFilesystemBackend
-      protections; treat them as ordinary artifacts in provenance (hash them in manifests).
-
+- [x] T011 (F9) BLOCKED - not attempted, needs Dr. Mani's decision. Two reasons. (1) Which models
+      to bind is a cost and provider choice nobody has made; the paper's split
+      (Gemini-2.5-Pro ideation/writing, Claude-4.5-Haiku code) is the paper's, not
+      necessarily this lab's. (2) It is only half-achievable regardless: the per-agent
+      `model:` YAML key works for sync subagents, but async containers hardcode the main
+      model except scheduler (subagents/_factory.py, expert_container_async.py), and
+      writing-agent is async - so the paper's Gemini-for-writing assignment is unreachable
+      without an upstream change. Editing shipped subagent YAMLs would also add upstream
+      merge surface for a change of unclear value. Recommend deciding (a) whether a role
+      split is wanted at all, and (b) whether to raise the async-routing gap upstream.
+- [x] T012 (F13) DONE: docs/cognitive-lab-architecture.md now states that M_I/M_E receive none of
+      MemoryFilesystemBackend's create/edit/delete guards because /memory/ resolves into the
+      ordinary workspace, and directs that they be hashed into the evidence manifest and
+      pinned in the launch record rather than trusted as memory.
 ## P2 — hygiene (fix directly)
 
 - [x] T013 (F10) NO ACTION, with reasoning. "Towards Self-Evolving AI Scientists" is upstream's
