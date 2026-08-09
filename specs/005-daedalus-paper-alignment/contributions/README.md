@@ -10,13 +10,13 @@ Protocol compliance:
 - Skills (EvoScientist/EvoSkills): Conventional Commits with skill-name scope; PR title
   <70 chars; skill anatomy preserved; eval scores if descriptions change.
 
-| Draft | Target repo | Type | Backs task |
-|---|---|---|---|
-| engine-issue-memory-path.md | EvoScientist/EvoScientist | bug issue | T001 |
-| engine-issue-streamjson-docs.md | EvoScientist/EvoScientist | documentation issue | T004 |
-| evoskills-doc-memory-claim.md | EvoScientist/EvoSkills | docs PR | T001 |
-| evoskills-pr-ese-trigger.md | EvoScientist/EvoSkills | fix PR | T008 |
-| evoskills-pr-ideation-tree.md | EvoScientist/EvoSkills | fix PR | T009 |
+| Draft | Target repo | Type | Backs task | Status |
+|---|---|---|---|---|
+| engine-issue-memory-path.md | EvoScientist/EvoScientist | bug issue | T001 | rewritten after review |
+| engine-issue-streamjson-docs.md | EvoScientist/EvoScientist | documentation issue | T004 | rewritten after review |
+| evoskills-doc-memory-claim.md | EvoScientist/EvoSkills | docs PR | T001 | rewritten after review |
+| evoskills-issue-33-comment.md | EvoScientist/EvoSkills | comment on existing #33 | T009 | duplicate; comment only |
+| PARKED-evoskills-ese-trigger.md | — | withheld | T008 | premise unverified |
 
 Filing order when approved: engine-issue-memory-path first — it is the blocking decision;
 the EvoSkills docs PR links it. Then the two EvoSkills fix PRs (ESE trigger, ideation tree),

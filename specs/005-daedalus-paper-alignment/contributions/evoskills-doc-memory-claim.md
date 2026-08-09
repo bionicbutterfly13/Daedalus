@@ -1,24 +1,28 @@
-# Draft — EvoSkills PR (docs only; blocked on engine decision for the path itself)
+# Draft — EvoSkills PR (docs only)
 
-Branch: docs/evo-memory-correct-persistence-claim
-Title: docs(evo-memory): correct the claim that /memory/ maps to shared memory
+Branch: docs/evo-memory-workspace-local-paths
+Title: docs(evo-memory): clarify workspace-local memory paths
 
 **What changed and why**
 
-`references/memory-schema.md` states: "All paths are relative to the workspace root. Memory
-files persist across sessions because `/memory/` maps to the shared memory directory."
-The second sentence is false against EvoScientist v0.2.6: the agent's CompositeBackend
-routes `/skills/` and `/memories/` only, so `/memory/` falls through to the workspace
-backend and resolves to `<workdir>/memory/` — per-run, not shared. Memory does not survive
-a workdir change, and the skill's own "first cycle → skip" fallback hides the loss.
+`references/memory-schema.md` currently says: "All paths are relative to the workspace root.
+Memory files persist across sessions because `/memory/` maps to the shared memory directory."
 
-This PR corrects the claim and states the current behavior plainly. It deliberately does
-**not** repoint the paths to `/memories/`: that mount rejects raw writes
-(`MemoryFilesystemBackend.write` → "Raw writes to /memories are blocked"), so repointing
-would turn silent loss into a hard failure. The path fix belongs with the engine decision
+The second sentence does not match EvoScientist v0.2.6. The agent's `CompositeBackend` routes
+`/skills/` and `/memories/`; singular `/memory/` matches no route and resolves through the
+default workspace backend, so these files live under the selected workdir rather than in the
+shared memory directory. In default `daemon` mode the workspace is the current directory, so
+they do persist across sessions started from the same place — but a session using `run` mode
+or a different `--workdir` will not see them, and the skill's "first cycle → skip" branch
+makes that look like a fresh start.
+
+This PR states the actual behavior. It deliberately does **not** repoint the paths to
+`/memories/`: `MemoryFilesystemBackend` rejects raw writes there, so that change would break
+memory writes outright. Where the paths should ultimately point is an engine question,
 tracked in <engine issue #>.
 
-Scope: one paragraph in `evo-memory/references/memory-schema.md`. No mechanism changes.
+Scope: one paragraph in `evo-memory/references/memory-schema.md`. No mechanism or
+frontmatter changes, so no description eval applies.
 
 Commit:
 - docs(evo-memory): state actual /memory/ persistence behavior
