@@ -1,7 +1,7 @@
 # Daedalus vs the EvoScientist paper: alignment review
 
-- Date: 2026-08-08
-- Reviewed tree: `/Volumes/Asylum/archimedes` at `3339a11` (dirty worktree), package `EvoScientist` v0.2.3
+- Date: 2026-08-08; re-verified 2026-08-09 after upstream sync
+- Reviewed tree: originally `3339a11` (v0.2.3); re-verified on `57e144e` (post-merge, upstream V0.2.6)
 - Also reviewed: installed skills at `~/.EvoScientist/skills` (source `EvoScientist/EvoSkills@skills`)
 - Paper: [arXiv 2603.08127v1](https://arxiv.org/html/2603.08127v1), *Towards Multi-Agent Evolving AI Scientists for End-to-End Scientific Discovery*
 - Independent verification: codex-cli 0.147.0, read-only, against the same tree
@@ -246,15 +246,39 @@ artifacts, which defeats the acceptance gate described in
 
 ## Verification status
 
-Verified by codex-cli 0.147.0, read-only sandbox, against the live worktree at `3339a11`.
+Round 1: codex-cli 0.147.0, read-only, against `3339a11` (v0.2.3).
 
 - CONFIRMED as originally written: F1, F3, F4, F5, F8, F10, F11
 - CORRECTED after refutation: F2 (agent count), F6 (mechanism), F7 (scope), F9 (substance)
 - Raised by verification and adopted: F12, F13, F14
 
+Round 2 (2026-08-09): after merging upstream V0.2.6 (`57e144e`), Codex re-derived
+every citation on the current tree. **All 14 findings hold.** Two are updated by the merge:
+
+- **F7 (updated):** upstream `prompts.py` now explicitly supports concurrent in-eval
+  `task()` fan-out "for expert panels, ELO-style tournaments" (`prompts.py:328-348`).
+  The generic-parallelism gap is closed; still absent are the paper's fixed 3-ideation /
+  4-experimentation worker topology and stage-level argmax code selection.
+- **F9 (updated):** agent-teams expert containers add dynamic roles but no model routing:
+  sync expert specs carry no model, async standard/expert containers hardcode the main
+  model except scheduler (`expert_container.py:149-158`, `_factory.py:115-124`,
+  `expert_container_async.py:358-364`). The per-agent `model:` YAML key survives
+  (`utils.py:205-223`), still unset in every shipped YAML.
+- **F2 (re-checked):** expert containers are generic skill wrappers, not an Evolution
+  Manager; IDE/IVE/ESE remain unenforced skill prose.
+
+The same round verified the 8 merge conflict resolutions (settings.py fork precedence,
+runtime package relocation, models.py sanitizer predicate, webui dual features,
+manager.py dual constants, test suites) — all confirmed, with the note that
+`_inject_subagent_middleware`'s cfg fallback yields an equivalent config object, not the
+identical instance. The one failing test on the merged tree
+(`test_timeout_bounds_drain_when_detached_descendant_holds_pipes`) is byte-identical to
+upstream/main and fails on pristine upstream v0.2.6: pre-existing, not merge-caused.
+
 Not independently re-derived: the paper's own figures (`N_I=21`, `k_I`, `k_E`, attempt
 budgets, reported success rates) come from arXiv 2603.08127v1 as fetched, not from a local
-copy. F13 and F14 rest on Codex's citations, which I have not re-read line by line.
+copy. F13 and F14 rest on Codex's citations (re-confirmed in round 2), not my own line-by-line
+read.
 
 Not yet tested at runtime: no Daedalus run was executed. F3's practical impact should be
 confirmed empirically by running two consecutive jobs in different workdirs and checking
