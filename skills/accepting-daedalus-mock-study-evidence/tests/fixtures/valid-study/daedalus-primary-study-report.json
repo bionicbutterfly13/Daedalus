@@ -1,0 +1,19 @@
+{
+  "schema": "daedalus-primary-study-report/v1",
+  "packet_id": "synthetic-vertical-acceptance-001",
+  "attempt_id": "attempt-001",
+  "run_id": "run-synthetic-001",
+  "thread_id": "thread-synthetic-001",
+  "author": "Daedalus",
+  "research_question": "Does a deterministic synthetic treatment change a deterministic synthetic outcome?",
+  "hypothesis": "The treatment group mean exceeds the control group mean in the frozen synthetic table.",
+  "synthetic_inputs": {"control": [1, 2, 3], "treatment": [2, 3, 4]},
+  "methods": "Compute both arithmetic means and their difference.",
+  "workflow_stages_attempted": ["question_formulation", "hypothesis_generation", "method_selection", "synthetic_analysis", "result_interpretation", "primary_report"],
+  "analyses_performed": ["control_mean", "treatment_mean", "difference_in_means"],
+  "outputs_produced": ["daedalus-primary-study-report.json"],
+  "measured_results": {"control_mean": 2.0, "treatment_mean": 3.0, "difference": 1.0},
+  "failures_and_retries": [],
+  "limitations": ["Synthetic arithmetic does not establish external scientific validity.", "One vertical test does not validate every Daedalus function."],
+  "unresolved_scientific_questions": ["Would the workflow preserve provenance under a larger synthetic design?"]
+}

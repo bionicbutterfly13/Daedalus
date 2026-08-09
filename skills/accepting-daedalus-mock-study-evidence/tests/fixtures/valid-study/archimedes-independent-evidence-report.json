@@ -1,0 +1,19 @@
+{
+  "schema": "archimedes-independent-evidence-report/v1",
+  "packet_id": "synthetic-vertical-acceptance-001",
+  "attempt_id": "attempt-001",
+  "run_id": "run-synthetic-001",
+  "thread_id": "thread-synthetic-001",
+  "author": "Archimedes",
+  "actually_executed": ["question_formulation", "hypothesis_generation", "method_selection", "synthetic_analysis", "result_interpretation", "primary_report"],
+  "directly_verified_artifacts": ["native-events.jsonl", "status.json", "daedalus-primary-study-report.json"],
+  "expected_outputs": 1,
+  "produced_outputs": 1,
+  "checksums_and_provenance": "See evidence-manifest.json.",
+  "missing_empty_stale_unlinked_evidence": [],
+  "failures_retries_timing_stop_conditions": {"failures": [], "retries": [], "elapsed_seconds": 12.5, "stop_conditions_triggered": []},
+  "concerns_about_daedalus": ["This fixture verifies only the acceptance validator contract."],
+  "blockers": [],
+  "verdict": "accepted",
+  "verdict_reason": "All frozen synthetic fixture stages and required artifacts are present, nonempty, linked, and internally consistent."
+}

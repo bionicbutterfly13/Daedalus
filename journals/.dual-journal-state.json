@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "timezone": "America/New_York",
+  "last_completed_run": {
+    "target_date": "2026-08-04",
+    "collector_generated_at": "2026-08-04T21:00:34.039635-04:00",
+    "verified_at": "2026-08-04T21:03:01-04:00",
+    "session_cutoff": "2026-08-04T21:00:34.039635-04:00",
+    "session_count": 0,
+    "artifact_count": 0,
+    "source_packet": {
+      "path": "/Volumes/Asylum/archimedes/journals/_sources/2026-08-04-nightly.md",
+      "bytes": 3267,
+      "lines": 66,
+      "sha256": "bfb46e52b756b2571d006d923cf1e36c53cf6a0524e00804108a3d3514217bfa",
+      "verified_nonempty": true
+    },
+    "archimedes_journal": {
+      "path": "/Volumes/Asylum/archimedes/journals/archimedes/2026-08-04.md",
+      "bytes": 3869,
+      "lines": 59,
+      "sha256": "6d2449329d34812c4d56399bc5f09e03e76f7995f71d432211810c0c6c6a6402",
+      "verified_nonempty": true,
+      "complete": true
+    },
+    "evo_journal": {
+      "path": null,
+      "status": "absent",
+      "direct_authorship_validated": false,
+      "complete": false
+    },
+    "evo_attempt": {
+      "status": "failed",
+      "authorship": "none",
+      "assistant_id": "EvoScientist CLI",
+      "thread_id": "dee1cd5d",
+      "markdown": "",
+      "path": null,
+      "error_type": "RuntimeError",
+      "error": "RuntimeError: EvoSci exited 1: ⚠️  Warning: Reusing externally-managed langgraph dev on http://localhost:6174 —\nno workspace sidecar, cannot verify it matches the requested \n/Volumes/Asylum/archimedes. Async sub-agents may operate on a different \nworkspace's files.\nLoading agent...\nSequential Thinking MCP Server running on stdio\n[08/04/26 21:01:13] INFO     Starting MCP server 'notebooklm'   transport.py:241\n                             with transport 'stdio'                             \n⚠️  Warning: Subagent 'research-agent': tool 'tavily_search' not in registry, \nskipping\n⚠️  Warning: Deserializing unregistered type \nEvoScientist.llm.errors.ProviderStreamError from checkpoint. This will be \nblocked in a future version. Set LANGGRAPH_STRICT_MSGPACK=true to block now, or \nadd to allowed_msgpack_modules to allow explicitly: [('EvoScientist.llm.errors',\n'ProviderStreamError')]\nGoodbye!\n\nResume this session with:\nEvoSci --resume dee1cd5d\n"
+    },
+    "local_draft_only": true,
+    "published": false,
+    "notion_synced": false,
+    "git_committed": false,
+    "git_pushed": false
+  }
+}

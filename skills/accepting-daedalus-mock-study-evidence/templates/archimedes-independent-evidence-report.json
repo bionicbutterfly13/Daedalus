@@ -1,0 +1,26 @@
+{
+  "schema": "archimedes-independent-evidence-report/v1",
+  "packet_id": "synthetic-vertical-acceptance-001",
+  "attempt_id": "attempt-001",
+  "run_id": "run-id-required",
+  "thread_id": "thread-id-required",
+  "author": "Archimedes",
+  "evidence_ceiling": null,
+  "actually_executed": [],
+  "workflow_stage_evidence": {},
+  "directly_verified_artifacts": [],
+  "expected_outputs": 0,
+  "produced_outputs": 0,
+  "checksums_and_provenance": "Record recomputed sizes, SHA-256 values, producers, stages, and source identities.",
+  "missing_empty_stale_unlinked_evidence": [],
+  "failures_retries_timing_stop_conditions": {
+    "failures": [],
+    "retries": [],
+    "elapsed_seconds": null,
+    "stop_conditions_triggered": []
+  },
+  "concerns_about_daedalus": [],
+  "blockers": [],
+  "verdict": "stopped",
+  "verdict_reason": "Template default: no evidence has been accepted."
+}

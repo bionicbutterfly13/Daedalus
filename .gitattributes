@@ -6,3 +6,4 @@ runs/**/*.json -text
 runs/**/*.zip -text
 EvoScientist/skills/jspace-research-operations/scripts/*.py -text
 tests/jspace/fixtures/*.json -text
+skills/**/tests/fixtures/** -text

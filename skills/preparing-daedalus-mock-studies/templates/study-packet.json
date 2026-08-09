@@ -1,0 +1,124 @@
+{
+  "schema": "daedalus-mock-study-packet/v1",
+  "packet_id": "synthetic-vertical-acceptance-001",
+  "synthetic_study": true,
+  "objective": "Exercise one bounded end-to-end Daedalus study workflow using synthetic content.",
+  "research_question": "Does a deterministic synthetic treatment change a deterministic synthetic outcome?",
+  "hypothesis": "The treatment group mean exceeds the control group mean in the frozen synthetic table.",
+  "input_inventory": [
+    {
+      "id": "synthetic-table-v1",
+      "content": {
+        "control": [1.0, 2.0, 3.0],
+        "treatment": [2.0, 3.0, 4.0]
+      },
+      "content_sha256": "212733c746c596d64a08bcddde2c3451939fd04e1e4057fe60c48960b959c530",
+      "private": false
+    }
+  ],
+  "daedalus_interface": {
+    "executable": "EvoSci",
+    "mode": "run",
+    "output_format": "stream-json",
+    "supervisor": "skills/supervising-daedalus-mock-study-runs/scripts/drive_stream_json_resume.py",
+    "resume_interface": "local_graph_gateway_command_resume",
+    "verified_at_launch": false
+  },
+  "supervision": {
+    "execution_allowlist": "execution-allowlist.json",
+    "runtime_config": "supervisor-runtime.json",
+    "tool_decisions": "separate_per_interrupt_exact_digest",
+    "rejection_behavior": "stop_without_resume",
+    "unattended_auto_mode_allowed": false,
+    "maximum_interrupt_cycles": 8
+  },
+  "source_identity": {
+    "expected_commit": null,
+    "expected_import_root": null,
+    "must_be_resolved_before_launch": true
+  },
+  "workflow_stages": [
+    "question_formulation",
+    "hypothesis_generation",
+    "method_selection",
+    "synthetic_analysis",
+    "result_interpretation",
+    "primary_report"
+  ],
+  "expected_artifacts": [
+    {
+      "path": "native-events.jsonl",
+      "role": "native_event_stream",
+      "producer": "daedalus",
+      "stage": "synthetic_analysis",
+      "required": true
+    },
+    {
+      "path": "status.json",
+      "role": "terminal_status",
+      "producer": "daedalus_runtime",
+      "stage": "primary_report",
+      "required": true
+    },
+    {
+      "path": "daedalus-primary-study-report.json",
+      "role": "primary_study_report",
+      "producer": "daedalus",
+      "stage": "primary_report",
+      "required": true
+    }
+  ],
+  "permitted_operations": ["read_frozen_synthetic_inputs", "write_bounded_run_artifacts"],
+  "prohibited_operations": [
+    "access_private_memory",
+    "access_private_research_data",
+    "activate_paid_provider",
+    "publish",
+    "transfer_artifacts",
+    "modify_evoscientist_core",
+    "manual_stage_substitution"
+  ],
+  "provider_cost_boundary": {
+    "allowed_providers": [],
+    "paid_providers_authorized": false,
+    "maximum_cost_usd": 0
+  },
+  "retention_transfer_publication": {
+    "retain_locally": true,
+    "artifact_transfer_authorized": false,
+    "publication_authorized": false
+  },
+  "retry_timeout_stop_policy": {
+    "maximum_attempts": 2,
+    "stage_timeout_seconds": 900,
+    "stop_on_silent_success": true,
+    "stop_on_missing_evidence": true,
+    "stop_on_privacy_violation": true,
+    "stop_on_unauthorized_action": true
+  },
+  "acceptance_criteria": {
+    "required_stage_coverage": "all_declared_stages_accounted_for",
+    "required_artifacts": "all_required_entries_present_nonempty_and_linked",
+    "allowed_verdicts": ["accepted", "partial", "failed", "stopped"],
+    "expected_output_count": 1
+  },
+  "public_journal": {
+    "destination": "project_public_journal",
+    "title": "Daedalus Synthetic Vertical Acceptance Study 001",
+    "authorship": {
+      "primary_study_report": "Daedalus",
+      "independent_evidence_report": "Archimedes",
+      "public_article": "Archimedes under Dr. Mani review"
+    },
+    "public_artifacts": ["public-journal-article.json"],
+    "private_artifacts": ["native-events.jsonl", "stderr.log"],
+    "redaction_privacy_rules": [
+      "exclude_credentials_and_secrets",
+      "exclude_private_memory_and_research_data",
+      "exclude_hidden_prompts_unsafe_paths_and_sensitive_logs"
+    ],
+    "evidence_linking_requirements": "publishable evidence reference or content hash for every material claim",
+    "approval_status": "not_approved",
+    "rollback_correction_procedure": "Publish a dated correction linked to the original article; withdraw only when required for safety or privacy."
+  }
+}

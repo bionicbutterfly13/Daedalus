@@ -1,0 +1,14 @@
+{
+  "schema": "daedalus-mock-study-authorization/v1",
+  "packet_id": "synthetic-vertical-acceptance-001",
+  "study_execution_authorized": true,
+  "tool_action_approval_policy": "separate_per_interrupt_exact_digest",
+  "tool_action_preapproval_authorized": false,
+  "paid_provider_activation_authorized": false,
+  "private_memory_access_authorized": false,
+  "private_research_data_access_authorized": false,
+  "artifact_transfer_authorized": false,
+  "publication_authorized": false,
+  "evoscientist_core_modification_authorized": false,
+  "approval_evidence": "fixture-only:authorized deterministic validator test, not a live run"
+}

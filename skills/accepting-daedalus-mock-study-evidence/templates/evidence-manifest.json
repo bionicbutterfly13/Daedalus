@@ -1,0 +1,40 @@
+{
+  "schema": "daedalus-mock-study-evidence-manifest/v1",
+  "packet_id": "synthetic-vertical-acceptance-001",
+  "attempt_id": "attempt-001",
+  "run_id": "run-id-required",
+  "thread_id": "thread-id-required",
+  "layout": "supervised_attempt/v1",
+  "artifacts": [
+    {
+      "path": "native-events.jsonl",
+      "role": "native_event_stream",
+      "producer": "daedalus",
+      "attempt_id": "attempt-001",
+      "stage": "synthetic_analysis",
+      "byte_size": 1,
+      "sha256": "required-64-character-lowercase-sha256",
+      "verification_status": "pending_direct_verification"
+    },
+    {
+      "path": "status.json",
+      "role": "terminal_status",
+      "producer": "daedalus_runtime",
+      "attempt_id": "attempt-001",
+      "stage": "primary_report",
+      "byte_size": 1,
+      "sha256": "required-64-character-lowercase-sha256",
+      "verification_status": "pending_direct_verification"
+    },
+    {
+      "path": "daedalus-primary-study-report.json",
+      "role": "primary_study_report",
+      "producer": "daedalus",
+      "attempt_id": "attempt-001",
+      "stage": "primary_report",
+      "byte_size": 1,
+      "sha256": "required-64-character-lowercase-sha256",
+      "verification_status": "pending_direct_verification"
+    }
+  ]
+}

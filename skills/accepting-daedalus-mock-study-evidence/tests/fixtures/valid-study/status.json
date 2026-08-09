@@ -1,0 +1,10 @@
+{
+  "schema": "daedalus-mock-study-status/v1",
+  "packet_id": "synthetic-vertical-acceptance-001",
+  "attempt_id": "attempt-001",
+  "run_id": "run-synthetic-001",
+  "thread_id": "thread-synthetic-001",
+  "exit_code": 0,
+  "terminal_event_observed": true,
+  "declared_success": true
+}

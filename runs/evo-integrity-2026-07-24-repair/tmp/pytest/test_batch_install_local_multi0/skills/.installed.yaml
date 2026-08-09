@@ -1,0 +1,6 @@
+skill-a:
+  source: /Volumes/Asylum/archimedes/runs/evo-integrity-2026-07-24-repair/tmp/pytest/test_batch_install_local_multi0/multi-repo
+skill-b:
+  source: /Volumes/Asylum/archimedes/runs/evo-integrity-2026-07-24-repair/tmp/pytest/test_batch_install_local_multi0/multi-repo
+skill-c:
+  source: /Volumes/Asylum/archimedes/runs/evo-integrity-2026-07-24-repair/tmp/pytest/test_batch_install_local_multi0/multi-repo
