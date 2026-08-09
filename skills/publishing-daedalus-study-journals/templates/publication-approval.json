@@ -1,0 +1,8 @@
+{
+  "schema": "daedalus-publication-approval/v1",
+  "packet_id": "synthetic-vertical-acceptance-001",
+  "approver": "Dr. Mani",
+  "decision": "not_approved",
+  "approved_at": null,
+  "article_sha256": null
+}

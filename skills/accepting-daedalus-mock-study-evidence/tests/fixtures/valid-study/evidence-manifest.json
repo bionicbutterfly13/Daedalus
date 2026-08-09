@@ -1,0 +1,39 @@
+{
+  "schema": "daedalus-mock-study-evidence-manifest/v1",
+  "packet_id": "synthetic-vertical-acceptance-001",
+  "attempt_id": "attempt-001",
+  "run_id": "run-synthetic-001",
+  "thread_id": "thread-synthetic-001",
+  "artifacts": [
+    {
+      "path": "native-events.jsonl",
+      "role": "native_event_stream",
+      "producer": "daedalus",
+      "attempt_id": "attempt-001",
+      "stage": "synthetic_analysis",
+      "byte_size": 1717,
+      "sha256": "0519d8d2577a56f4d7b996036fcc00c77a398665157cec42d57c6f23f1da3965",
+      "verification_status": "directly_verified"
+    },
+    {
+      "path": "status.json",
+      "role": "terminal_status",
+      "producer": "daedalus_runtime",
+      "attempt_id": "attempt-001",
+      "stage": "primary_report",
+      "byte_size": 284,
+      "sha256": "2a11e5e036eaf41bda8fed93fd2f896e3828afea8f1a436b3b84e377d306cc0d",
+      "verification_status": "directly_verified"
+    },
+    {
+      "path": "daedalus-primary-study-report.json",
+      "role": "primary_study_report",
+      "producer": "daedalus",
+      "attempt_id": "attempt-001",
+      "stage": "primary_report",
+      "byte_size": 1282,
+      "sha256": "2b550efeacac26644515e0a4fc748a3f100f53ecd61770e5b95d57139c9b9dab",
+      "verification_status": "directly_verified"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "schema": "daedalus-public-journal-article/v1",
+  "packet_id": "synthetic-vertical-acceptance-001",
+  "title": "Daedalus Synthetic Vertical Acceptance Study 001",
+  "destination": "project_public_journal",
+  "authors": {
+    "primary_study_report": "Daedalus",
+    "independent_evidence_report": "Archimedes",
+    "public_article": "Archimedes under Dr. Mani review"
+  },
+  "study_outcome": "accepted",
+  "publication_state": "publication_prepared",
+  "publication_authorized": false,
+  "dr_mani_approval_evidence": null,
+  "sections": {
+    "research_question_and_selection_rationale": "A deterministic difference-in-means question was selected to test one bounded vertical workflow without private data.",
+    "daedalus_and_archimedes_roles": "Daedalus authored the primary study report. Archimedes independently checked retained evidence and prepared this article.",
+    "study_design": "One frozen synthetic control/treatment table with deterministic arithmetic analysis.",
+    "synthetic_inputs_and_methods": "Control values 1, 2, 3 and treatment values 2, 3, 4; compare arithmetic means.",
+    "what_actually_ran": "The fixture records six declared stages and a terminal event.",
+    "verified_outputs_and_results": "The retained report states means 2.0 and 3.0 with a difference of 1.0.",
+    "failures_retries_and_missing_evidence": "No failures or retries are represented in the valid synthetic fixture.",
+    "what_worked_and_did_not_work": "The deterministic evidence contract validates; this fixture does not demonstrate a live Daedalus run.",
+    "limitations": "One synthetic vertical acceptance fixture does not validate every Daedalus function or establish external scientific validity.",
+    "concerns_about_daedalus": "Live operational behavior remains unknown because this is a deterministic test fixture.",
+    "needed_repairs_or_evaluations": "A separately authorized live synthetic run is needed before operational acceptance.",
+    "next_study_or_engineering_decision": "Review validator coverage, then decide whether to authorize the bounded live mock study."
+  },
+  "claims": [
+    {
+      "claim_id": "claim-001",
+      "claim_class": "verified_execution",
+      "text": "The fixture contains native events for all six frozen stages.",
+      "evidence_ref": "native-events.jsonl",
+      "content_sha256": "0519d8d2577a56f4d7b996036fcc00c77a398665157cec42d57c6f23f1da3965"
+    },
+    {
+      "claim_id": "claim-002",
+      "claim_class": "observed_result",
+      "text": "The primary report records a difference in means of 1.0.",
+      "evidence_ref": "daedalus-primary-study-report.json#measured_results",
+      "content_sha256": "2b550efeacac26644515e0a4fc748a3f100f53ecd61770e5b95d57139c9b9dab"
+    },
+    {
+      "claim_id": "claim-003",
+      "claim_class": "supported_inference",
+      "text": "The valid fixture satisfies the deterministic evidence contract.",
+      "evidence_ref": "archimedes-independent-evidence-report.json#verdict",
+      "content_sha256": null
+    },
+    {
+      "claim_id": "claim-004",
+      "claim_class": "hypothesis",
+      "text": "A future authorized live run may preserve the same evidence boundaries.",
+      "evidence_ref": "daedalus-primary-study-report.json#unresolved_scientific_questions",
+      "content_sha256": null
+    },
+    {
+      "claim_id": "claim-005",
+      "claim_class": "unknown",
+      "text": "Live Daedalus operational behavior has not been tested by this fixture.",
+      "evidence_ref": "archimedes-independent-evidence-report.json#concerns_about_daedalus",
+      "content_sha256": null
+    }
+  ],
+  "included_content_classes": ["public_synthetic_inputs", "public_safe_results", "public_safe_evidence_links"],
+  "public_content": {
+    "contains_only_synthetic_data": true,
+    "unsafe_internal_paths": false,
+    "sensitive_logs": false
+  },
+  "correction_procedure": "Publish a dated correction linked to the original; withdraw only when safety or privacy requires it."
+}

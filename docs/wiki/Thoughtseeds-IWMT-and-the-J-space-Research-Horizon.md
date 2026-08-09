@@ -60,14 +60,25 @@ SOHM concept are Safron's theoretical work. Our software can operationalize
 small abstractions inspired by it; that does not validate IWMT or reproduce
 biological dynamics.
 
-**Thoughtseeds.** The ThoughtSeed concept is attributed in the package NOTICE
-to Ruben Laukkonen and Shamil Chandaria, whose ThoughtSeed Hypothesis is listed
-as in preparation. The `thoughtseed-runtime` package is authored in this
-ecosystem and implements a particular competition rule, immutable seed records,
+**Two ThoughtSeed lineages.** The local `thoughtseed-runtime` package attributes
+its conceptual basis in NOTICE to Ruben Laukkonen and Shamil Chandaria, whose
+ThoughtSeed Hypothesis is listed as in preparation. The package implements a
+particular discrete competition rule, immutable candidate records,
 Hebbian-style updates, child spawning, and an SOHM-complex builder. Its
 Hamiltonian-gated threshold and specific complex-building algorithm are declared
 local contributions. The concept's unpublished status and incomplete trademark
 search remain public-release constraints.
+
+Prakash Chandra Kavi, Gorka Zamora-López, Daniel Ari Friedman, and later Gustavo
+Patow developed a separate public Thoughtseeds paper and code lineage from 2024
+through 2026. Its latest model represents five continuous latent causes over a
+four-network simulation and uses Layer 3 meta-awareness as the workspace gate.
+It does not implement the local runtime's discrete entities, spawning,
+Hamiltonian threshold, or SOHM builder. The latest code is a theoretically
+parameterized computational phenomenology with one seed-42 run per phenotype,
+not an empirically calibrated neural model. The public repository also lacked a
+software license at audit time. We must preserve both attribution and model
+boundaries rather than treating the two lineages as one implementation.
 
 **Nemori.** Nemori is the MIT-licensed third-party project by Jiayan Nan,
 Wenquan Ma, Wenlong Wu, and Yize Chen. Its event segmentation and
@@ -136,17 +147,26 @@ instrument's prompt-floor dependence is resolved.
 
 ## Thoughtseeds first
 
-A Thoughtseed is useful here as an experimental unit: a structured candidate
-that carries content, activation, lineage, basin association, and other
-selection variables. It lets us ask a sharper question than "what was the model
-thinking?" We can ask which candidate won, under which rule, with which inputs,
-and whether a new measurement improved prediction of that outcome.
+The name currently denotes two different experimental units. The local runtime
+uses a discrete candidate with content, activation, lineage, basin association,
+and selection variables. Kavi's 2026 model uses five continuous coordinates as
+latent causes of a synthetic four-network meditation process. A coordinate
+maximum is not a discrete competition winner, and copying a coordinate into an
+"occupancy" field does not calibrate a bridge between the models.
 
 The sibling Thoughtseed runtime exposes a deterministic candidate-selection
 interface and durable lineage records. Its own repository governs the exact
 selection rule, implementation, tests, notices, and release claims. Here we use
 that interface only to define a possible outcome variable. A selected record is
 not a biological ignition event or a conscious episode.
+
+The corrected Kavi model can play a different role: a pinned structural null or
+synthetic generator for local encoder, decoder, and forward-model Jacobian
+studies. Discrete transitions, NumPy policy control, and detached variational
+updates mean that it has no single ordinary end-to-end Jacobian. Any experiment
+must name the local differentiable map, frozen checkpoint, independent seed,
+and architecture-matched control. Its hand-set expert and novice priors cannot
+serve as empirical ground truth.
 
 The first strong cross-system hypothesis is therefore modest:
 
@@ -172,7 +192,7 @@ rank(target) = 1 + number of logits strictly greater than target_logit
 score(rank) = -log(rank) / log(vocabulary_size)
 ```
 
-The score is `1` at rank one and approaches `0` near the bottom of the
+The score is `0` at rank one and approaches `-1` near the bottom of the
 vocabulary. Ties receive the best shared rank. This convention is implemented
 directly in `target_rank1` and `rank_score`.
 
@@ -429,7 +449,8 @@ flowchart TD
     H --> C[Recorded curiosity policy]
     C --> E[Discriminating experiment]
     E --> J[Validated J-space measurement]
-    J --> T[Thoughtseed competition]
+    J --> T[Discrete runtime competition]
+    K[Continuous Kavi structural null] --> J
     J --> B[Attractor trajectory]
     J --> N[Memory prediction gap]
     T --> A[Artifact and provenance]
@@ -452,6 +473,8 @@ This project does not currently claim:
 - that language models are conscious;
 - that J-space establishes phenomenal experience;
 - that Thoughtseed competition reproduces biological ignition;
+- that Kavi's continuous latent model is empirically calibrated or equivalent
+  to the local discrete runtime;
 - that software frequency bands correspond to neural rhythms;
 - that Nemori prediction gaps are subjective surprise;
 - that Autonoesis records establish selfhood;
@@ -477,6 +500,28 @@ Circuits Thread*. https://transformer-circuits.pub/2026/workspace/index.html
 
 Laukkonen, R. E., & Chandaria, S. (in preparation). *ThoughtSeed hypothesis*
 [Unpublished manuscript].
+
+Kavi, P. C., Zamora-López, G., & Friedman, D. A. (2024). *Thoughtseeds:
+Evolutionary priors, nested Markov blankets, and the emergence of embodied
+cognition* (version 1). arXiv. https://arxiv.org/abs/2408.15982v1
+
+Kavi, P. C., Zamora-López, G., & Friedman, D. A. (2024). *From neuronal packets
+to thoughtseeds: A hierarchical model of embodied cognition in the global
+workspace* (version 2). arXiv. https://arxiv.org/abs/2408.15982v2
+
+Kavi, P. C., Zamora-López, G., Friedman, D. A., & Patow, G. (2025).
+Thoughtseeds: A hierarchical and agentic framework for investigating thought
+dynamics in meditative states. *Entropy, 27*(5), 459.
+https://doi.org/10.3390/e27050459
+
+Kavi, P. C., Friedman, D. A., & Patow, G. (2026). Dynamic attentional agents in
+focused attention meditation: Hierarchical computational modeling of
+expert-novice differences. In *Active Inference* (pp. 182-207).
+https://doi.org/10.1007/978-3-032-16955-6_11
+
+Kavi, P. C., Friedman, D. A., & Patow, G. (2026). *Thoughtseeds as latent
+causes: A dual-process computational phenomenology of focused-attention
+meditation*. arXiv. https://arxiv.org/abs/2607.14833
 
 Nan, J., Ma, W., Wu, W., & Chen, Y. (2025). Nemori: Self-organizing agent memory
 inspired by cognitive science [Preprint]. *arXiv*.

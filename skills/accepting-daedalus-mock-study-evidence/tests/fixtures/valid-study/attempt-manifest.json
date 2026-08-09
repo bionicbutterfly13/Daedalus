@@ -1,0 +1,17 @@
+{
+  "schema": "daedalus-mock-study-attempt/v1",
+  "packet_id": "synthetic-vertical-acceptance-001",
+  "attempt_id": "attempt-001",
+  "run_id": "run-synthetic-001",
+  "thread_id": "thread-synthetic-001",
+  "source_commit": "synthetic-source-001",
+  "imported_package_path": "installed/EvoScientist/__init__.py",
+  "workdir_kind": "data_only",
+  "native_events_path": "native-events.jsonl",
+  "stderr_path": "stderr.log",
+  "status_path": "status.json",
+  "monotonic_started_seconds": 100.0,
+  "monotonic_finished_seconds": 112.5,
+  "exit_code": 0,
+  "terminal_event_observed": true
+}

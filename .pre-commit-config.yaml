@@ -1,3 +1,6 @@
+# runs/ holds frozen experiment evidence artifacts; formatters must never
+# rewrite them (byte changes would invalidate digest-based manifests).
+exclude: ^runs/
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.

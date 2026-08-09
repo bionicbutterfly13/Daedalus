@@ -1,0 +1,8 @@
+{
+  "schema": "daedalus-supervisor-runtime/v1",
+  "packet_id": "synthetic-vertical-acceptance-001",
+  "provider": "REQUIRES_SEPARATE_RATIFICATION",
+  "model": "REQUIRES_SEPARATE_RATIFICATION",
+  "credential_env_names": [],
+  "config_overrides": {}
+}

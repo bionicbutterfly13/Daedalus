@@ -1,0 +1,24 @@
+{
+  "schema": "daedalus-supervisor-allowlist/v1",
+  "packet_id": "synthetic-vertical-acceptance-001",
+  "allowed_actions": [
+    {
+      "name": "execute",
+      "args": {
+        "command": "python3 analysis.py"
+      },
+      "argv": ["python3", "analysis.py"],
+      "path_argument_indexes": [1],
+      "path_sha256": {
+        "1": "REQUIRES_FROZEN_64_CHARACTER_LOWERCASE_SHA256"
+      }
+    }
+  ],
+  "allowed_artifact_paths": [
+    "daedalus-primary-study-report.json"
+  ],
+  "network_operations_allowed": false,
+  "private_memory_allowed": false,
+  "transfer_allowed": false,
+  "publication_allowed": false
+}
