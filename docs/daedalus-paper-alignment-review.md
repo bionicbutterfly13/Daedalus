@@ -13,6 +13,33 @@ EvoScientist.
 
 ---
 
+## The 14 gaps at a glance
+
+P0 = silently invalidates an unattended run. P1 = changes scientific behavior vs the paper. P2 = hygiene.
+
+| # | Out of parity | Sev | Whose bug | Status |
+|---|---|---|---|---|
+| F1 | The paper's method is prompt files installed outside the repo; `skill_manager` can swap it mid-run, and nothing records which version produced a result | P1 | upstream (design) | mitigated: runs now pin skill digests (T007) |
+| F2 | No Evolution Manager agent exists; IDE/IVE/ESE are optional prose nothing obliges the model to run | P1 | upstream engine | mitigated: post-run enforcement (T008) |
+| F3 | **Evolution memory has no writable persistent path.** Skills write `/memory/` (unmounted, per-run); `/memories/` refuses all raw writes | **P0** | upstream engine | **unfixable by us** — queued as U1; we pin the workspace as a workaround (T001) |
+| F4 | Retrieval is keyword/LLM-judged, not the paper's embedding cosine; `k_I=2`/`k_E=1` unreproducible | P1 | upstream engine | mitigated: selections recorded (T010) |
+| F5 | The Elo tournament ranks 3 candidates, so "top-3" is the whole field and selects nothing. The skill's own reference specifies 15-21 | P1 | upstream skills | already reported upstream as EvoSkills #33; local addendum (T009) |
+| F6 | Under `stream-json`, auto-mode **removes** `ask_user`. Human decision gates become inert text the model may narrate or ignore. Docs claim they're "auto-handled" | **P0** | upstream engine | mitigated: gate policy declared + narration audit (T004); queued as U2 |
+| F7 | Attempt budgets match (20/12/12/18), but best-code selection uses pass/fail gates instead of argmax, and the paper's fixed 3+4 worker topology is absent | P1 | upstream | not addressed |
+| F8 | ESE fires only if all 4 stages pass; the paper imposes no such condition. At the paper's own ~21% stage-3 rate it would almost never fire | P1 | upstream skills | fix written (T008); queued as U5 |
+| F9 | No per-role model routing out of the box; async agents hardcode the main model, so the paper's Gemini-for-writing is unreachable | P1 | upstream | **blocked, needs your decision** (D-2) |
+| F10 | Package tagline differs from the paper title | P2 | upstream branding | no action — not a defect in this fork |
+| F11 | Two broken doc links in our architecture doc | P2 | **ours** | fixed (T014) |
+| F12 | Nothing makes the pipeline mandatory; a run can emit `done` having skipped ideation, the tournament, and every memory update | **P0** | upstream engine | mitigated: artifact gate (T003) |
+| F13 | M_I/M_E bypass the engine's memory write protections entirely | P1 | upstream | documented + hashed (T012) |
+| F14 | Stage evidence is prose plus a checkbox; `C_best`, budget use, and gate status are unverifiable | **P0** | upstream skills | mitigated: structured stage records required (T005) |
+
+Found during remediation, not in the original review:
+
+| # | Issue | Status |
+|---|---|---|
+| — | The architecture doc's July 16 episodic-memory account cites two files that never existed in git history | **needs your call** (D-3 / T018) |
+
 ## Plain-language summary
 
 The paper's contribution is accumulation: the system keeps two notebooks across projects
