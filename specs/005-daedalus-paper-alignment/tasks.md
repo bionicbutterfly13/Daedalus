@@ -6,12 +6,16 @@ divergence; P2 = hygiene.
 
 ## P0 — silent-failure killers (do first)
 
-- [ ] T001 (F3) Memory-path mitigation: make M_I/M_E persist across runs. Options to evaluate
-      in plan: (a) launch Daedalus with EVOSCIENTIST_WORKSPACE_DIR fixed to a durable lab
-      workspace; (b) patch installed skills' `/memory/` -> `/memories/` (home-dir skill edit,
-      survives no reinstall - pair with T007); (c) Hermes post-run artifact sweep that copies
-      `<workdir>/memory/` into the lab store and injects it on launch. Acceptance test: run A
-      writes a direction, run B (fresh workdir) retrieves it.
+- [x] T001 (F3) Memory-path mitigation: DONE via option (a), workspace pinning.
+      Option (b) was attempted and WITHDRAWN: boundary capture against v0.2.6 showed
+      `MemoryFilesystemBackend.write()` rejects every raw write to `/memories/`, so
+      repointing the skills converts silent data loss into a hard write failure. There is
+      no path that is both persistent and agent-writable; that is now the upstream issue.
+      Installed skills were patched, verified broken-by-design, and reverted to pristine
+      (digests confirmed identical). Implemented: `scripts/memory_persistence.py`
+      (`verify_persistence_config` requires an absolute, existing EVOSCIENTIST_WORKSPACE_DIR;
+      `verify_shared_memory` refuses to pass on an empty store). 20 tests, including two
+      that exercise live engine backends.
 - [ ] T002 (F3) Acceptance-gate check: after every Daedalus run, verify M_I/M_E files exist,
       grew or changed plausibly, and carry the run's cycle marker; empty-when-expected = REJECT.
 - [ ] T003 (F12) Pipeline-evidence gate: acceptance requires artifacts proving the claimed
