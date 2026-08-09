@@ -33,10 +33,12 @@ divergence; P2 = hygiene.
       `stage-record.json` per stage (templates/stage-record.json) carrying stage, budget,
       attempts_used, best_attempt_id, gate_met. Cross-checks the paper's 20/12/12/18 budgets,
       rejects attempts over budget and gate_met with no best_attempt_id (unattributable C_best).
-- [ ] T006 (D1) Upstream update cadence: recurring task to fetch upstream, report
-      behind/ahead + changed finding-relevant files. This sync (v0.2.3 -> V0.2.6) found two
-      shipped rewrites of fork-critical code.
-
+- [x] T006 (D1) DONE: `check_upstream_drift.py` reports ahead/behind and, more usefully, whether
+      upstream touched a DIVERGENCE_FILE (needs graft-not-pick) or a FINDING_FILE (needs the
+      review re-run), exiting nonzero only then. Compares against the merge base, not
+      upstream/main directly: the first version diffed HEAD vs upstream and so fired on the
+      fork's own permanent divergences forever -- caught by running it against the real repo,
+      now pinned by test_permanent_fork_divergence_alone_needs_no_review.
 ## P1 — scientific divergences
 
 - [x] T007 (F1, D3) DONE: `launch_record.build_launch_record` pins sha256 per installed skill
