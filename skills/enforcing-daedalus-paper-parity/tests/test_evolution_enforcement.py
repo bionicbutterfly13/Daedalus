@@ -1,9 +1,8 @@
-"""Tests for evolution-mechanism enforcement (T008, findings F2 and F8).
+"""Tests for evolution-mechanism enforcement (T008 and local ESE policy).
 
 The sharpest case here is ``test_ese_is_owed_when_the_pipeline_failed``: the
-installed skill would skip ESE entirely on a failed run, and the paper would
-not. If that test ever starts passing for the wrong reason, the F8 correction
-has been quietly reverted.
+installed skill skips ESE on a failed run, while Archimedes deliberately keeps
+those lessons. This is local policy, not the withdrawn F8 paper claim.
 """
 
 from __future__ import annotations
@@ -64,7 +63,7 @@ def _mechanisms(workspace: Path) -> set[str]:
 
 
 class TestDeriveObligations:
-    """Obligations come from the paper's rules, not the skill's."""
+    """Obligations combine paper rules with explicit local policy."""
 
     def test_tournament_owes_ide(self, workspace: Path):
         assert "IDE" in _mechanisms(workspace)
@@ -79,12 +78,7 @@ class TestDeriveObligations:
         assert "ESE" in _mechanisms(workspace)
 
     def test_ese_is_owed_when_the_pipeline_failed(self, tmp_path: Path):
-        """The F8 correction: no success precondition.
-
-        The installed evo-memory skill fires ESE only when all four stages pass.
-        The paper distils from full search trajectories regardless, which is why
-        a ~21% stage-3 success rate can still yield the reported improvement.
-        """
+        """Local policy retains failed trajectories without making an F8 claim."""
         ws = tmp_path / "ws"
         ws.mkdir()
         _stage(ws, 1, attempts_used=20, gate_met=False)
@@ -187,6 +181,13 @@ class TestBuildReport:
 
     def test_is_json_serializable(self, workspace: Path):
         assert json.loads(json.dumps(build_report(workspace)))
+
+    def test_labels_failed_pipeline_ese_as_local_policy(self, workspace: Path):
+        record = build_report(workspace)
+
+        assert record["findings"] == ["F2"]
+        assert record["local_policies"] == ["require_ese_after_any_recorded_pipeline"]
+        assert "F8 is withdrawn" in record["note"]
 
 
 class TestCli:

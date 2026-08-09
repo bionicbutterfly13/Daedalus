@@ -2,7 +2,7 @@
 
 Date: 2026-08-07, amended 2026-08-08
 Status: Approved by Dr. Mani for implementation on 2026-08-08
-Canonical project: `/Volumes/Asylum/archimedes`
+Canonical project: `/Volumes/Asylum/Daedalus`
 
 ## Purpose
 

@@ -1,6 +1,6 @@
 # Draft — engine documentation issue (template: documentation)
 
-Title: stream-json docs say auto-mode "auto-handles" ask_user gates; the middleware is removed
+Title: Docs say auto-mode "auto-handles" ask_user; it removes the middleware
 
 **What documentation is affected**
 

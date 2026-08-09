@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Make Daedalus's evolution memory survive across runs (T001, finding F3).
+"""Verify stable same-workspace evolution memory (T001, finding F3).
 
 Background
 ----------
 The evolution skills read and write Ideation/Experimentation Memory under
-``/memory/``. The engine's ``CompositeBackend`` routes only ``/skills/`` and
-``/memories/``; ``/memory/`` matches no route, so it resolves through the
-default workspace backend to ``<workdir>/memory/``. A run in a fresh workdir
-therefore starts with empty M_I/M_E, and the skills' own "if it doesn't exist,
-this is your first cycle" fallback makes the loss look like a fresh start.
+``/memory/``. Upstream deliberately lets that path resolve through the default
+workspace backend to ``<workdir>/memory/``. Sessions that reuse one workspace
+see the same M_I/M_E. A new workdir starts with different files, and the skills'
+own "if it doesn't exist, this is your first cycle" fallback makes that scope
+change look like a fresh start.
 
 Why the obvious fix is wrong
 ----------------------------
@@ -22,11 +22,10 @@ code (see ``test_memories_mount_rejects_raw_writes``):
     backend.write("/memory/ideation-memory.md", ...)
         -> ok, lands at <workspace>/memory/ideation-memory.md
 
-So there is no path that is both persistent and writable by the agent's file
-tools. Until upstream resolves that, persistence must come from *pinning the
-workspace* rather than from changing the path: with
-``EVOSCIENTIST_WORKSPACE_DIR`` fixed to a durable lab workspace, ``/memory/``
-resolves to the same real directory on every run.
+Pinning ``EVOSCIENTIST_WORKSPACE_DIR`` keeps one local project on the same
+workspace and prevents accidental scope changes. It does not implement the
+paper's cross-project learning promise. That requires connecting EvoSkills to
+the engine's separate shared memory system.
 
 That is a configuration fix, so it carries no upstream merge surface.
 """
@@ -117,10 +116,10 @@ def snapshot_memory(workspace_dir: Path) -> MemorySnapshot:
 
 
 def verify_persistence_config(env: dict[str, str] | None = None) -> list[str]:
-    """Return the reasons evolution memory will not persist under *env*.
+    """Return reasons the supervised workspace is not explicitly pinned.
 
-    An empty list means the configuration pins a durable workspace, so
-    ``/memory/`` resolves to the same real directory on every run.
+    An empty list means the configuration pins one durable workspace. It says
+    nothing about sharing evolution memory with another workspace.
 
     Args:
         env: Environment mapping to inspect. Defaults to ``os.environ``.
@@ -134,9 +133,9 @@ def verify_persistence_config(env: dict[str, str] | None = None) -> list[str]:
     pinned = env.get(WORKSPACE_ENV_VAR, "").strip()
     if not pinned:
         violations.append(
-            f"{WORKSPACE_ENV_VAR} is unset: the workspace defaults to the process "
-            "cwd, so /memory/ moves with the launch directory and M_I/M_E do not "
-            "persist across runs (F3)."
+            f"{WORKSPACE_ENV_VAR} is unset: same-directory sessions may reuse "
+            "their /memory/ files, but changing the launch directory selects a "
+            "different project-local store (F3)."
         )
         return violations
 
@@ -204,14 +203,15 @@ def build_report(workspace_dir: Path, env: dict[str, str] | None = None) -> dict
         "config_violations": config_violations,
         "snapshot": snapshot.to_dict(),
         "note": (
-            "Persistence is achieved by pinning the workspace, not by repointing "
-            "the skills at /memories/: that mount rejects raw writes."
+            "This verifies stable reuse of one workspace only. It does not prove "
+            "cross-project paper memory. Do not repoint the skills at /memories/: "
+            "that mount rejects raw writes."
         ),
     }
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entry point. Exits nonzero when memory will not persist."""
+    """CLI entry point. Exits nonzero when the workspace is not pinned."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--workspace",
@@ -223,7 +223,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--require-pinned",
         action="store_true",
-        help="exit nonzero when the workspace is not durably pinned",
+        help="exit nonzero when the workspace is not explicitly pinned",
     )
     args = parser.parse_args(argv)
 

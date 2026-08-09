@@ -9,14 +9,14 @@
     "session_count": 0,
     "artifact_count": 0,
     "source_packet": {
-      "path": "/Volumes/Asylum/archimedes/journals/_sources/2026-08-04-nightly.md",
+      "path": "/Volumes/Asylum/Daedalus/journals/_sources/2026-08-04-nightly.md",
       "bytes": 3267,
       "lines": 66,
       "sha256": "bfb46e52b756b2571d006d923cf1e36c53cf6a0524e00804108a3d3514217bfa",
       "verified_nonempty": true
     },
     "archimedes_journal": {
-      "path": "/Volumes/Asylum/archimedes/journals/archimedes/2026-08-04.md",
+      "path": "/Volumes/Asylum/Daedalus/journals/archimedes/2026-08-04.md",
       "bytes": 3869,
       "lines": 59,
       "sha256": "6d2449329d34812c4d56399bc5f09e03e76f7995f71d432211810c0c6c6a6402",

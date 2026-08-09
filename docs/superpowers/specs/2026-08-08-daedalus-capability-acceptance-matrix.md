@@ -16,10 +16,10 @@ Source presence is not a pass. Help text is not a pass. A mocked test is not liv
 
 | Surface | Observed identity | Current evidence |
 |---|---|---|
-| Daedalus repository | `/Volumes/Asylum/archimedes`, commit `3339a1187cf14f50f80cfb28696d03de716419fd` | `git rev-parse HEAD`, exit 0 |
+| Daedalus repository | `/Volumes/Asylum/Daedalus`, commit `3339a1187cf14f50f80cfb28696d03de716419fd` | `git rev-parse HEAD`, exit 0 |
 | Installed launcher | `/Users/manisaintvictor/.local/bin/EvoSci` | `command -v EvoSci`, exit 0 |
 | Launcher interpreter | `/Users/manisaintvictor/.local/share/uv/tools/evoscientist/bin/python3` | launcher shebang read directly |
-| Imported package | `/Volumes/Asylum/archimedes/EvoScientist/__init__.py` | exact launcher interpreter import, exit 0 |
+| Imported package | `/Volumes/Asylum/Daedalus/EvoScientist/__init__.py` | exact launcher interpreter import, exit 0 |
 | Installed package version | `0.2.3` | `EvoSci --version`, exit 0 |
 | Root CLI surface | 8 top-level commands plus the root interactive/single-shot callback | `EvoSci --help`, exit 0 |
 | Slash-command registry | 21 registered primary commands, 5 aliases, 40 declared subcommands | direct read of `CommandManager`, exit 0 |
@@ -338,7 +338,7 @@ PATH="$PWD/.venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest
 PATH="$PWD/.venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider
 /Users/manisaintvictor/.local/share/uv/tools/evoscientist/bin/python3 -c '<CustomSandboxBackend python/python3 probe>' <temporary-directory>
 PYTHONDONTWRITEBYTECODE=1 .venv/bin/python skills/supervising-daedalus-mock-study-runs/scripts/drive_stream_json_resume.py --self-check --pretty
-PYTHONDONTWRITEBYTECODE=1 .venv/bin/python skills/supervising-daedalus-mock-study-runs/scripts/daedalus_preflight.py --repo-root /Volumes/Asylum/archimedes --workdir /Volumes/Asylum/archimedes/j-space-lab --launcher EvoSci --webui-source-dir /Volumes/Asylum/archimedes/.webui-source/EvoScientist-WebUI --pretty
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python skills/supervising-daedalus-mock-study-runs/scripts/daedalus_preflight.py --repo-root /Volumes/Asylum/Daedalus --workdir /Volumes/Asylum/Daedalus/j-space-lab --launcher EvoSci --webui-source-dir /Volumes/Asylum/Daedalus/.webui-source/EvoScientist-WebUI --pretty
 PATH="$PWD/.venv/bin:$PATH" .venv/bin/ruff check skills/supervising-daedalus-mock-study-runs skills/accepting-daedalus-mock-study-evidence skills/publishing-daedalus-study-journals
 PATH="$PWD/.venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider skills/tests skills/preparing-daedalus-mock-studies/tests skills/conducting-daedalus-mock-studies/tests skills/supervising-daedalus-mock-study-runs/tests skills/accepting-daedalus-mock-study-evidence/tests skills/publishing-daedalus-study-journals/tests
 PATH="$PWD/.venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest -q -p no:cacheprovider tests/test_backends.py tests/test_ccproxy_stream_middleware.py tests/test_cli_channel_bridge.py tests/test_cli_channel_bus_mode.py tests/test_cli_channel_slash.py tests/test_cli_completion.py tests/test_cli_deploy.py tests/test_cli_output_format.py tests/test_cli_resume_flag.py tests/test_cli_run_name.py tests/test_cli_serve.py tests/test_cli_tui_dispatch.py tests/test_config.py tests/test_configurable_model_middleware.py tests/test_gateway_background_runs.py tests/test_graph_gateway.py tests/test_hitl.py tests/test_mcp_client.py tests/test_resume_command.py tests/test_resume_hint.py tests/test_sessions.py tests/test_stream_cancel.py tests/test_stream_display.py tests/test_stream_emitter.py tests/test_stream_events.py tests/test_stream_recovery.py tests/test_stream_state.py tests/test_stream_utils.py
@@ -347,7 +347,7 @@ PATH="$PWD/.venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m pytest
 Observed results:
 
 - Every help/version command exited 0.
-- The exact launcher interpreter imported `/Volumes/Asylum/archimedes/EvoScientist/__init__.py`.
+- The exact launcher interpreter imported `/Volumes/Asylum/Daedalus/EvoScientist/__init__.py`.
 - Package version was `0.2.3`.
 - Pytest collected 3,752 tests in 6.17 seconds with one Starlette/httpx deprecation warning.
 - No test was counted as passed by collection.

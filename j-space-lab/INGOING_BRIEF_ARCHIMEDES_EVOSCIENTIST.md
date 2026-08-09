@@ -146,7 +146,7 @@ execution. Full narrative in `CLAUDE_CODE_SESSION_HISTORY.md`.
 
 ## 5. Source index (repository paths and commit identities)
 
-Fork `bionicbutterfly13/EvoScientist`, branch `docs/jspace-research-operations`
+Fork `bionicbutterfly13/Daedalus`, branch `docs/jspace-research-operations`
 (fork-internal PR #2). Notebook identity after both runtime fixes:
 `353479b0f0e959f2e207446b1383ebf632c05bf8c9a9656508cc91d98d4f28f5`.
 

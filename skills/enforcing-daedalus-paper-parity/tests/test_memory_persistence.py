@@ -70,7 +70,7 @@ class TestEngineWritePolicy:
         assert "blocked" in blocked.error.lower()
 
     def test_singular_memory_path_writes_into_the_workspace(self, tmp_path: Path):
-        """`/memory/` succeeds but lands in the per-run workspace -- the defect."""
+        """`/memory/` succeeds but lands in the selected project workspace."""
         from deepagents.backends import CompositeBackend
 
         from EvoScientist.backends import FilesystemBackend, MemoryFilesystemBackend

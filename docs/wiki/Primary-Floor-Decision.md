@@ -16,7 +16,7 @@ threshold-derivation, or prompt-selection path.
 
 The diagnostic received independent GO, passed `495` J-space tests and `3553
 passed, 12 skipped` repository-wide, passed six CI checks, and merged through
-[PR #10](https://github.com/bionicbutterfly13/EvoScientist/pull/10).
+[PR #10](https://github.com/bionicbutterfly13/Daedalus/pull/10).
 
 Its first Colab execution stopped before reading the artifact. The current
 runtime contained only `.config` and `sample_data`; both exact `/content` inputs

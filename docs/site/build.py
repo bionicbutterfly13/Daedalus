@@ -19,9 +19,9 @@ SIDEBAR_PATH = WIKI_DIR / "_Sidebar.md"
 STYLE_PATH = SITE_DIR / "style.css"
 
 DEFAULT_SITE_URL = "https://bionicbutterfly13.github.io"
-DEFAULT_BASE_PATH = "/EvoScientist"
-WIKI_URL = "https://github.com/bionicbutterfly13/EvoScientist/wiki"
-REPOSITORY_URL = "https://github.com/bionicbutterfly13/EvoScientist"
+DEFAULT_BASE_PATH = "/Daedalus"
+WIKI_URL = "https://github.com/bionicbutterfly13/Daedalus/wiki"
+REPOSITORY_URL = "https://github.com/bionicbutterfly13/Daedalus"
 
 WIKI_LINK = re.compile(r"\[\[([^\]]+)\]\]")
 SIDEBAR_LINK = re.compile(r"^- \[\[([^\]]+)\]\]$", re.MULTILINE)

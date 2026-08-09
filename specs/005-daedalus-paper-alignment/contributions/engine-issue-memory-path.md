@@ -1,6 +1,6 @@
 # Draft — engine bug issue (template: bug_report, label: bug)
 
-Title: EvoSkills evolution-memory files are workspace-local despite being documented as shared
+Title: Evolution-memory files are workspace-local, but documented as shared
 
 **Describe the bug**
 

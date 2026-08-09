@@ -42,7 +42,7 @@
 It is designed to be opinionated and ready to use out of the box, offering a living research system that grows alongside evolving agent skills, toolsets, and memory bases.
 Moving beyond traditional human-in-the-loop systems, EvoScientist adopts a human-on-the-loop paradigm, where AI acts as a research buddy that co-evolves with human researchers and internalizes scholarly taste and scientific judgment.**
 
-> **Research documentation in this fork:** the [J-space Global Workspace Project](https://bionicbutterfly13.github.io/EvoScientist/) publishes its Jacobian Lens instrument audit, Stage 2b evidence, open hypotheses, reproducibility gates, and failure record. The [GitHub Wiki](https://github.com/bionicbutterfly13/EvoScientist/wiki) remains the navigable lab notebook.
+> **Research documentation in this fork:** the [J-space Global Workspace Project](https://bionicbutterfly13.github.io/Daedalus/) publishes its Jacobian Lens instrument audit, Stage 2b evidence, open hypotheses, reproducibility gates, and failure record. The [GitHub Wiki](https://github.com/bionicbutterfly13/Daedalus/wiki) remains the navigable lab notebook.
 
 <h3>🏆 Awards & Recognition</h3>
 

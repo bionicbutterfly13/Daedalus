@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
-"""Decide which evolution mechanisms owed this run, and which actually ran (T008).
+"""Decide which evolution mechanisms a run owed, and which actually ran (T008).
 
-Two findings meet here:
+One paper finding and one local policy meet here:
 
 * F2 - the paper makes the Evolution Manager a first-class agent (§3.5). Daedalus
        has no such agent; IDE/IVE/ESE are optional skill prose that nothing
        obliges the model to execute. So a run can complete having evolved nothing.
-* F8 - the installed ``evo-memory`` skill fires ESE only "after experiment-pipeline
-       succeeds -- all 4 stages complete and gates met". The paper imposes no such
-       precondition: ``F_E = ESE(P, {H_E^s})`` distils from best-performing code
-       *and* full search trajectories. The success gate is self-defeating on the
-       paper's own numbers, where Stage-3 success is about 21% yet ESE is what
-       produced the reported +10.17pp.
+* Local policy - require ESE after any recorded experiment pipeline so failed
+  trajectories remain available to later local runs. This is useful Archimedes
+  policy, but it is not established as a paper requirement. The former F8 claim
+  was withdrawn on 2026-08-09 after reading the available paper prompt.
 
-This module derives the obligations from run artifacts using the paper's rules,
-compares them against what the run actually recorded, and reports the gap. It
-never edits the installed skills; the Hermes supervisor acts on the report.
+This module derives the obligations from run artifacts using the paper's rules
+plus the declared local ESE policy, compares them against what the run actually
+recorded, and reports the gap. It never edits the installed skills; the Hermes
+supervisor acts on the report.
 """
 
 from __future__ import annotations
@@ -84,7 +83,7 @@ def _load_stage_records(workspace: Path) -> list[dict]:
 
 
 def derive_obligations(workspace: Path) -> list[Obligation]:
-    """Return the mechanisms this run owed under the paper's rules.
+    """Return mechanisms owed by paper rules plus declared local policy.
 
     Args:
         workspace: The run's workspace root.
@@ -134,17 +133,16 @@ def derive_obligations(workspace: Path) -> list[Obligation]:
                 )
             )
 
-    # ESE owes on ANY completed pipeline run. This is the F8 correction: the
-    # installed skill gates ESE on all four stages succeeding, which the paper
-    # does not, and which would keep the mechanism from ever firing on the
-    # paper's own reported success rates.
+    # Local Archimedes policy requires ESE on any recorded pipeline, including
+    # failed or partial ones. F8 is withdrawn: do not describe this as a paper
+    # correction or an upstream defect.
     obligations.append(
         Obligation(
             "ESE",
             f"the pipeline produced {len(records)} stage trajector"
-            f"{'y' if len(records) == 1 else 'ies'}; the paper distils reusable "
-            "strategies from full search trajectories with no success "
-            "precondition, so ESE is owed whether or not the gates were met (F8)",
+            f"{'y' if len(records) == 1 else 'ies'}; local Archimedes policy "
+            "retains lessons from unsuccessful and partial pipelines, so ESE is "
+            "required whether or not all gates were met",
         )
     )
     return obligations
@@ -170,16 +168,17 @@ def build_report(workspace: Path) -> dict:
     return {
         "schema": "daedalus-parity-evolution-enforcement/v1",
         "task": "T008",
-        "findings": ["F2", "F8"],
+        "findings": ["F2"],
+        "local_policies": ["require_ese_after_any_recorded_pipeline"],
         "workspace": str(workspace),
         "obligations": [obligation.to_dict() for obligation in obligations],
         "observed": observed,
         "missing": missing,
         "complete": not missing,
         "note": (
-            "ESE is owed on partial trajectories. The installed evo-memory skill "
-            "gates it on all four stages succeeding, which the paper does not; "
-            "see contributions/evoskills-pr-ese-trigger.md."
+            "ESE on partial or failed trajectories is a deliberate local policy. "
+            "F8 is withdrawn, and this report must not be used to claim an "
+            "upstream paper-alignment defect."
         ),
     }
 

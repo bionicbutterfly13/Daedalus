@@ -22,7 +22,7 @@ uv run python -c "import EvoScientist; print(EvoScientist.__file__)"
 Expected path:
 
 ```text
-/Volumes/Asylum/archimedes/EvoScientist/__init__.py
+/Volumes/Asylum/Daedalus/EvoScientist/__init__.py
 ```
 
 ## 1. Manifest and freeze validation

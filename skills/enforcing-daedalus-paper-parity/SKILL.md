@@ -1,113 +1,114 @@
 ---
 name: enforcing-daedalus-paper-parity
-description: "Enforce that a Daedalus (EvoScientist) run actually performed the method its paper claims, instead of reporting success having done nothing. Use when: (1) launching a Daedalus run under Hermes and needing a launch record that pins skill versions and gate policy, (2) deciding whether to accept a finished run's evidence, (3) checking whether evolution memory persisted or silently reset, (4) auditing a stream-json transcript for decision gates that dissolved under auto-mode, (5) checking whether an upstream update invalidates the alignment review. Covers findings F1-F14 of docs/daedalus-paper-alignment-review.md."
-allowed-tools: "read_file write_file execute think_tool"
-metadata:
-  author: Archimedes
-  version: '1.0.0'
-  tags: [parity, acceptance, provenance, daedalus]
+description: Verify whether Daedalus and EvoScientist implement the method promised in arXiv 2603.08127, and prepare maintainer-aligned upstream contributions. Use when auditing paper parity, checking cross-task evolution memory, reviewing IDE/IVE/ESE behavior, validating a Daedalus run, searching for duplicate upstream reports, assigning Claude Fable a bounded parity task, or deciding what issue or pull request should come next.
 ---
 
 # Enforcing Daedalus Paper Parity
 
-Daedalus's characteristic failure is not an error. It is a clean `done` event
-covering a cycle that evolved nothing, ranked nothing, and left no checkable
-evidence. This skill makes each of those silent outcomes loud.
+Keep three questions separate:
 
-Every check here treats **absence of evidence as failure**. A gate that passes
-because it found nothing to inspect is the exact bug the gates exist to prevent.
+1. What does the paper promise?
+2. What does the current engine and current EvoSkills code actually do?
+3. What local evidence checks exist around a run?
 
-## When to use
+Local checks can expose missing work. They do not implement a missing paper promise.
 
-| Moment | Script |
+## Current verified baseline
+
+Use these facts unless newer primary-source evidence changes them:
+
+- The paper promises retrieval and improvement across different research tasks, using
+  Ideation Memory, Experimentation Memory, an Evolution Manager, and embedding-based
+  retrieval.
+- EvoSkills writes the two paper memories under `/memory/`. Upstream deliberately treats
+  that location as project-local. It survives sessions that reuse one workspace, but a new
+  workspace does not receive the earlier project's paper memory.
+- EvoScientist separately provides shared profile memory and global observations under
+  `/memories/`. EvoSkills does not connect IDE, IVE, or ESE to that shared system.
+- Current global observation search uses token overlap and IDF. It is not the paper's
+  embedding-cosine retrieval.
+- No released version or visible upstream branch found in the 2026-08-09 audit implements
+  the complete bridge between the paper memories and shared EvoMemory.
+- Rewriting `/memory/` to `/memories/` is not a fix. Raw writes to `/memories/` are blocked,
+  and upstream pull request 161 deliberately separated the two locations.
+- F8 is withdrawn. The available paper prompt asks ESE to analyze the final
+  high-performance or winning implementation, so the existing success precondition is not
+  established as a paper defect.
+- The three-candidate ideation tournament mismatch is already reported as EvoSkills issue
+  33. Do not file a duplicate.
+
+The correction block near the top of
+`docs/daedalus-paper-alignment-review.md` overrides stale wording retained later in that
+historical review.
+
+## Upstream contribution procedure
+
+Read `LIST.md` first. It is the active control list. Work on one contribution at a time.
+
+Before repeating a current-state claim, recheck the paper, current upstream code, visible
+branches, releases, issues, pull requests, and discussions. Record negative searches as the
+scope searched, never as proof that nobody has discussed the subject anywhere.
+
+For the cross-project memory gap:
+
+1. Prepare an issue-quality reproduction. Record an ideation lesson in workspace A, start
+   workspace B, and show that the paper-specific lesson is unavailable there while global
+   observations remain available.
+2. Ask maintainers which shared representation they want. Plausible choices include typed
+   entries in global EvoMemory or a distinct global evolution-memory store. Do not choose
+   the architecture on their behalf.
+3. After maintainer agreement, make the first code contribution small: connect IDE to the
+   agreed shared store and prove retrieval from a new workspace. Treat IVE, ESE, and exact
+   embedding retrieval as later focused changes.
+
+This sequence matches upstream practice:
+
+- Engine design changes require an issue or discussion before code.
+- EvoSkills prefers small pull requests and executable scripts for fragile control flow.
+- Specialized actors use a sibling `AGENTS.md`; portable knowledge remains in `SKILL.md`.
+
+Nothing is filed, commented, pushed, or sent without Dr. Mani's explicit approval.
+
+## Claude Fable assignment
+
+When Dr. Mani asks how to use Claude Fable for this work, give it this bounded task:
+
+> Prepare, but do not file, a maintainer-ready reproduction of the cross-project
+> evolution-memory disconnect. Demonstrate learning recorded in one project and unavailable
+> in another, identify the exact engine and EvoSkills code paths, design a failing automated
+> test, and propose the smallest first patch connecting IDE to shared EvoMemory. Do not
+> investigate other paper gaps or modify public issues.
+
+Independently validate Fable's source claims before accepting its packet.
+
+## Local run evidence
+
+Use the bundled scripts only for their stated evidence purpose:
+
+| Purpose | Script |
 |---|---|
-| Before launch | `launch_record.py build` |
-| Before launch (config check) | `memory_persistence.py --require-pinned` |
-| After the run | `parity_gates.py` |
-| After the run | `evolution_enforcement.py` |
-| After the run | `launch_record.py audit` |
-| Before trusting the review | `check_upstream_drift.py` |
+| Record skill versions and the declared decision policy | `scripts/launch_record.py` |
+| Check stable reuse of one selected workspace | `scripts/memory_persistence.py` |
+| Require expected run artifacts | `scripts/parity_gates.py` |
+| Check which evolution mechanisms the run owed | `scripts/evolution_enforcement.py` |
+| Detect changes to upstream files cited by the review | `scripts/check_upstream_drift.py` |
 
-## The two facts that shape everything else
+`memory_persistence.py` demonstrates same-workspace continuity only. Never report its pass
+as evidence that the paper's cross-project learning promise is implemented.
 
-**Evolution memory has no writable persistent home.** The skills write M_I/M_E
-to `/memory/`, which matches no backend route and resolves into the per-run
-workspace. The persistent mount `/memories/` rejects raw writes outright. So
-repointing the skills is not a fix; it converts silent loss into hard failure.
-Persistence comes from pinning `EVOSCIENTIST_WORKSPACE_DIR` to one durable
-directory, and the gate refuses to pass on an empty store because "empty" is
-exactly what the skills read as "first cycle".
+`scripts/patch_evolution_memory_paths.py` is an obsolete historical experiment. Do not run
+it and do not use its tests as current implementation guidance.
 
-**Under `stream-json`, `ask_user` does not exist.** Auto-mode sets
-`enable_ask_user=False`, which drops `AskUserMiddleware` entirely. Prompts that
-tell the agent to consult a human are not auto-answered; they become inert text
-the model may satisfy, narrate, or ignore. The replacement policy must therefore
-be declared before the run, and the transcript audited for gates that were
-narrated rather than resolved.
+## Primary references
 
-## Procedure
-
-### 1. Before launch
-
-```bash
-python scripts/memory_persistence.py --workspace "$WS" --require-pinned
-python scripts/launch_record.py build \
-    --run-id "$RUN_ID" --workspace "$WS" \
-    --gate-policy auto_select_top1 \
-    --prompt "$PROMPT" --out "$RUN_DIR/launch-record.json"
-```
-
-Choose the gate policy deliberately: `auto_select_top1` follows the paper
-(`P = Extend(Top-1)`); `surface_to_hermes` requires `--no-auto-mode` plus the
-resume driver in `supervising-daedalus-mock-study-runs`. There is no third
-option, and leaving it undeclared is the F6 failure itself.
-
-Inject `templates/ideation-width-addendum.md` into the packet so the tournament
-ranks the 15-21 leaves the skill's own reference specifies rather than three.
-
-### 2. After the run
-
-```bash
-python scripts/parity_gates.py --workspace "$WS" \
-    --launch-record "$RUN_DIR/launch-record.json" \
-    --memory-baseline "$RUN_DIR/memory-baseline.json" \
-    --report "$RUN_DIR/acceptance.json"
-python scripts/evolution_enforcement.py --workspace "$WS"
-python scripts/launch_record.py audit \
-    --events "$RUN_DIR/native-events.jsonl" \
-    --launch-record "$RUN_DIR/launch-record.json"
-```
-
-Any nonzero exit means do not accept the run. Each failure names the finding it
-belongs to, so the rejection can be reported in the lab's own terms.
-
-### 3. Periodically
-
-```bash
-git fetch upstream && python scripts/check_upstream_drift.py --repo .
-```
-
-Nonzero means upstream touched either a file carrying a deliberate fork
-divergence (merge needs graft-not-pick) or a file the findings cite (the review
-needs re-running before you act on it).
-
-## What these checks do not do
-
-They verify that the method's *artifacts* exist and are internally consistent.
-They cannot verify that the science is good, that the Elo judgments were sound,
-or that retrieval picked the right memories — retrieval is LLM-judged upstream,
-and the launch record only records which entries were chosen.
-
-They also do not fix the upstream defects. Drafts for those live in
-`specs/005-daedalus-paper-alignment/contributions/`, unfiled.
-
-## References
-
-| Topic | File |
-|---|---|
-| The 14 findings, twice verified | `docs/daedalus-paper-alignment-review.md` |
-| Remediation tasks and their status | `specs/005-daedalus-paper-alignment/tasks.md` |
-| Upstream contribution drafts | `specs/005-daedalus-paper-alignment/contributions/` |
-| Authority boundary this enforces | `docs/cognitive-lab-architecture.md` |
-| Stage evidence contract | `templates/stage-record.json` |
-| Ideation width addendum | `templates/ideation-width-addendum.md` |
+- Paper: <https://arxiv.org/abs/2603.08127>
+- Deliberate memory-scope change: <https://github.com/EvoScientist/EvoScientist/pull/161>
+- Shared observation memory: <https://github.com/EvoScientist/EvoScientist/pull/281>
+- Existing ideation mismatch: <https://github.com/EvoScientist/EvoSkills/issues/33>
+- EvoSkills implementation direction: <https://github.com/EvoScientist/EvoSkills/issues/30>
+- Engine actor direction: <https://github.com/EvoScientist/EvoScientist/issues/361>
+- Engine contribution rules: <https://github.com/EvoScientist/EvoScientist/blob/main/CONTRIBUTING.md>
+- EvoSkills contribution rules: <https://github.com/EvoScientist/EvoSkills/blob/main/CONTRIBUTING.md>
+- Local active list: `LIST.md`
+- Local evidence review: `docs/daedalus-paper-alignment-review.md`
+- Unfiled drafts: `specs/005-daedalus-paper-alignment/contributions/`

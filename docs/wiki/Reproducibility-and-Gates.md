@@ -47,7 +47,7 @@ It was retained in Colab at pilot completion and was never transferred. A later
 check found the artifact and pilot view absent from the active `/content` runtime
 before the bounded mechanism audit could read them. That state is consistent
 with a reset or replacement, but the precise lifecycle event is unknown. The
-curated aggregate [public record](https://github.com/bionicbutterfly13/EvoScientist/tree/main/runs/stage2b-pilot-public-record-20260731)
+curated aggregate [public record](https://github.com/bionicbutterfly13/Daedalus/tree/main/runs/stage2b-pilot-public-record-20260731)
 is published alongside separately tracked protocol inputs; the result artifact
 itself is not present here or in the active Colab runtime.
 

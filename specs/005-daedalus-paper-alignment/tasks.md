@@ -45,15 +45,14 @@ divergence; P2 = hygiene.
       dir (`skill_digest.digest_skill_tree`); `parity_gates.gate_skill_pins` rejects a run
       whose skills changed or vanished since launch, and rejects a launch record with no
       pins at all. Digest covers relative path plus bytes, so a rename is a different digest.
-- [x] T008 (F2/F8) DONE: `evolution_enforcement.py` derives which mechanisms the run owed from
-      the paper's rules and compares them against the evolution reports actually written.
-      IDE is owed once a tournament produced direction-summary.md; IVE on either paper
-      condition (a stage exhausting its budget without meeting its gate, or stage 3 failing
-      to beat the tuned baseline); ESE on ANY completed pipeline, success or not. That last
-      is the F8 correction: the installed skill gates ESE on all four stages passing, which
-      the paper does not, and which on the paper's own ~21% stage-3 rate would keep the
-      mechanism that produced its +10.17pp from ever firing. Pinned by two tests that fail
-      if the success gate is reintroduced.
+- [x] T008 (F2) DONE: `evolution_enforcement.py` derives which mechanisms a run owed and compares
+      them against the evolution reports actually written. IDE is owed once a tournament
+      produced direction-summary.md; IVE on either paper condition (a stage exhausting its
+      budget without meeting its gate, or stage 3 failing to beat the tuned baseline).
+      ESE-on-any-completed-pipeline is DECLARED LOCAL ARCHIMEDES POLICY, not paper
+      alignment: the former F8 claim (that the paper imposes no success precondition) was
+      WITHDRAWN 2026-08-09 after reading evo-memory/references/paper-prompts.md:133, which
+      asks ESE for "the final high-performance code" and "the winning implementation".
 - [x] T009 (F5) DONE as a prompt addendum, not a skill edit: templates/ideation-width-addendum.md
       directs the run to build the 15-21 leaf tree that research-ideation's own
       references/tree-search-protocol.md already specifies, and to record every entrant in

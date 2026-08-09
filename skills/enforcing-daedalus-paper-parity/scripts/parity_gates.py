@@ -7,7 +7,8 @@ is never the sole judge of whether EvoScientist succeeded. Findings F3, F12, and
 F14 are all cases where the run reports success while producing nothing
 checkable:
 
-* F3  - evolution memory silently resets, and an empty store reads as "first cycle";
+* F3  - evolution memory is project-local; changing workspace selects another
+        store, and an empty store reads as "first cycle";
 * F12 - the pipeline is "recommended", so a run can emit ``done`` having skipped
         Idea Tree Search, the tournament, and every memory update;
 * F14 - stage evidence is prose plus a checkbox, so ``C_best``, budget consumption,
