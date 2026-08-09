@@ -1,0 +1,24 @@
+{
+  "schema": "daedalus-parity-stage-record/v1",
+  "stage": 1,
+  "stage_name": "initial_implementation",
+  "budget": 20,
+  "attempts_used": 0,
+  "attempts": [
+    {
+      "attempt_id": "stage1-attempt-001",
+      "hypothesis": "REQUIRED: what this attempt expected and why",
+      "code_sha256": "REQUIRED: digest of the exact code run",
+      "command": "REQUIRED: exact command executed",
+      "primary_metric": null,
+      "succeeded": false,
+      "notes": ""
+    }
+  ],
+  "best_attempt_id": null,
+  "best_attempt_metric": null,
+  "gate_condition": "primary metric within 2% of reported values",
+  "gate_met": false,
+  "ive_triggered": false,
+  "ese_triggered": false
+}
