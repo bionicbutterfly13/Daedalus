@@ -80,7 +80,7 @@ runtime-sealed and unaccessed. The result artifact
 contained no raw prompt text, activations, or full logits; the separately tracked
 stimulus and pilot-view inputs remain part of the public protocol record.
 
-The repository contains a curated [public aggregate record](https://github.com/bionicbutterfly13/EvoScientist/tree/main/runs/stage2b-pilot-public-record-20260731)
+The repository contains a curated [public aggregate record](https://github.com/bionicbutterfly13/Daedalus/tree/main/runs/stage2b-pilot-public-record-20260731)
 and its provenance note, alongside the separately tracked protocol inputs.
 
 ## Decision boundary

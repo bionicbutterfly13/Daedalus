@@ -65,10 +65,10 @@ def validate(site: Path) -> list[str]:
             parsed = urlparse(href)
             if parsed.scheme or parsed.netloc or href.startswith("#"):
                 continue
-            if not href.startswith("/EvoScientist/"):
+            if not href.startswith("/Daedalus/"):
                 errors.append(f"unexpected internal link in {relative}: {href}")
                 continue
-            target = href.removeprefix("/EvoScientist/").split("#", maxsplit=1)[0]
+            target = href.removeprefix("/Daedalus/").split("#", maxsplit=1)[0]
             destination = site / target
             if (
                 target.endswith(".css")
@@ -99,7 +99,7 @@ def validate(site: Path) -> list[str]:
         else ""
     )
     if (
-        "Sitemap: https://bionicbutterfly13.github.io/EvoScientist/sitemap.xml"
+        "Sitemap: https://bionicbutterfly13.github.io/Daedalus/sitemap.xml"
         not in robots
     ):
         errors.append("robots.txt does not point to the canonical sitemap")

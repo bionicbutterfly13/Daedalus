@@ -20,7 +20,7 @@ The lab's entire current purpose is to decide whether Anthropic's Jacobian Lens
 is a real measurement instrument, *before* anything downstream (Elume consuming
 observations, Sakshi auditing lineage) is built on that assumption.
 
-This is a fork (`bionicbutterfly13/EvoScientist`) of a public upstream. Nothing
+This is a fork (`bionicbutterfly13/Daedalus`) of a public upstream. Nothing
 goes upstream.
 
 ## Where the science is
@@ -102,7 +102,7 @@ Controlled recovery is isolated in:
 - historical base: `fa7980b56a091d9bbd6e32d4136ddcfccbc6d867`
 
 The historical commit is provenance, not implementation authority. The original
-worktree `/Volumes/Asylum/archimedes` remains dirty and preserved; it was used only
+worktree `/Volumes/Asylum/Daedalus` remains dirty and preserved; it was used only
 as a file-by-file salvage source. No commit, push, or PR operation occurred during
 recovery.
 

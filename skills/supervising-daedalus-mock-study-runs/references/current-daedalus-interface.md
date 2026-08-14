@@ -22,7 +22,7 @@ EvoSci --mode run --name ATTEMPT_NAME --prompt PACKET_PROMPT --workdir DATA_ONLY
 The canonical supervised start is:
 
 ```text
-python3 skills/supervising-daedalus-mock-study-runs/scripts/drive_stream_json_resume.py start --repo-root /Volumes/Asylum/archimedes --packet PACKET --authorization AUTHORIZATION --allowlist ALLOWLIST --preflight PREFLIGHT --runtime-config RUNTIME --prompt-file PROMPT --attempt-dir ATTEMPT --workdir ATTEMPT/workspace --launcher EVOSCI_PATH --attempt-id ATTEMPT_ID --timeout-seconds SECONDS --max-cycles COUNT
+python3 skills/supervising-daedalus-mock-study-runs/scripts/drive_stream_json_resume.py start --repo-root /Volumes/Asylum/Daedalus --packet PACKET --authorization AUTHORIZATION --allowlist ALLOWLIST --preflight PREFLIGHT --runtime-config RUNTIME --prompt-file PROMPT --attempt-dir ATTEMPT --workdir ATTEMPT/workspace --launcher EVOSCI_PATH --attempt-id ATTEMPT_ID --timeout-seconds SECONDS --max-cycles COUNT
 ```
 
 An approval resume requires the exact digest printed by the prior cycle:
@@ -37,7 +37,7 @@ An `ask_user` gate uses `--decision answer --answers-file ANSWERS_JSON`.
 Before launch, run the read-only preflight from the repository root:
 
 ```text
-python3 skills/supervising-daedalus-mock-study-runs/scripts/daedalus_preflight.py --repo-root /Volumes/Asylum/archimedes --workdir DATA_ONLY_WORKDIR --launcher EvoSci --webui-source-dir FROZEN_WEBUI_SOURCE --pretty
+python3 skills/supervising-daedalus-mock-study-runs/scripts/daedalus_preflight.py --repo-root /Volumes/Asylum/Daedalus --workdir DATA_ONLY_WORKDIR --launcher EvoSci --webui-source-dir FROZEN_WEBUI_SOURCE --pretty
 ```
 
 The preflight resolves the exact interpreter from the installed launcher's shebang and uses that interpreter to print `EvoScientist.__file__`; do not substitute generic `python` for this identity check. Require JSON status `ready`, require the resolved path to match the intended source, and require the work directory to contain no `EvoScientist/` package. Preserve the preflight JSON and record the source commit separately.

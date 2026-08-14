@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify Hermes External Skills"
+  short_description: "Verify external skills in a Hermes profile"
+  default_prompt: "Use $verifying-hermes-external-skills to confirm that a Hermes profile indexes its configured external skills."

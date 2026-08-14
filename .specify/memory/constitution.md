@@ -4,7 +4,7 @@ Governs work in this repository: the EvoScientist agent runtime and the J-space
 cognitive lab that runs on top of it. Every `speckit.plan` and `speckit.analyze`
 run checks against this document.
 
-This is a **fork** (`bionicbutterfly13/EvoScientist`) of a public upstream
+This is a **fork** (`bionicbutterfly13/Daedalus`) of a public upstream
 (`EvoScientist/EvoScientist`). That fact constrains several principles below.
 
 ## Core Principles
@@ -89,7 +89,7 @@ Binds all work under `j-space-lab/` and
   (`git remote set-url --push upstream DISABLED`); a failure there is expected,
   not a credentials problem. All PRs are fork-internal: `gh pr create` defaults
   to the parent repo, so always pin
-  `--repo bionicbutterfly13/EvoScientist --base main`.
+  `--repo bionicbutterfly13/Daedalus --base main`.
 - **Outward-facing actions need explicit permission**: filing public issues,
   publishing, sending messages, or anything else that leaves this machine.
   Drafting is fine; sending is not.
@@ -108,7 +108,7 @@ Non-obvious properties of this environment, each of which has cost real debuggin
 time. Violating one produces a misleading error, not a clear failure.
 
 - The EvoScientist runtime is an **editable install** from
-  `/Volumes/Asylum/archimedes`. Never point `EvoSci --workdir` at a directory
+  `/Volumes/Asylum/Daedalus`. Never point `EvoSci --workdir` at a directory
   that is itself a checkout of this repo — `cwd` precedes site-packages on
   `sys.path`, so the checkout's `EvoScientist/` package shadows the install and
   the server silently runs another branch's code. Use a subdirectory holding the

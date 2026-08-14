@@ -1,0 +1,23 @@
+{
+  "digests": {
+    "evo-memory": "a2cfffb74805d229645ac5acc461ce8fe164fd69dbb30e2200e78c6ea00d51bc",
+    "evomath-tao": "517e9d079cb184d76a880e8b8fe8862add643c91dadbe5d5d3d6d79e3488155f",
+    "experiment-craft": "0abf0d048b1aeb743950c3c2788ccf575b9d759e706b78734d70014c97e6ebb8",
+    "experiment-iterative-coder": "df3873cf4591447e89847c090304a9719c21b7b5bfc1efa47ce93f8498b47c7b",
+    "experiment-pipeline": "d0e1d4e7c6dab1dc1f343f699a35ab11b8fc3d6ab07c8853c1f442de81d8ddac",
+    "jspace-research-operations": "10e4aaab1a576fa12de6b7230cc29160e55aa098cd971b0177f10126d3706007",
+    "nano-banana": "b4e908bb4db80979e00161b5c0f66e83dcb4e4db46e0af8b30854a092d87fc10",
+    "paper-figures": "122252981e39de85952ed328af67e36c8439d9c98cecda060e6f03fb644831c4",
+    "paper-graph": "4ae2ba6f22cec6635bdc8621fdcab238d5a6d274dd1ae4b03a599741124a635a",
+    "paper-navigator": "10122506a1639b714242f907b56e35f72c4e2a82e0010a1db58dd9e4a5af32b4",
+    "paper-planning": "de2a0827ef9319cca7b3e6ca1ced8f655e331871dc2f295e86918c31e41df5b0",
+    "paper-rebuttal": "b2e5f5f039f1a3a705b9dd141b4e55c93605ef852b98c2ec3d1de3357fa30aab",
+    "paper-review": "d104a947c53102d961ee5452dcd6999c1122a8e6e6026cbfd0e3c7446cfa6224",
+    "paper-writing": "684fe32c2637e00d2585690985e334f8e090d05b7f9a31c1ea6e9bafb25c6986",
+    "research-ideation": "8102018a645bf41746edfa1217c672c1e926d1c91ae8162d6326ba545a7107d2",
+    "research-survey": "3cf237bc148eecbaa259485459ce42adbe07facb9531dae4c789f4b04916ebf3"
+  },
+  "note": "Post-F3-patch digests of the local install. Cited by launch records (T007).",
+  "schema": "daedalus-parity-skill-digests/v1",
+  "skills_root": "/Users/manisaintvictor/.EvoScientist/skills"
+}

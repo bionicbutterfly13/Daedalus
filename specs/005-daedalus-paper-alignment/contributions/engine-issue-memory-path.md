@@ -1,41 +1,108 @@
 # Draft — engine bug issue (template: bug_report, label: bug)
 
-Title: Skills write memory to `/memory/` but the engine mounts `/memories/` — evolution
-memory silently lands in the per-run workspace
+Title: Evolution-memory files are workspace-local, but documented as shared
 
 **Describe the bug**
-The EvoSkills evolution skills (`evo-memory`, `research-ideation`, `experiment-pipeline`)
-read and write Ideation Memory and Experimentation Memory at `/memory/ideation-memory.md`
-and `/memory/experiment-memory.md`. The engine's CompositeBackend routes only `/skills/`
-and `/memories/` (plural); `/memory/` matches no route and falls through to the default
-workspace backend rooted at the current workdir. Cross-cycle memory therefore never
-reaches the persistent store: each run in a fresh workdir starts with empty M_I/M_E, and
-the skills' own "If M_I doesn't exist yet (first cycle), skip this step" instruction makes
-the loss indistinguishable from a genuine first cycle. No error is raised at any point.
 
-Three-way contradiction:
-- CONTRIBUTING.md architecture diagram: `/memory/ --> FilesystemBackend (persistent
-  cross-session)` (documents the singular path as persistent)
-- Engine code: mounts `/memories/` only (both agent constructors' route tables)
-- EvoSkills: write `/memory/` (singular) throughout evo-memory/SKILL.md and the
-  Step-0 sections of research-ideation and experiment-pipeline
+The EvoSkills evolution skills store Ideation and Experimentation Memory at
+`/memory/ideation-memory.md` and `/memory/experiment-memory.md` (`evo-memory`,
+`research-ideation`, `experiment-pipeline`, `experiment-iterative-coder`). The agent's
+`CompositeBackend` routes `/skills/` and `/memories/` only, so singular `/memory/` falls
+through to the default workspace backend and resolves under the selected workdir. Two
+documented statements disagree with that behavior:
+
+- `CONTRIBUTING.md` architecture diagram lists `/memory/ --> FilesystemBackend (persistent
+  cross-session)`.
+- `evo-memory/references/memory-schema.md` states "Memory files persist across sessions
+  because `/memory/` maps to the shared memory directory."
+
+In practice the files are per-workdir. A session that changes its workdir — `run` mode, or
+`--workdir` pointing somewhere new — sees an empty M_I/M_E and, because the skills instruct
+"If M_I doesn't exist yet (first cycle), skip this step", proceeds as though it were a first
+cycle rather than reporting anything missing. In the default `daemon` mode, where the
+workspace is the current directory, the files do persist across sessions launched from the
+same place, which is probably why this has gone unnoticed.
+
+Repointing the skills at `/memories/` is not a workaround: `MemoryFilesystemBackend` rejects
+raw writes and permits edits only to existing files under `/memories/profile/`, so that
+change would replace a silent visibility gap with a hard write failure.
+
+This looks like an integration gap rather than a missing capability. The engine already
+offers persistent, agent-writable storage — editable profile files under
+`/memories/profile/` and `record_observation(scope="global")` under
+`/memories/observations/global/` — but the shipped evolution skills use neither, and target
+a path the router does not serve.
 
 **To Reproduce**
-1. Install evo-memory + research-ideation; run any ideation cycle to completion in
-   workspace A (IDE writes /memory/ideation-memory.md)
-2. `ls ~/.evoscientist/memories/` → no ideation-memory.md; `ls <workspace-A>/memory/` → file is here
-3. Run a second cycle in fresh workspace B → Step 0 reports first-cycle, no directions recalled
+
+Direct backend reproduction, runnable as written against v0.2.6:
+
+```python
+import tempfile
+from pathlib import Path
+
+from deepagents.backends import CompositeBackend
+from EvoScientist.backends import FilesystemBackend, MemoryFilesystemBackend
+
+with tempfile.TemporaryDirectory() as tmp:
+    workspace = Path(tmp) / "workspace-A"
+    memories = Path(tmp) / "memories"
+    workspace.mkdir()
+    memories.mkdir()
+
+    backend = CompositeBackend(
+        default=FilesystemBackend(root_dir=str(workspace), virtual_mode=True),
+        routes={"/memories/": MemoryFilesystemBackend(root_dir=str(memories),
+                                                      virtual_mode=True)},
+    )
+
+    singular = backend.write("/memory/ideation-memory.md", "# M_I\n")
+    print("write /memory/   ->", "OK" if singular.error is None else singular.error)
+    print("   landed at     ->",
+          [str(p.relative_to(tmp)) for p in Path(tmp).rglob("ideation-memory.md")])
+
+    plural = backend.write("/memories/ideation-memory.md", "# M_I\n")
+    print("write /memories/ ->", plural.error)
+```
+
+End-to-end confirmation: run an ideation cycle to completion with `--workdir /tmp/ws-a`,
+confirm `/tmp/ws-a/memory/ideation-memory.md` exists while
+`~/.evoscientist/memories/` does not contain it. Then run a second cycle with
+`--workdir /tmp/ws-b`. Step 0 reports a first cycle and recalls nothing. Default `daemon`
+mode with an unchanged directory will not show the reset.
+
+**Error output / logs**
+
+Observed output:
+
+```
+write /memory/   -> OK
+   landed at     -> ['workspace-A/memory/ideation-memory.md']
+write /memories/ -> Raw writes to /memories are blocked. Edit existing /memories/profile/... files or use memory tools.
+```
 
 **Expected behavior**
-M_I/M_E persist across runs and workspaces (the paper's core accumulation mechanism,
-arXiv 2603.08127 §3.5), or a missing mount fails loudly instead of silently redirecting
-writes to the workspace.
 
-**Environment**
-- EvoScientist v0.2.6, macOS 15 (Darwin 24.6.0), Python 3.11, default (safe) mode
+The documented persistence contract and the actual routing should agree. Either evolution
+memory should be reachable across workdirs, matching `CONTRIBUTING.md` and
+`memory-schema.md`, or those files should be documented as workspace-local.
+
+**System information**
+
+- OS: macOS 15.7.8 (Darwin 24.6.0)
+- Python version: 3.12.11
+- Terminal: not terminal-specific; reproduced with the direct Python script above
+- EvoScientist version: 0.2.6 (`main` at `e086f76`)
+- LLM provider: none; the reproduction calls the backends directly
+- EvoSkills version: `main` at `2e47411`
 
 **Additional context**
-Because `/memory/` reaches the plain workspace backend, these files also bypass
-MemoryFilesystemBackend's create/edit protections. Happy to PR whichever direction
-maintainers prefer: route `/memory/` as an alias of `/memories/` in the engine, or fix the
-path in EvoSkills (draft ready) — the CONTRIBUTING diagram should match the outcome either way.
+
+Because these files sit on the workspace backend, they also receive none of
+`MemoryFilesystemBackend`'s create/edit/delete guards.
+
+Happy to send a PR in whichever direction is preferred — routing `/memory/` to a persistent
+writable backend, allowing a named set of evolution-memory files under `/memories/`,
+migrating the skills onto the existing observation tools, or correcting the two
+documentation statements. The choice affects EvoSkills as well, so it seemed better to ask
+before proposing a patch.

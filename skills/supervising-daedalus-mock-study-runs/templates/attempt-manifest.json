@@ -9,7 +9,7 @@
   "native_run_id_status": "not_exposed_by_local_stream_gateway",
   "thread_id": "FULL_THREAD_ID_REQUIRES_LAUNCH",
   "thread_id_authority": "exact_local_gateway_run_request",
-  "repo_root": "/Volumes/Asylum/archimedes",
+  "repo_root": "/Volumes/Asylum/Daedalus",
   "source_commit": null,
   "supervisor_source_path": "skills/supervising-daedalus-mock-study-runs/scripts/drive_stream_json_resume.py",
   "execution_mode": null,

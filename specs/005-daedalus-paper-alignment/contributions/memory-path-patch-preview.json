@@ -1,0 +1,88 @@
+{
+  "applied": false,
+  "finding": "F3",
+  "from_prefix": "/memory/",
+  "schema": "daedalus-parity-memory-path-patch/v1",
+  "skills": [
+    {
+      "changed": false,
+      "digest_after": "bdf6f34fc99c9fe01c00bcb9d6ae29d002a98c01b45f888e4c451614884a429f",
+      "digest_before": "bdf6f34fc99c9fe01c00bcb9d6ae29d002a98c01b45f888e4c451614884a429f",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "replacements": 8
+        },
+        {
+          "path": "references/ese-protocol.md",
+          "replacements": 2
+        },
+        {
+          "path": "references/ide-protocol.md",
+          "replacements": 2
+        },
+        {
+          "path": "references/ive-protocol.md",
+          "replacements": 1
+        },
+        {
+          "path": "references/memory-schema.md",
+          "replacements": 5
+        }
+      ],
+      "skill": "evo-memory",
+      "total_replacements": 18
+    },
+    {
+      "changed": false,
+      "digest_after": "14ad55cb57f3f8150c2369df167bd5e0590eee5dedb7c0b98748dd6cd68142a6",
+      "digest_before": "14ad55cb57f3f8150c2369df167bd5e0590eee5dedb7c0b98748dd6cd68142a6",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "replacements": 2
+        }
+      ],
+      "skill": "experiment-iterative-coder",
+      "total_replacements": 2
+    },
+    {
+      "changed": false,
+      "digest_after": "435e2fc8d0c9ab91f7d0226d369b2ffc22d6692365393e5abadcfa4f21256157",
+      "digest_before": "435e2fc8d0c9ab91f7d0226d369b2ffc22d6692365393e5abadcfa4f21256157",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "replacements": 2
+        },
+        {
+          "path": "assets/pipeline-tracker-template.md",
+          "replacements": 1
+        }
+      ],
+      "skill": "experiment-pipeline",
+      "total_replacements": 3
+    },
+    {
+      "changed": false,
+      "digest_after": "4d43cc40203e57ea8af69a940291cbb581b851da534155843a5291266541fb7f",
+      "digest_before": "4d43cc40203e57ea8af69a940291cbb581b851da534155843a5291266541fb7f",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "replacements": 2
+        }
+      ],
+      "skill": "research-ideation",
+      "total_replacements": 2
+    }
+  ],
+  "skills_root": "/Users/manisaintvictor/.EvoScientist/skills",
+  "summary": {
+    "expected_skills_untouched": [],
+    "residual_singular_references": 24,
+    "skills_patched": 4,
+    "total_replacements": 25
+  },
+  "to_prefix": "/memories/"
+}

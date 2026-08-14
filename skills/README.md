@@ -1,12 +1,14 @@
 # Daedalus Mock Study Skills
 
-This directory is the only canonical source for the five project-local skills that govern the first synthetic Daedalus vertical acceptance study:
+This directory is the only canonical source for the seven project-local skills that govern Daedalus paper parity, cross-runtime verification, and the first synthetic vertical acceptance study:
 
 1. `conducting-daedalus-mock-studies`
 2. `preparing-daedalus-mock-studies`
 3. `supervising-daedalus-mock-study-runs`
 4. `accepting-daedalus-mock-study-evidence`
 5. `publishing-daedalus-study-journals`
+6. `enforcing-daedalus-paper-parity`
+7. `verifying-hermes-external-skills`
 
 Daedalus means the customized EvoScientist system. Archimedes is the Hermes profile and governance envelope managing Daedalus.
 

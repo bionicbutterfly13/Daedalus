@@ -1,27 +1,46 @@
-# Draft — engine documentation issue (template: documentation)
+# Draft: engine documentation issue (template: documentation)
 
-Title: stream-json docs say auto-mode "auto-handles" ask_user gates; auto-mode actually
-removes the ask_user tool
+Title: stream-json docs say ask_user is handled, but auto-mode disables it
 
-**What is wrong**
-Both the stream-json guide and the CLI comment state that headless auto-mode
-"auto-handles" approval and `ask_user` gates. The implementation disables
-`enable_ask_user`, which removes AskUserMiddleware from the composition — the ask_user
-tool does not exist in the run. Prompt-mandated questions (e.g. workflow steps that
-instruct the agent to ask the user and "not assume a default silently") are neither asked
-nor answered by any recorded policy; the model improvises. For orchestrators driving
-stream-json programmatically, "gate was auto-answered with default X" and "gate never
-existed" are materially different contracts — the current wording claims the former while
-the code implements the latter, and nothing in the event stream lets a consumer tell
-which prompts were silently dropped.
+**What documentation is affected?**
 
-**Where**
-- docs/guides/stream-json.md, "Unattended by default" bullet
-- cli/commands.py comment above the effective-auto-mode resolution
-- Middleware gate: AskUserMiddleware only mounts when `enable_ask_user and not auto_mode`
+- `docs/guides/stream-json.md`, the "Unattended by default" bullet
+- The matching auto-mode comment in `EvoScientist/cli/commands.py`
 
-**Suggested fix**
-Reword both to: auto-mode removes the ask_user tool entirely; instructions to consult the
-user become inert prompt text; behavior at prompt-level decision points is model-dependent.
-Optionally document `--no-auto-mode` + resume as the only path that surfaces gates, with
-its current single-shot limitation. Happy to PR the wording.
+**What is wrong or missing?**
+
+The guide says approval and `ask_user` gates are "auto-handled" when `stream-json`
+enables auto-mode. Those two cases do not behave the same way.
+
+Tool approval prompts are skipped through `auto_approve`. The `ask_user` mechanism is
+disabled: the CLI sets `enable_ask_user=False`, and the middleware stack does not include
+`AskUserMiddleware` when auto-mode is on. No question is raised and no automatic answer is
+recorded. If a prompt tells the agent to consult a user, what happens next depends on the
+prompt and model rather than a defined default answer.
+
+The same bullet says a `--no-auto-mode` interrupt can be answered by re-invoking with
+`--resume`. The CLI warning says the stream-json interrupt "is not yet resumable," so the
+guide currently recommends a path the CLI says is unavailable.
+
+This behavior is covered by two current upstream tests and can be checked without an LLM:
+
+```bash
+uv run pytest -q \
+  tests/test_cli_output_format.py::test_stream_json_defaults_auto_mode_on_in_overrides \
+  tests/test_ask_user.py::test_auto_mode_disables_ask_user_middleware
+```
+
+Observed on `main` at `e086f76`:
+
+```text
+2 passed
+```
+
+**Suggested improvement**
+
+Change the guide and source comment to state that auto-mode skips tool approval prompts and
+disables `ask_user`. State that `--no-auto-mode` can emit the interrupt event, but the
+single-shot stream-json run ends there and cannot currently resume it. Remove the current
+instruction to re-invoke with `--resume` until that path is supported.
+
+I can send the wording change as a focused documentation pull request.

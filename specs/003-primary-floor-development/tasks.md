@@ -26,7 +26,7 @@ confirmation.
 **Purpose**: Confirm routing and establish the separate development-only source
 and test surfaces without changing the completed pilot contracts.
 
-- [ ] T001 Verify `.specify/feature.json` resolves `specs/003-primary-floor-development`, confirm branch `003-primary-floor-development`, and verify the editable import resolves `/Volumes/Asylum/archimedes/EvoScientist/__init__.py`
+- [ ] T001 Verify `.specify/feature.json` resolves `specs/003-primary-floor-development`, confirm branch `003-primary-floor-development`, and verify the editable import resolves `/Volumes/Asylum/Daedalus/EvoScientist/__init__.py`
 - [ ] T002 [P] Create development-only module scaffolds with scope docstrings and no Torch, model, network, or GPU imports in `EvoScientist/skills/jspace-research-operations/scripts/stage2b_development_manifest.py`, `EvoScientist/skills/jspace-research-operations/scripts/stage2b_development_analysis.py`, `EvoScientist/skills/jspace-research-operations/scripts/stage2b_development_preflight.py`, and `EvoScientist/skills/jspace-research-operations/scripts/validate_stage2b_development.py`
 - [ ] T003 [P] Create test module scaffolds and shared synthetic factories in `tests/jspace/test_stage2b_development_manifest.py`, `tests/jspace/test_stage2b_development_analysis.py`, `tests/jspace/test_stage2b_development_preflight.py`, `tests/jspace/test_stage2b_development_validator.py`, `tests/jspace/test_stage2b_development_decision.py`, `tests/jspace/test_stage2b_development_notebook.py`, and `tests/jspace/stage2b_development_fixtures.py`
 

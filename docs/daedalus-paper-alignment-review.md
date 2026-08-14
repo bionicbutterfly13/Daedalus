@@ -5,6 +5,9 @@
 - Also reviewed: installed skills at `~/.EvoScientist/skills` (source `EvoScientist/EvoSkills@skills`)
 - Paper: [arXiv 2603.08127v1](https://arxiv.org/html/2603.08127v1), *Towards Multi-Agent Evolving AI Scientists for End-to-End Scientific Discovery*
 - Independent verification: codex-cli 0.147.0, read-only, against the same tree
+- Re-audited 2026-08-14 on `ece1b3d` (merge of upstream/main, 6 commits past V0.2.6)
+  with EvoSkills at `6d92ea5`: drift check clean, all 14 findings stand unchanged
+  (detail in `LIST.md`, RE-AUDIT block)
 - Status: findings only. No code changed.
 
 **Terminology.** "Daedalus" is our deployed fork plus its installed skills, wrapped and
@@ -12,6 +15,57 @@ CLI-driven by Hermes. "the paper" and "the reference implementation" mean upstre
 EvoScientist.
 
 ---
+
+## The 14 gaps at a glance
+
+P0 = silently invalidates an unattended run. P1 = changes scientific behavior vs the paper. P2 = hygiene.
+
+| # | Out of parity | Sev | Whose bug | Status |
+|---|---|---|---|---|
+| F1 | The paper's method is prompt files installed outside the repo; `skill_manager` can swap it mid-run, and nothing records which version produced a result | P1 | upstream (design) | mitigated: runs now pin skill digests (T007) |
+| F2 | No Evolution Manager agent exists; IDE/IVE/ESE are optional prose nothing obliges the model to run | P1 | upstream engine | mitigated: post-run enforcement (T008) |
+| F3 | Evolution memory is **workspace-local while documented as shared**. Skills write `/memory/` (unmounted); `/memories/` refuses raw writes, so the paths cannot simply be repointed | **P1** (was P0) | upstream integration | conditional: default `daemon` mode reuses cwd, so it persists there. Bites on `run` mode or a changing `--workdir`. Queued as U1 |
+| F4 | Retrieval is keyword/LLM-judged, not the paper's embedding cosine; `k_I=2`/`k_E=1` unreproducible | P1 | upstream engine | mitigated: selections recorded (T010) |
+| F5 | The Elo tournament ranks 3 candidates, so "top-3" is the whole field and selects nothing. The skill's own reference specifies 15-21 | P1 | upstream skills | already reported upstream as EvoSkills #33; local addendum (T009) |
+| F6 | Under `stream-json`, auto-mode **removes** `ask_user`. Human decision gates become inert text the model may narrate or ignore. Docs claim they're "auto-handled" | **P0** | upstream engine | mitigated: gate policy declared + narration audit (T004); queued as U2 |
+| F7 | Attempt budgets match (20/12/12/18), but best-code selection uses pass/fail gates instead of argmax, and the paper's fixed 3+4 worker topology is absent | P1 | upstream | not addressed |
+| F8 | ~~ESE fires only if all 4 stages pass; the paper imposes no such condition~~ **WITHDRAWN 2026-08-09**: the installed paper prompt asks for "the final high-performance code" and "the winning implementation", so the success gate is plausibly faithful to the paper | — | not established | our ESE-on-failure behavior is a local policy choice, not paper alignment |
+| F9 | No per-role model routing out of the box; async agents hardcode the main model, so the paper's Gemini-for-writing is unreachable | P1 | upstream | **blocked, needs your decision** (D-2) |
+| F10 | Package tagline differs from the paper title | P2 | upstream branding | no action — not a defect in this fork |
+| F11 | Two broken doc links in our architecture doc | P2 | **ours** | fixed (T014) |
+| F12 | Nothing makes the pipeline mandatory; a run can emit `done` having skipped ideation, the tournament, and every memory update | **P0** | upstream engine | mitigated: artifact gate (T003) |
+| F13 | M_I/M_E bypass the engine's memory write protections entirely | P1 | upstream | documented + hashed (T012) |
+| F14 | Stage evidence is prose plus a checkbox; `C_best`, budget use, and gate status are unverifiable | **P0** | upstream skills | mitigated: structured stage records required (T005) |
+
+> **Corrections applied 2026-08-09** after an independent Codex review of the upstream
+> drafts. Three claims in this review were wrong or overstated:
+>
+> 1. **F3 was not "no writable persistent path".** Upstream does provide persistent,
+>    agent-writable storage: editable global profile files under `/memories/profile/`
+>    (`middleware/memory.py:119`, `backends.py:1157`) and `record_observation(scope="global")`
+>    under `/memories/observations/global/` (`memory/observations/store.py:171`). The defect
+>    is an integration mismatch — EvoSkills targets a file convention the engine does not
+>    route, while the engine's own persistence goes unused. The absolute claim is refuted.
+> 2. **F3 was not "every run restarts from zero".** Default mode is `daemon`, which fixes
+>    the workspace to the current directory (`config/settings.py:302`,
+>    `cli/commands.py:2378`), so memory persists across sessions launched from the same
+>    place. The reset requires `run` mode or a changing `--workdir`. Severity P0 → P1.
+> 3. **F8 is withdrawn.** It rested on a fetched summary of the paper's §3.5. The installed
+>    `evo-memory/references/paper-prompts.md:133`, which purports to be the paper's own ESE
+>    prompt, asks for "the final high-performance code" and "the winning implementation" —
+>    consistent with a success precondition. That primary source was in the local install
+>    and was not read before the claim was made.
+>
+> `evolution_enforcement.py` still requires ESE after failed pipelines. That is now labelled
+> a deliberate local policy choice rather than a paper-alignment fix, and the U5 PR is
+> withheld.
+
+
+Found during remediation, not in the original review:
+
+| # | Issue | Status |
+|---|---|---|
+| — | The architecture doc's July 16 episodic-memory account cites two files that never existed in git history | **needs your call** (D-3 / T018) |
 
 ## Plain-language summary
 

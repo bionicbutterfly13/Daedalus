@@ -56,6 +56,15 @@ skills/*
 !skills/accepting-daedalus-mock-study-evidence/**
 !skills/publishing-daedalus-study-journals/
 !skills/publishing-daedalus-study-journals/**
+!skills/enforcing-daedalus-paper-parity/
+!skills/enforcing-daedalus-paper-parity/**
+!skills/verifying-hermes-external-skills/
+!skills/verifying-hermes-external-skills/**
+# Re-ignore build artifacts: the `**` negations above out-rank the generic
+# __pycache__ rule, so each allowlisted skill must re-exclude them.
+skills/**/__pycache__/
+skills/**/*.pyc
+skills/**/.pytest_cache/
 !.agents/skills/
 !.agents/skills/speckit-*/
 !.agents/skills/speckit-*/**
@@ -64,6 +73,8 @@ skills/*
 !.agents/skills/supervising-daedalus-mock-study-runs
 !.agents/skills/accepting-daedalus-mock-study-evidence
 !.agents/skills/publishing-daedalus-study-journals
+!.agents/skills/enforcing-daedalus-paper-parity
+!.agents/skills/verifying-hermes-external-skills
 !EvoScientist/skills/
 memory/
 !.specify/memory/

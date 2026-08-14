@@ -11,7 +11,7 @@ execution, or confirmation.
 cd /Volumes/Asylum/archimedes-recovery-jspace-stage2b
 ```
 
-Do not substitute `/Volumes/Asylum/archimedes`; the recovery changes are in the
+Do not substitute `/Volumes/Asylum/Daedalus`; the recovery changes are in the
 worktree above.
 
 ## 1. Endpoint and lossless 8×8 materialization

@@ -89,6 +89,13 @@ found the artifacts, read the authoritative report, verified its identity and
 coverage, and kept EvoScientist's source claims separate from facts Archimedes
 had independently checked.
 
+> **Evidence status (2026-08-09): unresolved.** The two artifacts this account
+> cited (`runs/cognitive-hypothesis-lab/context-intake-2026-07-16.md` and
+> `journals/archimedes/2026-07-16.md`) are absent from the working tree and from
+> all of git history, so the episode is currently an unsourced recollection.
+> The architectural point it illustrates stands on its own; the specific
+> narrative should be re-sourced or removed.
+
 ### Cross-system routing
 
 Archimedes decides whether a task belongs to EvoScientist, J-lens
@@ -119,7 +126,7 @@ only when the task requires a full scientific lifecycle.
 
 ## EvoScientist driver contract
 
-EvoScientist's [`stream-json`](stream-json.md) protocol is the preferred
+EvoScientist's [`stream-json`](guides/stream-json.md) protocol is the preferred
 programmatic integration surface. It emits native tool, subagent, usage,
 interrupt, error, and completion events for a headless client.
 
@@ -157,10 +164,25 @@ The driver should:
 
 ### Acceptance gate
 
+Implementation status: the checks marked **[implemented]** below are enforced by
+`skills/enforcing-daedalus-paper-parity/scripts/parity_gates.py`, which exits
+nonzero and names every failing gate. The remainder are design intent with no
+enforcing code yet; treat an unmarked check as unperformed rather than assumed.
+
 A run is accepted only when its task-specific conditions pass. Typical checks
 include:
 
-- expected artifacts exist and are nonempty;
+- **[implemented]** expected artifacts exist and are nonempty
+  (`gate_pipeline_artifacts`: direction summary, a tournament field larger than
+  the retained top-3, stage directories, an evolution report);
+- **[implemented]** evolution memory persisted and actually changed
+  (`gate_memory_persistence`: an empty store cannot pass, because the skills
+  read empty as "first cycle");
+- **[implemented]** stage claims are machine-checkable
+  (`gate_stage_evidence_machine_checkable`: `C_best`, attempts against the
+  paper's 20/12/12/18 budgets, gate status);
+- **[implemented]** the method that produced the run is pinned and unchanged
+  (`gate_skill_pins` against the launch record's skill digests);
 - artifact manifest, sizes, hashes, and provenance are recorded;
 - required sources have verified access method and coverage;
 - reported commands, parameters, and environments are reproducible;
@@ -255,6 +277,20 @@ A candidate observation record includes:
 | `uncertainty` | Stability, calibration, or confidence information |
 | `artifact_refs` | Content-addressed raw and derived evidence |
 | `created_at` | Observation time |
+
+### Evolution-memory files are unprotected artifacts
+
+Ideation and Experimentation Memory (`M_I`, `M_E`) are *not* held in the engine's
+guarded memory store. The evolution skills write them under the agent's
+`/memory/` path, which matches no backend route and therefore resolves into the
+run's ordinary workspace. They receive none of `MemoryFilesystemBackend`'s
+protections: no create guard, no edit restriction, no delete guard. Anything
+with workspace write access can alter them silently.
+
+Treat them as ordinary run artifacts rather than as memory: hash them into the
+evidence manifest, record their pre-run digests in the launch record, and check
+them at the acceptance gate. `parity_gates.gate_memory_persistence` does the
+last of these; the first two belong to whatever writes the manifest.
 
 Raw activations should remain outside ordinary agent memories and reports.
 Sparse summaries, transformation receipts, and content-addressed references can
@@ -371,9 +407,11 @@ Not established by this document:
 - [Anthropic: A global workspace in language models](https://www.anthropic.com/research/global-workspace)
 - [Verbalizable Representations Form a Global Workspace in Language Models](https://transformer-circuits.pub/2026/workspace/index.html)
 - [Anthropic Jacobian Lens reference implementation](https://github.com/anthropics/jacobian-lens)
-- [EvoScientist stream-json protocol](stream-json.md)
-- [Cognitive hypothesis lab context intake](../runs/cognitive-hypothesis-lab/context-intake-2026-07-16.md)
-- [Archimedes operations journal, July 16, 2026](../journals/archimedes/2026-07-16.md)
+- [EvoScientist stream-json protocol](guides/stream-json.md)
+- Cognitive hypothesis lab context intake, `runs/cognitive-hypothesis-lab/context-intake-2026-07-16.md`
+  (UNRESOLVED: not in the working tree or git history as of 2026-08-09)
+- Archimedes operations journal, July 16, 2026, `journals/archimedes/2026-07-16.md`
+  (UNRESOLVED: earliest surviving journal is 2026-07-31)
 - [Hermes Agent profiles](https://hermes-agent.nousresearch.com/docs/user-guide/profiles/)
 - [Hermes Agent Kanban](https://hermes-agent.nousresearch.com/docs/user-guide/features/kanban)
 - [Hermes Agent persistent memory](https://hermes-agent.nousresearch.com/docs/user-guide/features/memory)
