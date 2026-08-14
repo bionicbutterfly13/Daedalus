@@ -5,6 +5,9 @@
 - Also reviewed: installed skills at `~/.EvoScientist/skills` (source `EvoScientist/EvoSkills@skills`)
 - Paper: [arXiv 2603.08127v1](https://arxiv.org/html/2603.08127v1), *Towards Multi-Agent Evolving AI Scientists for End-to-End Scientific Discovery*
 - Independent verification: codex-cli 0.147.0, read-only, against the same tree
+- Re-audited 2026-08-14 on `ece1b3d` (merge of upstream/main, 6 commits past V0.2.6)
+  with EvoSkills at `6d92ea5`: drift check clean, all 14 findings stand unchanged
+  (detail in `LIST.md`, RE-AUDIT block)
 - Status: findings only. No code changed.
 
 **Terminology.** "Daedalus" is our deployed fork plus its installed skills, wrapped and
