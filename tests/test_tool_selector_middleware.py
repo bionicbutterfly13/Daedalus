@@ -676,6 +676,50 @@ def test_create_tool_selector_wires_nostream_and_flood_detector_on_model():
     # Append (not replace): pre-existing tags/callbacks survive.
     assert "pre_existing_tag" in update_kwarg["tags"]
     assert _pre_existing_cb in update_kwarg["callbacks"]
+    assert mock_selector.call_args.kwargs["model"] is tagged_out
+
+
+def test_ccproxy_codex_selector_uses_streaming_structured_output():
+    """The ccproxy Codex route must not use its output-losing non-stream path."""
+    from EvoScientist.middleware.tool_selector import _FLOOD_DETECTOR
+
+    thinking_out = MagicMock(name="disable_thinking_output")
+    thinking_out.use_responses_api = True
+    thinking_out.openai_api_base = "http://127.0.0.1:8000/codex/v1"
+
+    streaming_out = MagicMock(name="streaming_output")
+    streaming_out.tags = []
+    streaming_out.callbacks = []
+    tagged_out = MagicMock(name="tagged_output")
+    streaming_out.model_copy.return_value = tagged_out
+    thinking_out.model_copy.return_value = streaming_out
+
+    with (
+        patch(
+            "EvoScientist.middleware.utils.disable_thinking",
+            return_value=thinking_out,
+        ),
+        patch("EvoScientist.middleware.utils.disable_streaming") as mock_ds,
+        patch(
+            "langchain.agents.middleware.LLMToolSelectorMiddleware",
+            return_value=MagicMock(),
+        ) as mock_selector,
+    ):
+        middleware = create_tool_selector_middleware(model=MagicMock())[0]
+        middleware.wrap_model_call(
+            _request([_tool(f"tool_{index}") for index in range(27)]),
+            MagicMock(),
+        )
+
+    mock_ds.assert_not_called()
+    thinking_out.model_copy.assert_called_once_with(
+        update={"streaming": True, "disable_streaming": False}
+    )
+    from langgraph.constants import TAG_NOSTREAM
+
+    update_kwarg = streaming_out.model_copy.call_args.kwargs["update"]
+    assert TAG_NOSTREAM in update_kwarg["tags"]
+    assert _FLOOD_DETECTOR in update_kwarg["callbacks"]
     # The tagged model is what reaches LLMToolSelectorMiddleware.
     assert mock_selector.call_args.kwargs["model"] is tagged_out
 

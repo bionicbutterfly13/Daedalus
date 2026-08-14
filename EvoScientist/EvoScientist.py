@@ -669,7 +669,10 @@ def _build_base_kwargs(
     from .utils import load_subagents
 
     cfg = cfg if cfg is not None else _ensure_config()
-    tool_registry = {"think_tool": think_tool}
+    tool_registry = {
+        "think_tool": think_tool,
+        "skill_manager": skill_manager,
+    }
     if os.environ.get("TAVILY_API_KEY"):
         tool_registry["tavily_search"] = tavily_search
     base_tools = [think_tool, skill_manager]
@@ -746,7 +749,10 @@ def load_mcp_and_build_kwargs(
             workspace_dir=workspace_dir,
         )
 
-    tool_registry = {"think_tool": think_tool}
+    tool_registry = {
+        "think_tool": think_tool,
+        "skill_manager": skill_manager,
+    }
     if os.environ.get("TAVILY_API_KEY"):
         tool_registry["tavily_search"] = tavily_search
     base_tools = [think_tool, skill_manager]

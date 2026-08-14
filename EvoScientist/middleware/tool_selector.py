@@ -300,6 +300,7 @@ def create_tool_selector_middleware(
     """
     from langchain.agents.middleware import LLMToolSelectorMiddleware
 
+    from .ccproxy_stream import _is_ccproxy_codex_responses_model
     from .utils import disable_streaming, disable_thinking
 
     if model is None:
@@ -320,7 +321,14 @@ def create_tool_selector_middleware(
     # Append (rather than replace) so any tags/callbacks the main-agent
     # model may carry are preserved - relevant if a future factory adds
     # e.g. langsmith tracing tags to the base model.
-    base = disable_streaming(disable_thinking(model))
+    base = disable_thinking(model)
+    if _is_ccproxy_codex_responses_model(base):
+        # This route loses completed non-streaming Responses output. Structured
+        # output works over its streaming path, so use a per-selector copy.
+        # Other providers keep the established non-streaming selector path.
+        base = base.model_copy(update={"streaming": True, "disable_streaming": False})
+    else:
+        base = disable_streaming(base)
     safe_model = base.model_copy(
         update={
             "tags": [*(base.tags or []), TAG_NOSTREAM],
