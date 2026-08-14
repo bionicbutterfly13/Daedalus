@@ -4,23 +4,24 @@ Status: DRAFTS ONLY. Nothing here is filed. Filing is outward-facing and require
 Dr. Mani's explicit approval per hard boundaries.
 
 Protocol compliance:
-- Engine (EvoScientist/EvoScientist): issue first for features; bug fixes PR-able with
-  tests; branch names fix/... feat/...; must pass `uv run ruff check .` + `uv run pytest`;
-  PR template checkboxes; core-functionality scope.
+- Engine (EvoScientist/EvoScientist): pull requests address an open issue; design changes
+  start in an issue or discussion; keep changes focused; run `uv run ruff check .` and
+  `uv run pytest`.
 - Skills (EvoScientist/EvoSkills): Conventional Commits with skill-name scope; PR title
   <70 chars; skill anatomy preserved; eval scores if descriptions change.
 
 | Draft | Target repo | Type | Backs task | Status |
 |---|---|---|---|---|
-| engine-issue-memory-path.md | EvoScientist/EvoScientist | bug issue | T001 | rewritten after review |
-| engine-issue-streamjson-docs.md | EvoScientist/EvoScientist | documentation issue | T004 | rewritten after review |
-| evoskills-doc-memory-claim.md | EvoScientist/EvoSkills | docs PR | T001 | rewritten after review |
-| evoskills-issue-33-comment.md | EvoScientist/EvoSkills | comment on existing #33 | T009 | duplicate; comment only |
+| engine-issue-memory-path.md | EvoScientist/EvoScientist | bug issue | T001 | ready, not filed |
+| engine-issue-streamjson-docs.md | EvoScientist/EvoScientist | documentation issue | T004 | ready, not filed |
+| evoskills-doc-memory-claim.md | EvoScientist/EvoSkills | docs PR | T001 | verified, blocked on U1 |
+| evoskills-issue-33-comment.md | EvoScientist/EvoSkills | comment on existing #33 | T009 | ready, not posted |
 | PARKED-evoskills-ese-trigger.md | — | withheld | T008 | premise unverified |
 
-Filing order when approved: engine-issue-memory-path first — it is the blocking decision;
-the EvoSkills docs PR links it. Then the two EvoSkills fix PRs (ESE trigger, ideation tree),
-which are independent of that decision. Then the stream-json docs issue.
+Outward-action order when each item is approved: file the memory-path issue, then post the
+comment on EvoSkills #33. The stream-json draft still needs revision. The memory docs change
+waits for the memory-path decision. The ESE trigger change is withheld because its premise
+is unverified.
 
 Correction log:
 - 2026-08-09: the original `evoskills-pr-memory-path.md` proposed repointing the skills from

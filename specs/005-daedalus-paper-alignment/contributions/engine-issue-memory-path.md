@@ -65,6 +65,14 @@ with tempfile.TemporaryDirectory() as tmp:
     print("write /memories/ ->", plural.error)
 ```
 
+End-to-end confirmation: run an ideation cycle to completion with `--workdir /tmp/ws-a`,
+confirm `/tmp/ws-a/memory/ideation-memory.md` exists while
+`~/.evoscientist/memories/` does not contain it. Then run a second cycle with
+`--workdir /tmp/ws-b`. Step 0 reports a first cycle and recalls nothing. Default `daemon`
+mode with an unchanged directory will not show the reset.
+
+**Error output / logs**
+
 Observed output:
 
 ```
@@ -73,21 +81,20 @@ write /memory/   -> OK
 write /memories/ -> Raw writes to /memories are blocked. Edit existing /memories/profile/... files or use memory tools.
 ```
 
-End to end: run an ideation cycle to completion with `--workdir /tmp/ws-a`, confirm
-`/tmp/ws-a/memory/ideation-memory.md` exists while `~/.evoscientist/memories/` does not
-contain it, then run a second cycle with `--workdir /tmp/ws-b`. Step 0 reports a first cycle
-and recalls nothing. Default `daemon` mode with an unchanged directory will not show the
-reset.
-
 **Expected behavior**
 
-Either evolution memory is reachable across workdirs, matching what `CONTRIBUTING.md` and
-`memory-schema.md` describe, or the documentation is corrected to say the files are
-workspace-local.
+The documented persistence contract and the actual routing should agree. Either evolution
+memory should be reachable across workdirs, matching `CONTRIBUTING.md` and
+`memory-schema.md`, or those files should be documented as workspace-local.
 
-**Environment**
+**System information**
 
-EvoScientist v0.2.6, macOS 15 (Darwin 24.6.0), Python 3.11, default (safe) mode.
+- OS: macOS 15.7.8 (Darwin 24.6.0)
+- Python version: 3.12.11
+- Terminal: not terminal-specific; reproduced with the direct Python script above
+- EvoScientist version: 0.2.6 (`main` at `e086f76`)
+- LLM provider: none; the reproduction calls the backends directly
+- EvoSkills version: `main` at `2e47411`
 
 **Additional context**
 

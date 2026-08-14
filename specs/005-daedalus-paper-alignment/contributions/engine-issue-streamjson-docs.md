@@ -1,43 +1,46 @@
-# Draft — engine documentation issue (template: documentation)
+# Draft: engine documentation issue (template: documentation)
 
-Title: Docs say auto-mode "auto-handles" ask_user; it removes the middleware
+Title: stream-json docs say ask_user is handled, but auto-mode disables it
 
-**What documentation is affected**
+**What documentation is affected?**
 
 - `docs/guides/stream-json.md`, the "Unattended by default" bullet
-- The matching comment above the effective-auto-mode resolution in `EvoScientist/cli/commands.py`
+- The matching auto-mode comment in `EvoScientist/cli/commands.py`
 
-**What is unclear or incorrect**
+**What is wrong or missing?**
 
-Both state that under `stream-json`, auto-mode "auto-handles" approval and `ask_user` gates.
-The implementation does not answer those gates; it removes the mechanism that raises them.
-`--output-format stream-json` defaults auto-mode on, auto-mode sets `enable_ask_user=False`,
-and `AskUserMiddleware` is mounted only when `enable_ask_user and not auto_mode`, so the
-`ask_user` tool is absent from the run. Approval interrupts are likewise removed rather than
-answered from a recorded default.
+The guide says approval and `ask_user` gates are "auto-handled" when `stream-json`
+enables auto-mode. Those two cases do not behave the same way.
 
-The practical difference matters for a programmatic consumer. "Auto-handled" implies a
-recorded decision a client could inspect or reproduce. What actually happens is that no gate
-handler and no default are installed; any prompt instructing the agent to consult a user
-remains as model-visible text, and the response to it is model-dependent. Nothing in the
-event stream distinguishes a prompt-level question that was resolved from one that was never
-raised.
+Tool approval prompts are skipped through `auto_approve`. The `ask_user` mechanism is
+disabled: the CLI sets `enable_ask_user=False`, and the middleware stack does not include
+`AskUserMiddleware` when auto-mode is on. No question is raised and no automatic answer is
+recorded. If a prompt tells the agent to consult a user, what happens next depends on the
+prompt and model rather than a defined default answer.
 
-**Deterministic demonstration** (configuration path only, no model involved)
+The same bullet says a `--no-auto-mode` interrupt can be answered by re-invoking with
+`--resume`. The CLI warning says the stream-json interrupt "is not yet resumable," so the
+guide currently recommends a path the CLI says is unavailable.
 
-1. Resolve the effective flags for a `stream-json` run without passing `--auto-mode`:
-   auto-mode resolves on, and the CLI overrides set `enable_ask_user=False`.
-2. Build the middleware stack with that config and list it: `AskUserMiddleware` is not
-   present, because its mount condition is `cfg.enable_ask_user and not cfg.auto_mode`.
+This behavior is covered by two current upstream tests and can be checked without an LLM:
 
-Both steps are visible in the source without executing a model turn.
+```bash
+uv run pytest -q \
+  tests/test_cli_output_format.py::test_stream_json_defaults_auto_mode_on_in_overrides \
+  tests/test_ask_user.py::test_auto_mode_disables_ask_user_middleware
+```
 
-**Suggested fix**
+Observed on `main` at `e086f76`:
 
-Reword both places to say that auto-mode removes the `ask_user` and approval mechanisms
-rather than auto-answering them, and that prompt-level instructions to consult a user have
-no handler in that mode. If it is worth documenting an alternative, note that `--no-auto-mode`
-surfaces the interrupt as an event — while stating the current limitation, since the CLI
-warns the run ends there and is not yet resumable.
+```text
+2 passed
+```
 
-Happy to send the wording as a PR.
+**Suggested improvement**
+
+Change the guide and source comment to state that auto-mode skips tool approval prompts and
+disables `ask_user`. State that `--no-auto-mode` can emit the interrupt event, but the
+single-shot stream-json run ends there and cannot currently resume it. Remove the current
+instruction to re-invoke with `--resume` until that path is supported.
+
+I can send the wording change as a focused documentation pull request.

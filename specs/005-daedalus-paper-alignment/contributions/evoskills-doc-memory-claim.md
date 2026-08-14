@@ -1,4 +1,6 @@
-# Draft — EvoSkills PR (docs only)
+# Draft: EvoSkills PR (docs only)
+
+Status: verified, but blocked until the EvoScientist memory-path issue is answered.
 
 Branch: docs/evo-memory-workspace-local-paths
 Title: docs(evo-memory): clarify workspace-local memory paths
